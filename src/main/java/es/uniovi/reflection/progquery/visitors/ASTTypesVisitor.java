@@ -151,7 +151,6 @@ public class ASTTypesVisitor extends TreeScanner<ASTVisitorResult, Pair<PartialR
         this.pdgUtils = pdgUtils;
         this.ast = ast;
         this.currentCU = cu;
-        // System.out.println(NodeUtils.nodeToString(cu));
     }
 
     private NodeWrapper addInvocationInStatement(NodeWrapper statement) {

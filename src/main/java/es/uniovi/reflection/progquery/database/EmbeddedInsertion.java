@@ -18,7 +18,6 @@ public class EmbeddedInsertion implements InsertionStrategy {
     private EmbeddedDBBuilder dbBuilder;
 
     public EmbeddedInsertion() {
-//		System.out.println("EMBEDDED NO PATH");
         dbBuilder = new EmbeddedDBBuilder();
         gDBService = dbBuilder.getNewEmbeddedDBService();
     }
@@ -48,7 +47,6 @@ public class EmbeddedInsertion implements InsertionStrategy {
         return wrapper;
     }
 
-
     @Override
     public Neo4jEmbeddedWrapperNode createNode(Object[] props) {
         Neo4jEmbeddedWrapperNode wrapper = createNode();
@@ -65,18 +63,13 @@ public class EmbeddedInsertion implements InsertionStrategy {
 
     @Override
     public void startAnalysis() {
-
         currentTransaction = gDBService.beginTx();
-
-        //TODO LOG System.out.printf("OPEN TRANS %s FORM EMBDEDDED INSERTION\n", currentTransaction.toString());
     }
 
     @Override
     public void endAnalysis() {
-        //TODO LOG System.out.printf("CLOSING TRANS %s FOR EMBDEDDED INSERTION\n", currentTransaction.toString());
         currentTransaction.commit();
         currentTransaction.close();
-        //All the EmbeddedManager instances are actually closed, because its currentTransaction is closed
         dbBuilder.shutdownManager();
     }
 

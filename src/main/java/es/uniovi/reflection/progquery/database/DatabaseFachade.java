@@ -28,9 +28,7 @@ public class DatabaseFachade {
 
 	public static void init(InsertionStrategy current) {
 		CURRENT_INSERTION_STRATEGY = current;
-//		System.out.println(current);
 		CURRENT_DB_FACHADE = new DatabaseFachade(current);
-		// System.out.println(current);
 	}
 
 	public DatabaseFachade(InsertionStrategy insertionStrategy) {

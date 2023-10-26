@@ -15,48 +15,32 @@ import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 
 public class InfoToInsert {
-
 	final List<NodeWrapper> nodeSet = new ArrayList<>();
-
 	final List<RelationshipWrapper> relSet = new ArrayList<>();
-
 	public List<NodeWrapper> getNodeSet() {
 		return Collections.unmodifiableList(nodeSet);
 	}
-
 	public List<RelationshipWrapper> getRelSet() {
-
 		return Collections.unmodifiableList(relSet);
 	}
-
 	public static final InfoToInsert INFO_TO_INSERT = new InfoToInsert();
-
 	public void addNewNode(Neo4jLazyNode newNode) {
 		nodeSet.add(newNode);
 	}
-
 	public void deleteNode(Neo4jLazyNode node) {
 		nodeSet.remove(node);
 	}
-
-	public void addNewRel(Neo4jLazyRelationship newRel) {
-		relSet.add(newRel);
-
-	}
-
+	public void addNewRel(Neo4jLazyRelationship newRel) { relSet.add(newRel);}
 	public void deleteRel(Neo4jLazyRelationship rel) {
 		relSet.remove(rel);
 	}
-
 	public List<Pair<String, Object[]>> getNodeQueriesInfo() {
-
 		final List<Pair<String, Object[]>> nodeQueries = new ArrayList<>();
 		for (NodeWrapper n : nodeSet)
 			nodeQueries.add(createParameterizedQueryFor(n));
 		return nodeQueries;
 	}
 	public List<Pair<String, Object[]>> getRelQueriesInfo() {
-
 		final List<Pair<String, Object[]>> relQueries = new ArrayList<>();
 		for (RelationshipWrapper r : relSet)
 			relQueries.add(createParameterizedQueryFor(r));
@@ -72,10 +56,8 @@ public class InfoToInsert {
 		int i = 4;
 		for (Object o : props.getSecond())
 			propArray[i++] = o;
-
 		return Pair.create("MATCH (n),(m) WHERE ID(n)=$startId AND ID(m)=$endId CREATE (n)-[r:" + r.getTypeString()
 				+ props.getFirst() + "]->(m)", propArray);
-
 	}
 
 	private static String createQueryFor(Iterable<NodeWrapper> nodes, Iterable<RelationshipWrapper> rels) {
@@ -84,15 +66,12 @@ public class InfoToInsert {
 			queryPart1 += "( n" + n.getId() + "), ";
 			queryPart2 += " n" + n.getId() + ", ";
 		}
-
 		return queryPart1.substring(0, queryPart1.length() - 2) + queryPart2.substring(0, queryPart2.length() - 2);
 	}
 
 	private static String createQueryFor(RelationshipWrapper r) {
-
 		return "MATCH (n),(m) WHERE ID(n)=" + r.getStartNode().getId() + " AND ID(m)=" + r.getEndNode().getId()
 				+ " CREATE (n)-[r:" + r.getTypeString() + getProps(r.getAllProperties()) + "]->(m)";
-
 	}
 
 	private static String getProps(Set<Entry<String, Object>> props) {
@@ -123,9 +102,7 @@ public class InfoToInsert {
 		String query = "CREATE (n";
 		for (Label label : n.getLabels())
 			query += ":" + label;
-
 		return query + getProps(n.getAllProperties()) + queryEnd;
-
 	}
 
 	private static Pair<String, Object[]> createParameterizedQueryFor(NodeWrapper n) {
@@ -135,6 +112,5 @@ public class InfoToInsert {
 			query += ":" + label;
 		Pair<String, Object[]> pair = getParameterizedProps(n.getAllProperties());
 		return Pair.create(query + pair.getFirst() + queryEnd, pair.getSecond());
-
 	}
 }

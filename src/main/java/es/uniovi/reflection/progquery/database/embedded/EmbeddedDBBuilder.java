@@ -25,9 +25,7 @@ public class EmbeddedDBBuilder {
         this(DEFAULT_DB_DIR, DEFAULT_DB_NAME);
     }
 
-
     public GraphDatabaseService getNewEmbeddedDBService() { return manager.database(database_name); }
-
 
     private static void registerShutdownHook(final DatabaseManagementService managementService) {
         Runtime.getRuntime().addShutdownHook(new Thread() {

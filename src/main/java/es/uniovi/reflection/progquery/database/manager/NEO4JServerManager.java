@@ -11,10 +11,9 @@ import java.util.List;
 public class NEO4JServerManager implements NEO4JManager {
     public static final String NEO4J_PROTOCOL = "neo4j://";
     public static final String NEO4J_DEFAULT_DB = "neo4j";
-
     private final Driver driver;
     private Session session;
-@Override
+    @Override
     public NodeWrapper getProgramFromDB(String programId, String userId) {
         List<Record> programsIfAny = executeQuery(String.format("MATCH (p:PROGRAM) WHERE p.ID='%s' AND p.USER_ID='%s' RETURN ID(p)", programId, userId));
         if (programsIfAny.size() == 0)
@@ -35,7 +34,6 @@ public class NEO4JServerManager implements NEO4JManager {
     private List<Record> executeQuery(String query) {
         return session.writeTransaction(tx -> tx.run(query).list());
     }
-
 
     @Override
     public void close() {

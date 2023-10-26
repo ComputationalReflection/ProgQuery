@@ -9,12 +9,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
-
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodInfo;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodState;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 import org.neo4j.graphdb.Direction;
-
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
@@ -24,7 +22,6 @@ import com.sun.source.tree.Tree.Kind;
 import com.sun.source.tree.TryTree;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
-
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.CFGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.CGRelationTypes;
@@ -40,34 +37,14 @@ import es.uniovi.reflection.progquery.pdg.GetDeclarationFromExpression;
 import es.uniovi.reflection.progquery.pdg.InterproceduralPDG;
 
 public class ASTAuxiliarStorage {
-	private static final String OBJECT_CLASS_NAME = "java.lang.Object";
-
-	// public static List<EnhancedForLoopTree> enhancedForLoopList = new
-	// ArrayList<EnhancedForLoopTree>();
-	// public static Map<MethodTree, List<StatementTree>>
-	// nestedConstructorsToBlocks = new HashMap<MethodTree,
-	// List<StatementTree>>();
-	// public static List<Pair<AssertTree, NodeWrapper>> assertList = new
-	// ArrayList<Pair<AssertTree, NodeWrapper>>();
-
 	private Stack<List<Pair<NodeWrapper, List<MethodSymbol>>>> lastInvocationInStatementLists = new Stack<List<Pair<NodeWrapper, List<MethodSymbol>>>>();
-
-	// private final Map<String, List<Type>> methodNamesToExceptionThrowsTypes =
-	// new HashMap<String, List<Type>>();
 	private Map<NodeWrapper, MethodInfo> methodInfo = new HashMap<>();
 	public final Set<NodeWrapper> typeDecNodes = new HashSet<NodeWrapper>();
 	private final Set<NodeWrapper> trustableInvocations = new HashSet<NodeWrapper>();
-
-	// METHOD_DEC,CALL
-	// private final Set<Pair<Node, NodeWrapper>> calls = new HashSet<>();
 	private final Map<MethodSymbol, NodeWrapper> accesibleMethods = new HashMap<>();
 	private final Map<NodeWrapper, Set<NodeWrapper>> callGraph = new HashMap<>();
-public static final int NO_VARG_ARG=-1;
-	// public void addThrowsInfoToMethod(String methodName, List<Type>
-	// exceptionTypes) {
-	// methodNamesToExceptionThrowsTypes.put(methodName, exceptionTypes);
-	// }
-	//A trustuble invocation, is a new clsas or constructor that cannot have polimorfism, REFER_TO always to a sigle method i think, they dont need Hierarchy + call analysisi con MAY_REFE_TO
+	public static final int NO_VARG_ARG = -1;
+
 	public void checkIfTrustableInvocation(MethodInvocationTree methodInvocationTree, MethodSymbol methodSymbol,
 			NodeWrapper methodInvocationNode) {
 		if (methodInvocationTree.getMethodSelect().getKind() == Kind.IDENTIFIER) {
@@ -84,10 +61,6 @@ public static final int NO_VARG_ARG=-1;
 		}
 	}
 
-	public Map<NodeWrapper, MethodInfo> getMethodsInfo() {
-		return methodInfo;
-	}
-
 	public void addInfo(MethodTree methodTree, NodeWrapper methodNode, MethodState methodState, int varArgParamIndex) {
 
 		methodInfo.put(methodNode,
@@ -98,22 +71,11 @@ public static final int NO_VARG_ARG=-1;
 
 	public void addAccesibleMethod(MethodSymbol ms, NodeWrapper method) {
 		accesibleMethods.put(ms, method);
-
 	}
 
 	public void deleteAccesibleMethod(MethodSymbol ms) {
-//		int starting=accesibleMethods.size();
 		accesibleMethods.remove(ms);
-//		if(starting!=accesibleMethods.size())
-//			throw new IllegalStateException("ESTA BORRANDO ALGUNO");
 	}
-	// public void putConditionInCfgCache(ExpressionTree tree, NodeWrapper n) {
-	// if (tree instanceof ParenthesizedTree)
-	// n = n.getSingleRelationship(RelationTypes.PARENTHESIZED_ENCLOSES,
-	// Direction.OUTGOING).getEndNode();
-	// if (tree != null)
-	// cfgNodeCache.put(tree, n);
-	// }
 
 	public void enterInNewTry(TryTree tryTree, MethodState m) {
 		lastInvocationInStatementLists.push(new ArrayList<Pair<NodeWrapper, List<MethodSymbol>>>());
@@ -130,10 +92,7 @@ public static final int NO_VARG_ARG=-1;
 	}
 
 	public void newMethodDeclaration(MethodState s) {
-
-		// s with INIT INVSTATEMENS
 		enterInNewTry(null, s);
-
 	}
 
 	public void endMethodDeclaration() {
@@ -171,18 +130,9 @@ public static final int NO_VARG_ARG=-1;
 	}
 
 	public void doInterproceduralPDGAnalysis() {
-	//SE USAN LOS CALLS EDGES PARA HACER EL PROCESAMIENTO
 		Map<NodeWrapper, Iterable<RelationshipWrapper>> methodDecToCalls = new HashMap<NodeWrapper, Iterable<RelationshipWrapper>>();
-		// Get Declarations Analysis
 		GetDeclarationFromExpression getDecs = new GetDeclarationFromExpression();
-		// thisRefsOfMethods.entrySet().forEach(e -> {
-		// System.out.println(
-		// "ENTRY :\n" + NodeUtils.nodeToString(e.getKey()) + "\n" +
-		// NodeUtils.nodeToString(e.getValue()));
-		// });
-
 		methodInfo.values().forEach(mInfo -> {
-			//FOR EACH METHOD
 			getDecs.setInfoForMethod(mInfo);
 			Iterable<RelationshipWrapper> callRels = mInfo.methodNode.getRelationships(Direction.OUTGOING,
 					CGRelationTypes.CALLS);
@@ -196,18 +146,8 @@ public static final int NO_VARG_ARG=-1;
 			}
 		});
 
-		// Interprocedural analysis
-		InterproceduralPDG pdgAnalysis = new InterproceduralPDG(methodDecToCalls, getDecs.getInvocationsMayModifyVars(),
-				methodInfo);
-		methodInfo.values().forEach(mInfo ->
-//		{
-//			System.out.println("INTERPRCEDURAL FoR ");
-		pdgAnalysis.doInterproceduralPDGAnalysis(mInfo)
-//			;}
-
-		);
-
-
+		InterproceduralPDG pdgAnalysis = new InterproceduralPDG(methodDecToCalls, getDecs.getInvocationsMayModifyVars(), methodInfo);
+		methodInfo.values().forEach(mInfo -> pdgAnalysis.doInterproceduralPDGAnalysis(mInfo));
 	}
 
 	private void addCallToCallCache(RelationshipWrapper callRel) {
@@ -220,86 +160,51 @@ public static final int NO_VARG_ARG=-1;
 			calleeList.add(r.getEndNode());
 	}
 
-	// Aqu� tenemos dos opciones, bucle o traversal
 	public void doDynamicMethodCallAnalysis() {
 		HierarchyAnalysis dynMethodCallAnalysis = new HierarchyAnalysis(trustableInvocations);
-//		System.out.println("TYPE DEC LIST PREV ANALYSIS ");
-//		System.out.println(typeDecNodes);
 		for (NodeWrapper typeDec : typeDecNodes)
 			dynMethodCallAnalysis.dynamicMethodCallAnalysis(typeDec);
 	}
 
 	public void doInitializationAnalysis() {
 		Set<NodeWrapper> newAccessibleMethods = new HashSet<>(accesibleMethods.values());
-
 		for (NodeWrapper accMethod : accesibleMethods.values())
 			addAllOverriders(newAccessibleMethods,
 					accMethod.getRelationships(Direction.INCOMING, TypeRelations.OVERRIDES));
-
 		for (NodeWrapper accMethod : new HashSet<>(newAccessibleMethods))
 			addAllCallees(newAccessibleMethods, callGraph.get(accMethod));
-		// newAccessibleMethods.forEach(n ->
-		// System.out.println(n.getProperty("fullyQualifiedName")));
 		for (MethodInfo mInfo : methodInfo.values())
-			// SI NO TIENE NADIE QUE LO LLAME ... SE LO PREGUNTAMOS A ORTIN
-
 			mInfo.methodNode.setProperty("isInitializer", !newAccessibleMethods.contains(mInfo.methodNode));
-		// mInfo.instanceAssignments.entrySet().forEach(instanceAssignPair -> {
-		//
-		// if (isInitMethod)
-		// instanceAssignPair.getKey().addLabel(NodeTypes.INITIALIZATION);
-		// else if (instanceAssignPair.getValue())
-		// // IF NEEDS TO BE LABELED AS ASIGNMENT
-		// instanceAssignPair.getKey().addLabel(NodeTypes.ASSIGNMENT);
-		// });
-		// mInfo.getDecToInstanceInvRels().forEach(rel -> {
-		// rel.setProperty("isInit", isInitMethod);
-		// });
-
-		// AWUI VENDR�A LA PREGUNTA DE, ALGUNO LO LLAM�???
-
 	}
 
 	private void addAllCallees(Set<NodeWrapper> newNodes, Set<NodeWrapper> callees) {
-		if (callees == null)
-			return;
-		for (NodeWrapper callee : callees)
+		if (callees == null) return;
+		for (NodeWrapper callee : callees) {
 			if (!newNodes.contains(callee) && (Boolean) callee.getProperty("isDeclared")
 					&& callee.hasLabel(NodeTypes.METHOD_DEF)) {
 				newNodes.add(callee);
 				addAllCallees(newNodes, callGraph.get(callee));
 			}
-
+		}
 	}
 
 	private void addAllOverriders(Set<NodeWrapper> newNodes, Iterable<RelationshipWrapper> overriders) {
-		if (overriders == null)
-			return;
-		for (RelationshipWrapper ovRel : overriders)
+		if (overriders == null)	return;
+		for (RelationshipWrapper ovRel : overriders) {
 			if (!newNodes.contains(ovRel.getStartNode())) {
 				newNodes.add(ovRel.getStartNode());
 				addAllCallees(newNodes,
 						ovRel.getStartNode().getRelationships(Direction.INCOMING, TypeRelations.OVERRIDES).stream()
 								.map(r -> r.getStartNode()).collect(Collectors.toSet()));
 			}
-
+		}
 	}
 
 	public void createAllParamsToMethodsPDGRels() {
-		// System.out.println("STARTING CREATING PARAMS RELS ");
 		methodInfo.values().forEach(methodInfo -> {
-			// PORQUE LOS CONSTRUCTORES SE QUEDAN FUERA?!?!?! TIENE SENTIDO,
-			// PORQUE AUNQUE TENGAN ARCOS CON THIS, LOS DE LOS PARAMETROS
-			// DEBER�AN PROPAGARLOS
-			// System.out.println("CREATING FOR METHOD " +
-			// methodInfo.methodNode.getProperty("name"));
 			for (Entry<NodeWrapper, PDGRelationTypes> paramEntry : methodInfo.paramsToPDGRelations.entrySet()) {
-				// System.out.println(paramEntry.getKey().getLabels().iterator().next());
-				// System.out.println(paramEntry.getValue());
-
 				paramEntry.getKey().createRelationshipTo(methodInfo.methodNode, paramEntry.getValue());
 			}
-
 		});
 	}
 }

@@ -7,13 +7,11 @@ import es.uniovi.reflection.progquery.database.nodes.NodeUtils;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 
 public class SimpleTreeNodeCache<K> {
-
 	private final Map<K, NodeWrapper> auxNodeCache = new HashMap<>();
 
 	public void put(K tree, NodeWrapper n) {
-
 		if (auxNodeCache.containsKey(tree))
-			throw new IllegalStateException("Duplicate tree in cach�.\n" + tree + "\nCurrent node:\n"
+			throw new IllegalStateException("Duplicate tree in cach!.\n" + tree + "\nCurrent node:\n"
 					+ NodeUtils.nodeToString(auxNodeCache.get(tree)));
 		auxNodeCache.put(tree, n);
 	}

@@ -53,24 +53,22 @@ public class ProgQuery {
         compilerTask.addTaskListener(new GetStructuresAfterAnalyze(compilerTask, programId, userId));
         compilerTask.call();
 
-        // If errors
-        /*if (diagnostics.getDiagnostics().size() > 0) {
+        if (diagnostics.getDiagnostics().size() > 0) {
             for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
-                System.err.format("Error on [%d,%d] in %s %s\n", diagnostic.getLineNumber(), diagnostic.getColumnNumber(),
+                if(diagnostic.getKind().equals(Diagnostic.Kind.ERROR))
+                    System.err.format("Error on [%d,%d] in %s %s\n", diagnostic.getLineNumber(), diagnostic.getColumnNumber(),
                         diagnostic.getSource(), diagnostic.getMessage(null));
             }
-        }*/
+        }
     }
 
     public static List<File> listFiles(String path) {
         try (Stream<Path> walk = Files.walk(Paths.get(path))) {
-            // We want to find only regular files
             return walk
                     .filter(Files::isRegularFile)
                     .filter(f -> f.getFileName().toString().endsWith(".java"))
                     .map(f -> f.toAbsolutePath().toFile())
                     .collect(Collectors.toList());
-
         } catch (IOException e) {
             e.printStackTrace();
             return new ArrayList<File>();

@@ -24,9 +24,6 @@ import es.uniovi.reflection.progquery.database.EmbeddedInsertion;
 import es.uniovi.reflection.progquery.database.Neo4jDriverLazyInsertion;
 import es.uniovi.reflection.progquery.database.NotPersistentLazyInsertion;
 import es.uniovi.reflection.progquery.tasklisteners.GetStructuresAfterAnalyze;
-import org.eclipse.collections.api.factory.map.MutableMapFactory;
-import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.map.mutable.MutableMapFactoryImpl;
 
 public class Main {
 

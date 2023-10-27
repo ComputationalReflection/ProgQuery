@@ -61,22 +61,16 @@ public class NodeUtils {
 			return "NULL";
 		String res = "Node[" + n.getId() + "]\n";
 		res +=  n.getProperty("fullyQualifiedName")+ "\n";
-
-//		for (Label label : n.getLabels())
-//			res += "Label:\t" + label + "\n";
-			
 		return res;
 	}
 	public static String nodeToString(Node n) {
 		if (n == null)
 			return "NULL";
 		String res = "Node[" + n.getId() + "]\n";
-//		System.out.println(res);
 		for (Label label : n.getLabels())
 			res += "Label:\t" + label.name() + "\n";
 		for (Entry<String, Object> prop : n.getAllProperties().entrySet())
 			res += prop.getKey() + "=" + prop.getValue() + "\n";
-//		System.out.println(res);
 		for (Relationship r : n.getRelationships()) {
 			String relType = r.getType().name();
 			res += (r.getStartNode().equals(n)

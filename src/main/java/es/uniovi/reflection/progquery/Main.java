@@ -24,9 +24,6 @@ import es.uniovi.reflection.progquery.database.EmbeddedInsertion;
 import es.uniovi.reflection.progquery.database.Neo4jDriverLazyInsertion;
 import es.uniovi.reflection.progquery.database.NotPersistentLazyInsertion;
 import es.uniovi.reflection.progquery.tasklisteners.GetStructuresAfterAnalyze;
-import org.eclipse.collections.api.factory.map.MutableMapFactory;
-import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.map.mutable.MutableMapFactoryImpl;
 
 public class Main {
 
@@ -125,14 +122,6 @@ public class Main {
                 parameters.neo4j_database = parameters.userId;
             }
         }
-        //else {
-        //if (parameters.neo4j_database_path.isEmpty()) {
-        //System.out.println(OptionsConfiguration.noDataBasePath);
-        //System.exit(0);
-        //return;
-
-        // }
-        //}
         if (parameters.sourceFolder.isEmpty()) {
             System.out.println(OptionsConfiguration.noInputMessage);
             System.exit(0);

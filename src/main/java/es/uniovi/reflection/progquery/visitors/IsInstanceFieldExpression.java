@@ -11,7 +11,6 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 
-//RETURNS THE CLASS SYMBOL OF THE LEFT MOST (VALID- NON CLASS SYMBOL) ID IN THE LEFT PAQRT OF ASSIGNMENT
 public class IsInstanceFieldExpression extends TreeScanner<Boolean, Void> {
 	public static final IsInstanceFieldExpression GET_ID_VISITOR = new IsInstanceFieldExpression();
 
@@ -39,5 +38,4 @@ public class IsInstanceFieldExpression extends TreeScanner<Boolean, Void> {
 		return scan(arrayAccess.getExpression(), v);
 
 	}
-
 }

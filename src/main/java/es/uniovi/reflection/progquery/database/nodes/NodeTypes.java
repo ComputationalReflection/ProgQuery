@@ -8,27 +8,27 @@ import org.neo4j.graphdb.Label;
 public enum NodeTypes implements Label {
 	ANNOTATION(NodeCategory.AST_NODE),
 	ANNOTATED_TYPE(NodeCategory.AST_TYPE),
-	ARRAY_ACCESS(NodeCategory.LVALUE,NodeCategory.EXPRESSION),
+	ARRAY_ACCESS(NodeCategory.LVALUE, NodeCategory.EXPRESSION),
 	ARRAY_TYPE,
 	ASSERT_STATEMENT(NodeCategory.STATEMENT),
 	ASSIGNMENT(NodeCategory.EXPRESSION),
-	ATTR_DEF(NodeCategory.VARIABLE_DEF,NodeCategory.DEFINITION),
+	ATTR_DEF(NodeCategory.VARIABLE_DEF, NodeCategory.DEFINITION),
 	BINARY_OPERATION(NodeCategory.EXPRESSION),
 	BLOCK(NodeCategory.STATEMENT),
 	BREAK_STATEMENT(NodeCategory.STATEMENT),
 	CASE_STATEMENT(NodeCategory.AST_NODE),
 	CATCH_BLOCK(NodeCategory.STATEMENT),
-	CLASS_DEF(NodeCategory.TYPE_DEFINITION,NodeCategory.DEFINITION,NodeCategory.TYPE_NODE),
+	CLASS_DEF(NodeCategory.TYPE_DEFINITION, NodeCategory.DEFINITION, NodeCategory.TYPE_NODE),
 	COMPILATION_UNIT(NodeCategory.AST_NODE),
 	COMPOUND_ASSIGNMENT(NodeCategory.EXPRESSION),
 	CONDITIONAL_EXPRESSION(NodeCategory.EXPRESSION),
-	CONSTRUCTOR_DEF(NodeCategory.CALLABLE_DEF,NodeCategory.DEFINITION),
+	CONSTRUCTOR_DEF(NodeCategory.CALLABLE_DEF, NodeCategory.DEFINITION),
 	CONTINUE_STATEMENT(NodeCategory.STATEMENT),
 	DO_WHILE_LOOP(NodeCategory.STATEMENT),
 	ERROR_TYPE(NodeCategory.TYPE_NODE),
 	EMPTY_STATEMENT(NodeCategory.STATEMENT),
 	FOR_EACH_LOOP(NodeCategory.STATEMENT),
-	ENUM_DEF(NodeCategory.TYPE_DEFINITION,NodeCategory.DEFINITION,NodeCategory.TYPE_NODE),
+	ENUM_DEF(NodeCategory.TYPE_DEFINITION, NodeCategory.DEFINITION, NodeCategory.TYPE_NODE),
 	ENUM_ELEMENT(NodeCategory.AST_NODE),
 	ERRONEOUS_NODE, CALLABLE_TYPE(NodeCategory.TYPE_NODE),
 	EXPRESSION_STATEMENT(NodeCategory.STATEMENT),
@@ -38,22 +38,23 @@ public enum NodeTypes implements Label {
 	IF_STATEMENT(NodeCategory.STATEMENT),
 	IMPORT(NodeCategory.AST_NODE),
 	INSTANCE_OF(NodeCategory.EXPRESSION),
-	INTERFACE_DEF(NodeCategory.TYPE_DEFINITION,NodeCategory.DEFINITION,	NodeCategory.TYPE_NODE),
+	INTERFACE_DEF(NodeCategory.TYPE_DEFINITION, NodeCategory.DEFINITION, NodeCategory.TYPE_NODE),
 	INTERSECTION_TYPE,
 	LABELED_STATEMENT(NodeCategory.STATEMENT),
 	LAMBDA_EXPRESSION(NodeCategory.EXPRESSION),
 	LITERAL(NodeCategory.EXPRESSION),
 	MEMBER_SELECTION(NodeCategory.AST_NODE),
 	MEMBER_REFERENCE(NodeCategory.EXPRESSION),
-	METHOD_DEF(NodeCategory.CALLABLE_DEF,NodeCategory.DEFINITION),
+	METHOD_DEF(NodeCategory.CALLABLE_DEF, NodeCategory.DEFINITION),
 	METHOD_INVOCATION(NodeCategory.EXPRESSION, NodeCategory.CALL),
 	NEW_ARRAY(NodeCategory.EXPRESSION),
-	NEW_INSTANCE(NodeCategory.EXPRESSION,NodeCategory.CALL),
+	NEW_INSTANCE(NodeCategory.EXPRESSION, NodeCategory.CALL),
 	NULL_TYPE(NodeCategory.TYPE_NODE),
 	PACKAGE(NodeCategory.PACKAGE_NODE),
 	PACKAGE_TYPE(NodeCategory.TYPE_NODE),
-	PARAMETER_DEF(NodeCategory.LOCAL_DEF,NodeCategory.VARIABLE_DEF,NodeCategory.DEFINITION),
+	PARAMETER_DEF(NodeCategory.LOCAL_DEF, NodeCategory.VARIABLE_DEF, NodeCategory.DEFINITION),
 	GENERIC_TYPE,
+	PARAMETERIZED_TYPE,
 	PRIMITIVE_TYPE,
 	RETURN_STATEMENT(NodeCategory.STATEMENT),
 	SWITCH_STATEMENT(NodeCategory.STATEMENT),
@@ -65,7 +66,7 @@ public enum NodeTypes implements Label {
 	TYPE_PARAM,
 	UNARY_OPERATION(NodeCategory.EXPRESSION),
 	UNION_TYPE,
-	LOCAL_VAR_DEF(NodeCategory.LOCAL_DEF,NodeCategory.VARIABLE_DEF,NodeCategory.DEFINITION,NodeCategory.STATEMENT),
+	LOCAL_VAR_DEF(NodeCategory.LOCAL_DEF, NodeCategory.VARIABLE_DEF, NodeCategory.DEFINITION, NodeCategory.STATEMENT),
 	WHILE_LOOP(NodeCategory.STATEMENT),
 	WILDCARD_TYPE, VOID_TYPE(NodeCategory.TYPE_NODE),
 	TYPE_VARIABLE(NodeCategory.TYPE_NODE),
@@ -77,7 +78,7 @@ public enum NodeTypes implements Label {
 	CFG_LAST_STATEMENT_IN_FINALLY(NodeCategory.CFG_NODE),
 	PROGRAM(NodeCategory.PACKAGE_NODE);
 
-	private NodeTypes(NodeCategory... hypernyms) {
+	NodeTypes(NodeCategory... hypernyms) {
 		this();
 		for (NodeCategory cat : hypernyms) {
 			if (cat == NodeCategory.STATEMENT || cat == NodeCategory.EXPRESSION || cat == NodeCategory.AST_TYPE
@@ -88,7 +89,7 @@ public enum NodeTypes implements Label {
 		}
 	}
 
-	private NodeTypes() {
+	NodeTypes() {
 		hypernyms = new ArrayList<NodeCategory>();
 		hypernyms.add(NodeCategory.PQ_NODE);
 	}

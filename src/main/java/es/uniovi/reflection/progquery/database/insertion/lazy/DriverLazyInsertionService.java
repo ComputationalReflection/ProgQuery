@@ -65,6 +65,7 @@ public class DriverLazyInsertionService {
 	private static Void executeNodesQuery(Session session, List<NodeWrapper> nodes,
 			List<Pair<String, Object[]>> nodeQueries, Function<Result, Long> resultF, int start, int end) {
 		return session.writeTransaction(new TransactionWork<Void>() {
+
 			@Override
 			public Void execute(Transaction tx) {
 				for (int i = start; i < end; i++) {
@@ -74,6 +75,7 @@ public class DriverLazyInsertionService {
 				}
 				return null;
 			}
+
 		});
 	}
 

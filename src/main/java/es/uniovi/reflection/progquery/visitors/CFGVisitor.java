@@ -4,7 +4,7 @@ import com.sun.source.tree.*;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.code.Type;
 import es.uniovi.reflection.progquery.cache.SimpleTreeNodeCache;
-import es.uniovi.reflection.progquery.database.DatabaseFachade;
+import es.uniovi.reflection.progquery.database.DatabaseFacade;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.CFGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.PartialRelation;
@@ -794,10 +794,10 @@ public <T>  T m(T t){
                                      Map<TryTree, Map<Type, List<PartialRelation<CFGRelationTypes>>>> triesMayThrowTypesToExPartialRels,
                                      Map<Tree, Pair<NodeWrapper, NodeWrapper>> finallyCache) {
         NodeWrapper lastStatementNode =
-                DatabaseFachade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.CFG_NORMAL_END),
-                entryStatement = DatabaseFachade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.CFG_ENTRY),
+                DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.CFG_NORMAL_END),
+                entryStatement = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.CFG_ENTRY),
                 exceptionalEnd =
-                        DatabaseFachade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.CFG_EXCEPTIONAL_END);
+                        DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.CFG_EXCEPTIONAL_END);
         methodNode.createRelationshipTo(entryStatement, CFGRelationTypes.CFG_ENTRIES);
 
         CFGVisitor.linkLasts(

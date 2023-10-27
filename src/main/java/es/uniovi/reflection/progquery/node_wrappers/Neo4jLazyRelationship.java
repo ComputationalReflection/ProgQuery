@@ -36,11 +36,8 @@ public class Neo4jLazyRelationship extends AbstractNeo4jLazyServerDriverElement
 		return end;
 	}
 
-	// private static int i = 0;
-
 	@Override
 	public void delete() {
-		// System.out.println(i++);
 		InfoToInsert.INFO_TO_INSERT.deleteRel(this);
 		((Neo4jLazyNode) start).removeOutgoingRel(this);
 		((Neo4jLazyNode) end).removeIncomingRel(this);
@@ -48,7 +45,6 @@ public class Neo4jLazyRelationship extends AbstractNeo4jLazyServerDriverElement
 
 	@Override
 	public String getTypeString() {
-		// TODO Auto-generated method stub
 		return rType.toString();
 	}
 

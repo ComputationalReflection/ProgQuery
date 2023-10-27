@@ -43,7 +43,7 @@ public class ASTAuxiliarStorage {
 	private final Set<NodeWrapper> trustableInvocations = new HashSet<NodeWrapper>();
 	private final Map<MethodSymbol, NodeWrapper> accesibleMethods = new HashMap<>();
 	private final Map<NodeWrapper, Set<NodeWrapper>> callGraph = new HashMap<>();
-	public static final int NO_VARG_ARG = -1;
+	public static final int NO_VARG_ARG=-1;
 
 	public void checkIfTrustableInvocation(MethodInvocationTree methodInvocationTree, MethodSymbol methodSymbol,
 			NodeWrapper methodInvocationNode) {
@@ -59,6 +59,10 @@ public class ASTAuxiliarStorage {
 					&& ((IdentifierTree) memberSelectionExp).getName().contentEquals("super"))
 				trustableInvocations.add(methodInvocationNode);
 		}
+	}
+
+	public Map<NodeWrapper, MethodInfo> getMethodsInfo() {
+		return methodInfo;
 	}
 
 	public void addInfo(MethodTree methodTree, NodeWrapper methodNode, MethodState methodState, int varArgParamIndex) {
@@ -109,7 +113,6 @@ public class ASTAuxiliarStorage {
 					for (Type excType : methodSymbol.getThrownTypes()) {
 						if (!typesToRelations.containsKey(excType))
 							typesToRelations.put(excType, new ArrayList<PartialRelation<CFGRelationTypes>>());
-
 						String methodName = methodSymbol.owner.getQualifiedName() + ":" + methodSymbol.toString();
 						if (methodSymbol.isConstructor())
 							methodName = methodName.replaceAll(":(\\w)+\\(", ":<init>(");
@@ -121,9 +124,7 @@ public class ASTAuxiliarStorage {
 										Pair.create("exceptionType",
 												WrapperUtils.stringToNeo4jQueryString(excType.toString()))));
 					}
-
 			}
-
 			throwsTypesInStatementsGrouped.put(entry.getKey(), typesToRelations);
 		}
 		return throwsTypesInStatementsGrouped;
@@ -145,8 +146,7 @@ public class ASTAuxiliarStorage {
 					getDecs.scanMethodInvocation(callRel.getEndNode());
 			}
 		});
-
-		InterproceduralPDG pdgAnalysis = new InterproceduralPDG(methodDecToCalls, getDecs.getInvocationsMayModifyVars(), methodInfo);
+		InterproceduralPDG pdgAnalysis = new InterproceduralPDG(methodDecToCalls, getDecs.getInvocationsMayModifyVars(),methodInfo);
 		methodInfo.values().forEach(mInfo -> pdgAnalysis.doInterproceduralPDGAnalysis(mInfo));
 	}
 
@@ -178,26 +178,27 @@ public class ASTAuxiliarStorage {
 	}
 
 	private void addAllCallees(Set<NodeWrapper> newNodes, Set<NodeWrapper> callees) {
-		if (callees == null) return;
-		for (NodeWrapper callee : callees) {
+		if (callees == null)
+			return;
+		for (NodeWrapper callee : callees)
 			if (!newNodes.contains(callee) && (Boolean) callee.getProperty("isDeclared")
 					&& callee.hasLabel(NodeTypes.METHOD_DEF)) {
 				newNodes.add(callee);
 				addAllCallees(newNodes, callGraph.get(callee));
 			}
-		}
 	}
 
 	private void addAllOverriders(Set<NodeWrapper> newNodes, Iterable<RelationshipWrapper> overriders) {
-		if (overriders == null)	return;
-		for (RelationshipWrapper ovRel : overriders) {
+		if (overriders == null)
+			return;
+		for (RelationshipWrapper ovRel : overriders)
 			if (!newNodes.contains(ovRel.getStartNode())) {
 				newNodes.add(ovRel.getStartNode());
 				addAllCallees(newNodes,
 						ovRel.getStartNode().getRelationships(Direction.INCOMING, TypeRelations.OVERRIDES).stream()
 								.map(r -> r.getStartNode()).collect(Collectors.toSet()));
 			}
-		}
+
 	}
 
 	public void createAllParamsToMethodsPDGRels() {

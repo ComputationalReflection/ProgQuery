@@ -27,11 +27,12 @@ import com.sun.tools.javac.tree.TreeInfo;
 public class JavacInfo {
 
 	private static JavacInfo currentJavacInfo;
-
+	public static boolean isInitialized(){
+		return currentJavacInfo!=null;
+	}
 	public static void setJavacInfo(JavacInfo javacInfo) {
 		currentJavacInfo = javacInfo;
 	}
-
 	private final SourcePositions sourcePositions;
 	private final Trees trees;
 	private final CompilationUnitTree currCompilationUnit;
@@ -49,11 +50,9 @@ public class JavacInfo {
 	}
 
 	public static Object[] getPosition(Tree tree) {
-		// map offsets to line numbers in source file
 		LineMap lineMap = currentJavacInfo.currCompilationUnit.getLineMap();
 		if (lineMap == null)
 			return new Object[0];
-		// find offset of the specified AST node
 		long position = currentJavacInfo.sourcePositions.getStartPosition(currentJavacInfo.currCompilationUnit, tree);
 
 		long line = -1;
@@ -83,7 +82,6 @@ public class JavacInfo {
 	}
 
 	public static TypeMirror getTypeMirror(Tree tree) {
-
 		return currentJavacInfo.trees.getTypeMirror(getPath(tree));
 	}
 
@@ -136,6 +134,5 @@ public class JavacInfo {
 
 	public static Type erasure(Type t) {
 		return t.tsym.erasure(currentJavacInfo.types);
-//		return currentJavacInfo.javaxTypes.erasure(t.ty);
 	}
 }

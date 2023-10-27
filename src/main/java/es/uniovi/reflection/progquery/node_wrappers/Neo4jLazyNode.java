@@ -26,26 +26,20 @@ public class Neo4jLazyNode extends AbstractNeo4jLazyServerDriverElement implemen
 	public Neo4jLazyNode(long id) {
 		this.id = id;
 	}
-
-//	private static long counter=0;
 	public Neo4jLazyNode() {
-//		id=counter++;
 		id = null;
 		InfoToInsert.INFO_TO_INSERT.addNewNode(this);
 	}
 
 	public Neo4jLazyNode(NodeTypes... labels) {
-
 		this();
 		for (NodeTypes label : labels)
 			this.labels.add(label);
-
 	}
 
 	public Neo4jLazyNode(NodeTypes label, Object... props) {
 		this(props);
 		this.labels.add(label);
-
 	}
 
 	public Neo4jLazyNode(Object... props) {
@@ -78,7 +72,6 @@ public class Neo4jLazyNode extends AbstractNeo4jLazyServerDriverElement implemen
 
 	@Override
 	public List<RelationshipWrapper> getRelationships() {
-
 		return allRels;
 	}
 
@@ -143,10 +136,6 @@ public class Neo4jLazyNode extends AbstractNeo4jLazyServerDriverElement implemen
 
 	@Override
 	public void delete() {
-		// Theoretically, a check is needed in order to asses that there are no
-		// rels attached to this node
-		// We also can implement detach, just to not to have to delete all the
-		// rels... i dont know
 		InfoToInsert.INFO_TO_INSERT.deleteNode(this);
 	}
 
@@ -182,26 +171,4 @@ public class Neo4jLazyNode extends AbstractNeo4jLazyServerDriverElement implemen
 	public String toString() {
 		return NodeUtils.nodeToString(this);
 	}
-//	@Override
-//	public int hashCode() {
-//		final int prime = 31;
-//		int result = 1;
-//		result = prime * result + (int) (id ^ (id >>> 32));
-//		return result;
-//	}
-//
-//	@Override
-//	public boolean equals(Object obj) {
-//		if (this == obj)
-//			return true;
-//		if (obj == null)
-//			return false;
-//		if (getClass() != obj.getClass())
-//			return false;
-//		Neo4jLazyServerDriverNode other = (Neo4jLazyServerDriverNode) obj;
-//		if (id != other.id)
-//			return false;
-//		return true;
-//	}
-
 }

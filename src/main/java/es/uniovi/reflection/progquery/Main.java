@@ -2,28 +2,12 @@ package es.uniovi.reflection.progquery;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
-
-import com.sun.tools.javac.api.JavacTaskImpl;
-
-import es.uniovi.reflection.progquery.database.DatabaseFachade;
-import es.uniovi.reflection.progquery.database.EmbeddedInsertion;
-import es.uniovi.reflection.progquery.database.Neo4jDriverLazyInsertion;
-import es.uniovi.reflection.progquery.database.NotPersistentLazyInsertion;
-import es.uniovi.reflection.progquery.tasklisteners.GetStructuresAfterAnalyze;
 
 public class Main {
 
@@ -34,18 +18,11 @@ public class Main {
 
     public static void main(String[] args) {
         parseArguments(args);
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, Charset.forName("UTF-8"));
-        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-        List<File> files = listFiles(parameters.sourceFolder);
-
-        Iterable<? extends JavaFileObject> sources = fileManager.getJavaFileObjectsFromFiles(files);
-        String[] compilerOptions = new String[]
+        String[] javac_options = new String[]
                 {
                         "-nowarn",
                         "-d",
-                        Paths.get(parameters.sourceFolder, "target", "classes").toAbsolutePath().toAbsolutePath().toString(),
+                        Paths.get(parameters.sourceFolder, "target", "classes").toAbsolutePath().toString(),
                         "-g",
                         "-target",
                         "15",
@@ -53,38 +30,15 @@ public class Main {
                         "15",
                         "-classpath",
                         parameters.class_path,
+                        "sourcepath",
+                        Paths.get(parameters.sourceFolder, "src").toAbsolutePath().toString()
                 };
-        JavacTaskImpl compilerTask = (JavacTaskImpl) compiler.getTask(null, null, diagnostics, Arrays.asList(compilerOptions), null, sources);
+        CompilationScheduler scheduler = parameters.neo4j_mode.equals(OptionsConfiguration.DEFAULT_NEO4J_MODE)?
+                new CompilationScheduler(parameters.neo4j_host,parameters.neo4j_port_number,parameters.neo4j_user,parameters.neo4j_password,parameters.neo4j_database,parameters.programId,parameters.userId):
+                new CompilationScheduler(parameters.neo4j_database_path,parameters.programId,parameters.userId);
 
-        final String LOCAL_MODE = OptionsConfiguration.neo4j_modeNames[0];
-        try {
-            DatabaseFachade.init(parameters.neo4j_mode.contentEquals(OptionsConfiguration.DEFAULT_NEO4J_MODE) ?
-                    new Neo4jDriverLazyInsertion(
-                            parameters.neo4j_host,
-                            parameters.neo4j_port_number,
-                            parameters.neo4j_user,
-                            parameters.neo4j_password,
-                            parameters.neo4j_database,
-                            parameters.max_operations_transaction) : parameters.neo4j_mode.contentEquals(LOCAL_MODE) ?
-                    new EmbeddedInsertion(
-                            Paths.get(new File(parameters.sourceFolder).getCanonicalPath(),"target",parameters.neo4j_database).toAbsolutePath().toString()
-                    ) : new NotPersistentLazyInsertion()
-            );
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        compilerTask.addTaskListener(new GetStructuresAfterAnalyze(compilerTask, parameters.programId, parameters.userId));
-        compilerTask.call();
-
-        // If errors
-        if (diagnostics.getDiagnostics().size() > 0) {
-            for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
-                System.err.format("Error on [%d,%d] in %s %s\n", diagnostic.getLineNumber(), diagnostic.getColumnNumber(),
-                        diagnostic.getSource(), diagnostic.getMessage(null));
-            }
-        }
-        System.exit(0);
+        scheduler.newCompilationTask(String.join(" ", javac_options));
+        scheduler.endAnalysis();
     }
 
 

@@ -15,7 +15,6 @@ public class PartialRelationWithProperties<T extends RelationTypesInterface> ext
 	}
 
 	public PartialRelationWithProperties(NodeWrapper startingNode, T relationType, String key, Object value) {
-		
 		this(startingNode, relationType,Pair.create(key, value));
 	}
 
@@ -45,7 +44,5 @@ public class PartialRelationWithProperties<T extends RelationTypesInterface> ext
 	@Override
 	public RelationshipWrapper createRelationship(NodeWrapper endNode) {
 		return addProperties(super.createRelationship(endNode));
-
 	}
-
 }

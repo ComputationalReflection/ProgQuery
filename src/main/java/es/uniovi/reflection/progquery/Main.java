@@ -122,14 +122,6 @@ public class Main {
                 parameters.neo4j_database = parameters.userId;
             }
         }
-        //else {
-        //if (parameters.neo4j_database_path.isEmpty()) {
-        //System.out.println(OptionsConfiguration.noDataBasePath);
-        //System.exit(0);
-        //return;
-
-        // }
-        //}
         if (parameters.sourceFolder.isEmpty()) {
             System.out.println(OptionsConfiguration.noInputMessage);
             System.exit(0);

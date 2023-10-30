@@ -19,6 +19,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -56,6 +58,7 @@ public class CompilationScheduler {
     }
 
     public void newCompilationTask(String javac_options) {
+        ProgQuery.LOGGER.info(String.format("New Compilation Task: %s", javac_options));
         String[] commandOptions = javac_options.split(" ");
         String[] sourceFolders = null;
         String options = "";

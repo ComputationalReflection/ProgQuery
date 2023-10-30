@@ -5,12 +5,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Main {
-
     //-user=progquery -program=ExampleClasses -neo4j_host=156.35.94.130 -neo4j_database=debug -neo4j_password=secreto -src=C:\Users\VirtualUser\Source\Repos\StaticCodeAnalysis\Programs\ExampleClasses
     //-user=progquery -program=ExampleClasses -neo4j_database=debug -neo4j_mode=local -src=C:\Users\Miguel\Source\codeanalysis\codeanalysis-tool\Programs\ExampleClasses
 
@@ -33,12 +35,10 @@ public class Main {
                         "sourcepath",
                         Paths.get(parameters.sourceFolder, "src").toAbsolutePath().toString()
                 };
-        CompilationScheduler scheduler = parameters.neo4j_mode.equals(OptionsConfiguration.DEFAULT_NEO4J_MODE)?
-                new CompilationScheduler(parameters.neo4j_host,parameters.neo4j_port_number,parameters.neo4j_user,parameters.neo4j_password,parameters.neo4j_database,parameters.programId,parameters.userId):
-                new CompilationScheduler(parameters.neo4j_database_path,parameters.programId,parameters.userId);
-
-        scheduler.newCompilationTask(String.join(" ", javac_options));
-        scheduler.endAnalysis();
+        ProgQuery progquery = parameters.neo4j_mode.equals(OptionsConfiguration.DEFAULT_NEO4J_MODE)?
+                new ProgQuery(parameters.neo4j_host,parameters.neo4j_port_number,parameters.neo4j_user,parameters.neo4j_password,parameters.neo4j_database,parameters.programId,parameters.userId, parameters.verbose):
+                new ProgQuery(parameters.neo4j_database_path,parameters.programId,parameters.userId, parameters.verbose);
+        progquery.analyze(Collections.singletonList(String.join(" ", javac_options)));
     }
 
 

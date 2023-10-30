@@ -59,31 +59,51 @@ public class CompilationScheduler {
 
     public void newCompilationTask(String javac_options) {
         ProgQuery.LOGGER.info(String.format("New Compilation Task: %s", javac_options));
-        String[] commandOptions = javac_options.split(" ");
-        String[] sourceFolders = null;
-        String options = "";
-        for (int i = 0; i < commandOptions.length; i++) {
-            if (commandOptions[i].equals("-sourcepath"))
-                sourceFolders = commandOptions[++i].split(";");
-            else
-                options += commandOptions[i] + " ";
+        List<String> options = parseOptions(javac_options);
+        String sourcepath = options.stream().filter(o-> o.startsWith("-sourcepath")).findFirst().orElse("");
+        List<File> files = new ArrayList<>();
+        if(!sourcepath.isEmpty()) {
+            for (String sourceFolder : sourcepath.substring(12).split(";"))
+                files.addAll(listFiles(sourceFolder));
         }
 
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, Charset.forName("UTF-8"));
-        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+        for (String sourceFile:options.stream().filter(o->!o.startsWith("-")).filter( o-> o.endsWith(".java")).collect(Collectors.toList()))
+            files.add(Paths.get(sourceFile).toAbsolutePath().toFile());
 
-        List<File> files = new ArrayList<>();
-        for (String sourceFolder : sourceFolders)
-            files.addAll(listFiles(sourceFolder));
+        List<String> task_options = new ArrayList<>();
+        for(String option:options.stream().filter(o-> o.startsWith("-") && !o.startsWith("-sourcepath")).collect(Collectors.toList()))
+            task_options.addAll(Arrays.asList(option.split(" ")));
+
+        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+        StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, Charset.forName("UTF-8"));
         Iterable<? extends JavaFileObject> sources = fileManager.getJavaFileObjectsFromFiles(files);
 
-
         JavacTaskImpl compilerTask =
-                (JavacTaskImpl) compiler.getTask(null, null, diagnostics, Arrays.asList(options.split(" ")), null, sources);
+                (JavacTaskImpl) compiler.getTask(null, null, diagnostics, task_options , null, sources);
 
         addListener(compilerTask, StreamSupport.stream(sources.spliterator(), false).collect(Collectors.toSet()));
         runPQCompilationTask(compilerTask);
         showErrors(diagnostics);
+    }
+
+    public static List<String> parseOptions(String options){
+        List<String> result = new ArrayList<>();
+        String partial = "";
+        for (String option:options.split(" ")) {
+            if (option.startsWith("-")) {
+                if (!partial.isEmpty())
+                    result.add(partial);
+                partial = option;
+            }
+            else if(partial.isEmpty()) {
+                result.add(option);
+            }
+            else  {
+                result.add(partial + " " + option);
+                partial = "";
+            }
+        }
+        return result;
     }
 
     public static List<File> listFiles(String path) {

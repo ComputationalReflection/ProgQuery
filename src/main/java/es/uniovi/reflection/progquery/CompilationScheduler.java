@@ -63,7 +63,7 @@ public class CompilationScheduler {
         String sourcepath = options.stream().filter(o-> o.startsWith("-sourcepath")).findFirst().orElse("");
         List<File> files = new ArrayList<>();
         if(!sourcepath.isEmpty()) {
-            for (String sourceFolder : sourcepath.substring(12).split(";"))
+            for (String sourceFolder : sourcepath.substring(12).split(File.pathSeparator))
                 files.addAll(listFiles(sourceFolder));
         }
 

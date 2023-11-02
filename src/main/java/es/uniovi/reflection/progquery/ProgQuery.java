@@ -8,10 +8,12 @@ public class ProgQuery {
     private CompilationScheduler compilationScheduler;
     private String programId;
     private String userId;
+
     public ProgQuery(String neo4j_host, String neo4j_port, String neo4j_user, String neo4j_password, String neo4j_database, String userId, String programId, boolean verbose) {
         this.userId = userId;
         this.programId = programId;
         if(!verbose) LOGGER.setLevel(Level.OFF);
+        org.neo4j.internal.unsafe.IllegalAccessLoggerSuppressor.suppress();
         compilationScheduler = new CompilationScheduler(neo4j_host,neo4j_port,neo4j_user,neo4j_password,neo4j_database,programId,userId);
     }
 
@@ -19,6 +21,7 @@ public class ProgQuery {
         this.userId = userId;
         this.programId = programId;
         if(!verbose) LOGGER.setLevel(Level.OFF);
+        org.neo4j.internal.unsafe.IllegalAccessLoggerSuppressor.suppress();
         compilationScheduler = new CompilationScheduler(neo4j_database_path,programId,userId);
     }
 

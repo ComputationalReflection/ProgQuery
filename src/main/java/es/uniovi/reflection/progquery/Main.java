@@ -1,5 +1,7 @@
 package es.uniovi.reflection.progquery;
 
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 public class Main {

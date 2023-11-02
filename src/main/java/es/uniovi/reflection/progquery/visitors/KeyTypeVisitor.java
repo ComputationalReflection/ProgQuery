@@ -17,13 +17,11 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
 
     @Override
     public TypeKey visit(TypeMirror t) {
-        // TODO Auto-generated method stub
         throw new IllegalStateException(t.getClass().toString());
     }
 
     @Override
     public TypeKey visit(TypeMirror t, Object param) {
-        // TODO Auto-generated method stub
         throw new IllegalStateException(t.getClass().toString());
     }
 
@@ -35,12 +33,6 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
 
     @Override
     public TypeKey visitDeclared(DeclaredType declaredType, Object param) {
-//        System.out.println("DECLARED..." + declaredType);
-//        System.out.println("TYPE INSIDE..." + ((Type) declaredType).tsym.type);
-//        System.out.println("CONDITION..." + (declaredType.getTypeArguments().stream()
-//                .filter(argType -> argType instanceof TypeVar &&
-//                        ((TypeVar) argType).tsym.owner.type.equals(declaredType)).count() > 0));
-
         if (declaredType.getTypeArguments().stream().filter(argType -> !(argType instanceof TypeVar) ||
                 !((TypeVar) argType).tsym.owner.type.equals(declaredType)).count() > 0)
             return new ParameterizedTypeKey(
@@ -57,7 +49,6 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
 
     @Override
     public TypeKey visitExecutable(ExecutableType t, Object param) {
-        // MethodType type = (MethodType) t;
         List<TypeKey> params = new ArrayList<>();
         for (TypeMirror pType : t.getParameterTypes())
             params.add(pType.accept(this, null));
@@ -72,14 +63,12 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
 
     @Override
     public TypeKey visitIntersection(IntersectionType t, Object param) {
-
         return new CompoundTypeKey(true,
                 t.getBounds().stream().map(otherType -> otherType.accept(this, null)).collect(Collectors.toList()));
     }
 
     @Override
     public TypeKey visitNoType(NoType t, Object param) {
-        // TODO Auto-generated method stub
         if (t.getKind() == TypeKind.VOID)
             return VoidTypeKey.VOID_TYPE_KEY;
 
@@ -114,7 +103,6 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
     public TypeKey visitUnion(UnionType t, Object param) {
         return new CompoundTypeKey(false, t.getAlternatives().stream().map(otherType -> otherType.accept(this, null))
                 .collect(Collectors.toList()));
-
     }
 
     @Override
@@ -124,14 +112,9 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
 
     @Override
     public TypeKey visitWildcard(WildcardType t, Object param) {
-        // System.out.println(t);
-        // System.out.println(t.getSuperBound());
-        // System.out.println(t.getExtendsBound());
-        // System.out.println(JavacInfo.getSymtab().botType);
         return new WildcardKey(
                 (t.getSuperBound() == null ? JavacInfo.getSymtab().botType : t.getSuperBound()).accept(this, null),
                 (t.getExtendsBound() == null ? JavacInfo.getSymtab().objectType : t.getExtendsBound())
                         .accept(this, null));
     }
-
 }

@@ -40,7 +40,6 @@ import java.util.Set;
 
 public class ASTTypesVisitor
         extends TreeScanner<ASTVisitorResult, Pair<PartialRelation<RelationTypesInterface>, Object>> {
-    private static final boolean DEBUG = false;
     private NodeWrapper lastStaticConsVisited = null;
     private ClassTree typeDec;
     private boolean first;
@@ -137,91 +136,57 @@ public class ASTTypesVisitor
         return methodDec;
     }
 
-    public static NodeWrapper createNonDeclaredMethodDuringTypeCreation(NodeWrapper classNode, boolean isInterface,
-                                                                        ASTAuxiliarStorage ast, MethodSymbol symbol) {
-
-
-        NodeWrapper methodDec =
-                createNonDeclaredMethodDuringTypeCreation(isInterface, ast, symbol, new MethodNameInfo(symbol));
+    public static NodeWrapper createNonDeclaredMethodDuringTypeCreation(NodeWrapper classNode, boolean isInterface, ASTAuxiliarStorage ast, MethodSymbol symbol) {
+        NodeWrapper methodDec = createNonDeclaredMethodDuringTypeCreation(isInterface, ast, symbol, new MethodNameInfo(symbol));
         classNode.createRelationshipTo(methodDec, RelationTypes.DECLARES_METHOD);
         return methodDec;
     }
 
     private static NodeWrapper createNonDeclaredMethodWithoutSymbol(MethodNameInfo nameInfo) {
-        NodeWrapper methodDecNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.METHOD_DEF);
-
+        NodeWrapper methodDecNode = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.METHOD_DEF);
         methodDecNode.setProperty("isDeclared", false);
         methodDecNode.setProperty("name", nameInfo.getSimpleName());
-        // System.out.println(fullyQualifiedName);
         methodDecNode.setProperty("completeName", nameInfo.getCompleteName());
         methodDecNode.setProperty("fullyQualifiedName", nameInfo.getFullyQualifiedName());
         return methodDecNode;
     }
 
-    private static NodeWrapper createNonDeclaredMethodDuringTypeCreation(boolean isInterface, ASTAuxiliarStorage ast,
-                                                                         MethodSymbol symbol, MethodNameInfo nameInfo) {
-        NodeWrapper
-                // Se hacen muchas cosas y es posible que se visite la
-                // declaraci�n despu�s
-                methodDecNode = createNonDeclaredMethodWithoutSymbol(nameInfo);
-
+    private static NodeWrapper createNonDeclaredMethodDuringTypeCreation(boolean isInterface, ASTAuxiliarStorage ast, MethodSymbol symbol, MethodNameInfo nameInfo) {
+        NodeWrapper methodDecNode = createNonDeclaredMethodWithoutSymbol(nameInfo);
         setMethodModifiers(Flags.asModifierSet(symbol.flags()), methodDecNode, isInterface);
-
-        // Aqui se pueden hacer nodos como el de declaracion, declara
-        // params declara return throws???�
-        // De momento no, solo usamos el methodType
-
         ast.addAccesibleMethod(symbol, methodDecNode);
         DefinitionCache.METHOD_DEF_CACHE.put(nameInfo.getFullyQualifiedName(), methodDecNode);
         return methodDecNode;
     }
 
     @Override
-    public ASTVisitorResult visitAnnotatedType(AnnotatedTypeTree annotatedTypeTree,
-                                               Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
-        NodeWrapper annotatedTypeNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(annotatedTypeTree, NodeTypes.ANNOTATED_TYPE);
+    public ASTVisitorResult visitAnnotatedType(AnnotatedTypeTree annotatedTypeTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        NodeWrapper annotatedTypeNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(annotatedTypeTree, NodeTypes.ANNOTATED_TYPE);
         attachTypeDirect(annotatedTypeNode, annotatedTypeTree);
         GraphUtils.connectWithParent(annotatedTypeNode, t);
-
         scan(annotatedTypeTree.getAnnotations(), Pair.createPair(annotatedTypeNode, RelationTypes.HAS_ANNOTATIONS));
         scan(annotatedTypeTree.getUnderlyingType(), Pair.createPair(annotatedTypeNode, RelationTypes.UNDERLYING_TYPE));
-
         return null;
     }
 
     @Override
-    public ASTVisitorResult visitAnnotation(AnnotationTree annotationTree,
-                                            Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
-        NodeWrapper annotationNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(annotationTree, NodeTypes.ANNOTATION);
+    public ASTVisitorResult visitAnnotation(AnnotationTree annotationTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        NodeWrapper annotationNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(annotationTree, NodeTypes.ANNOTATION);
         GraphUtils.connectWithParent(annotationNode, t, RelationTypes.HAS_ANNOTATIONS);
         boolean prevInsideAnn = outsideAnnotation;
         outsideAnnotation = false;
         scan(annotationTree.getAnnotationType(), Pair.createPair(annotationNode, RelationTypes.HAS_ANNOTATION_TYPE));
-
-        // TODO: order
-        // scan(annotationTree.getArguments(), Pair.createPair(annotationNode,
-        // RelationTypes.HAS_ANNOTATIONS_ARGUMENTS));
-
         for (int i = 0; i < annotationTree.getArguments().size(); i++)
             scan(annotationTree.getArguments().get(i), Pair.createPair(
                     new PartialRelationWithProperties<>(annotationNode, RelationTypes.HAS_ANNOTATIONS_ARGUMENTS,
                             "argumentIndex", i + 1)));
         outsideAnnotation = prevInsideAnn;
-
         return null;
     }
 
     @Override
-    public ASTVisitorResult visitArrayAccess(ArrayAccessTree arrayAccessTree,
-                                             Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
-        NodeWrapper arrayAccessNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(arrayAccessTree, NodeTypes.ARRAY_ACCESS);
+    public ASTVisitorResult visitArrayAccess(ArrayAccessTree arrayAccessTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        NodeWrapper arrayAccessNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(arrayAccessTree, NodeTypes.ARRAY_ACCESS);
         attachTypeDirect(arrayAccessNode, arrayAccessTree);
         GraphUtils.connectWithParent(arrayAccessNode, t);
         ASTVisitorResult res = scan(arrayAccessTree.getExpression(),
@@ -229,42 +194,29 @@ public class ASTTypesVisitor
                         PDGProcessing.modifiedToStateModified(t)));
         scan(arrayAccessTree.getIndex(), Pair.createPair(arrayAccessNode, RelationTypes.ARRAYACCESS_INDEX));
         return res;
-
     }
 
     @Override
     public ASTVisitorResult visitArrayType(ArrayTypeTree arrayTypeTree,
                                            Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        //		System.out.println("ARRAY TYPE:\n"+arrayTypeTree);
-        //		System.out.println("ARRAY TYPE:\n"+arrayTypeTree.getKind());
-        //		System.out.println("ARRAY TYPE:\n"+arrayTypeTree.getClass());
-
         NodeWrapper arrayTypeNode = DatabaseFacade.CURRENT_DB_FACHADE
                 .createSkeletonNodeExplicitCats(arrayTypeTree, NodeTypes.ARRAY_TYPE, NodeCategory.AST_TYPE,
                         NodeCategory.AST_NODE);
         GraphUtils.connectWithParent(arrayTypeNode, t);
         String fullyName = ((JCArrayTypeTree) arrayTypeTree).type.toString();
         arrayTypeNode.setProperty("fullyQualifiedName", fullyName);
-        // System.out.println(fullyName);
         String[] splittedName = fullyName.split(".");
-        arrayTypeNode.setProperty("simpleName",
-                splittedName.length == 0 ? fullyName : splittedName[splittedName.length - 1]);
-        // System.out.println(arrayTypeTree);
+        arrayTypeNode.setProperty("simpleName", splittedName.length == 0 ? fullyName : splittedName[splittedName.length - 1]);
         scan(arrayTypeTree.getType(), Pair.createPair(arrayTypeNode, RelationTypes.TYPE_PER_ELEMENT));
-        //Analizar otros posibles casos GENRIOC en javva iposible???
         if (arrayTypeTree.getType() instanceof IdentifierTree)
             addClassIdentifier(((JCIdent) arrayTypeTree.getType()).type);
         return null;
     }
 
     @Override
-    public ASTVisitorResult visitAssert(AssertTree assertTree,
-                                        Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
-        NodeWrapper assertNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(assertTree, NodeTypes.ASSERT_STATEMENT);
+    public ASTVisitorResult visitAssert(AssertTree assertTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        NodeWrapper assertNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(assertTree, NodeTypes.ASSERT_STATEMENT);
         GraphUtils.connectWithParent(assertNode, t);
-
         scan(assertTree.getCondition(), Pair.createPair(assertNode, RelationTypes.ASSERT_CONDITION));
         addInvocationInStatement(assertNode);
         methodState.putCfgNodeInCache(assertTree, assertNode);
@@ -272,30 +224,20 @@ public class ASTTypesVisitor
         return null;
     }
 
-    private NodeWrapper beforeScanAnyAssign(NodeWrapper assignmentNode,
-                                            Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
+    private NodeWrapper beforeScanAnyAssign(NodeWrapper assignmentNode, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         assignmentNode.setProperty("mustBeExecuted", must);
         NodeWrapper previousAssignment = pdgUtils.lastAssignment;
-        // AQUI SE REPITE COMPUTACION; DEBER�A INTEGRARSE EN EL PDGVISITOR, o
-        // mejor dicho en este mismo
         pdgUtils.lastAssignment = assignmentNode;
-
         return previousAssignment;
     }
 
     private void afterScanAnyAssign(NodeWrapper previousAssignment) {
-
         pdgUtils.lastAssignment = previousAssignment;
     }
 
-    // 1 METODO COMUN A TODAS LAS ASIGNACIONES
-    // comprobar i++ and i+= used and mod y assign i = ... is not used i
-    // USaR LA INFO DE LASTASSIGN EN EL METODO ADDASSIGN JEJEJEJEJ
     @Override
     public ASTVisitorResult visitAssignment(AssignmentTree assignmentTree,
                                             Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
         NodeWrapper assignmentNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(assignmentTree, NodeTypes.ASSIGNMENT);
 
@@ -315,15 +257,12 @@ public class ASTTypesVisitor
             scan(assignmentTree.getExpression(),
                     Pair.createPair(assignmentNode, RelationTypes.ASSIGNMENT_RHS, PDGProcessing.USED));
         }
-
         return null;
-
     }
 
     @Override
     public ASTVisitorResult visitBinary(BinaryTree binaryTree,
                                         Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        //System.out.println(binaryTree);
         NodeWrapper binaryNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(binaryTree, NodeTypes.BINARY_OPERATION);
         binaryNode.setProperty("operator", binaryTree.getKind().toString());
@@ -356,19 +295,13 @@ public class ASTTypesVisitor
 
         GraphUtils.connectWithParent(lastBlockVisited, t);
 
-        // Se debe elegir entre filtrar por ENCLOSES relationType o usar todas
-        // las relaciones salientes pero crear un nodo STATIC_CONS_DEC que
-        // reciba y retorne void o que no reciba ni retorne nada....
         scan(blockTree.getStatements(), Pair.createPair(lastBlockVisited, RelationTypes.ENCLOSES));
         if (isStaticInit) {
-
-            // pdgUtils.endMethod(methodState, classState.currentClassDec);
             methodState = prevState;
             ast.endMethodDeclaration();
         }
 
         return null;
-
     }
 
     @Override
@@ -397,9 +330,6 @@ public class ASTTypesVisitor
         NodeWrapper caseNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(caseTree, NodeTypes.CASE_STATEMENT);
         GraphUtils.connectWithParent(caseNode, t);
-        // Si hay un case default y no hay ning�n break en el switch, seguro que
-        // pasa
-
         prevMust = must;
         boolean isAUnconditionalDefault = caseTree.getExpressions().isEmpty() && !anyBreak;
         must = prevMust && isAUnconditionalDefault;
@@ -437,12 +367,10 @@ public class ASTTypesVisitor
 
         ClassSymbol previousClassSymbol = currentTypeDecSymbol;
         currentTypeDecSymbol = ((JCClassDecl) classTree).sym;
-        // Console s = System.console();
         String simpleName = classTree.getSimpleName().toString();
 
         String fullyQualifiedType = currentTypeDecSymbol.toString();
         if (simpleName.equals("")) {
-            // System.out.println(fullyQualifiedType);
             String[] split = fullyQualifiedType.split(fullyQualifiedType.contains(".") ? "\\." : " ");
             simpleName = split[split.length - 1];
             simpleName = simpleName.substring(0, simpleName.length() - 1);
@@ -466,7 +394,6 @@ public class ASTTypesVisitor
             addClassIdentifier(outerMostClass);
         if (!pair.getFirst().getStartingNode().hasLabel(NodeTypes.COMPILATION_UNIT))
             currentCU.createRelationshipTo(classNode, CDGRelationTypes.HAS_INNER_TYPE_DEF);
-        // System.out.println("CREATING REL INNER to\n" + classTree);
 
         GraphUtils.connectWithParent(classNode, pair, RelationTypes.HAS_TYPE_DEF);
 
@@ -502,22 +429,13 @@ public class ASTTypesVisitor
 
         scan(classTree.getMembers(), Pair.createPair(classNode, RelationTypes.HAS_STATIC_INIT,
                 Pair.create(Pair.create(attrs, staticAttrs), constructors)));
-
-        if (DEBUG)
-            System.out.println(
-                    "Attrs found: " + attrs.size() + " S :" + staticAttrs.size() + " C : " + constructors.size());
         for (NodeWrapper constructor : constructors)
             for (NodeWrapper instanceAttr : attrs)
                 callsFromVarDecToConstructor(instanceAttr, constructor);
-        // Depending on the java version a static cons is included or not, so if
-        // it is null we can create it, but now are not
         if (lastStaticConsVisited != null)
             for (NodeWrapper staticAttr : staticAttrs)
                 callsFromVarDecToConstructor(staticAttr, lastStaticConsVisited);
-        // this.isInAInnerClass = previousIsInner;
         lastStaticConsVisited = prevStaticCons;
-        // this.fullNamePrecedent = previusPrecedent;
-        // pdgUtils.endVisitClass();
         classState = previousClassState;
         typeDecUses = previousTypeDecUses;
         currentTypeDecSymbol = previousClassSymbol;
@@ -540,10 +458,8 @@ public class ASTTypesVisitor
         if (first) {
             currentCU.setProperty("packageName", ((JCCompilationUnit) compilationUnitTree).packge.toString());
             scan(compilationUnitTree.getPackageAnnotations(), pair);
-            // scan(packageDec, p);
             scan(compilationUnitTree.getImports(), pair);
-            //			System.out.println(compilationUnitTree);
-        } // scan(compilationUnitTree.getTypeDecls(), pair);
+        }
         if (compilationUnitTree.getTypeDecls().size() == 0)
             return null;
 
@@ -563,8 +479,6 @@ public class ASTTypesVisitor
         attachTypeDirect(assignmentNode, compoundAssignmentTree);
         NodeWrapper lasAssignInfo = beforeScanAnyAssign(assignmentNode, t);
 
-        // THIS CANNOT BE THE SAME AS VISITAS I mean
-        // PDGVisitor.getLefAssignmentArg(t), I need USED_AND_MOD
         scan(compoundAssignmentTree.getVariable(),
                 Pair.createPair(assignmentNode, RelationTypes.COMPOUND_ASSIGNMENT_LHS,
                         PDGProcessing.getLefAssignmentArg(t)));
@@ -602,7 +516,6 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitContinue(ContinueTree continueTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
         NodeWrapper continueNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(continueTree, NodeTypes.CONTINUE_STATEMENT);
         methodState.putCfgNodeInCache(continueTree, continueNode);
@@ -628,7 +541,6 @@ public class ASTTypesVisitor
         GraphUtils.connectWithParent(doWhileLoopNode, t);
         boolean prevInWh = inADoWhile, prevMust = must;
         inADoWhile = true;
-        //		pdgUtils.enteringNewBranch();
 
         scan(doWhileLoopTree.getStatement(), Pair.createPair(doWhileLoopNode, RelationTypes.DO_WHILE_STATEMENT));
         scan(doWhileLoopTree.getCondition(), Pair.createPair(doWhileLoopNode, RelationTypes.DO_WHILE_CONDITION));
@@ -640,8 +552,6 @@ public class ASTTypesVisitor
                 prevMust = auxMust;
             }
         }
-        //		if (!must)
-        //			pdgUtils.exitingCurrentBranch();
         must = prevMust;
         methodState.putCfgNodeInCache(doWhileLoopTree, doWhileLoopNode);
         return null;
@@ -650,12 +560,10 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitEmptyStatement(EmptyStatementTree emptyStatementTree,
                                                 Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
         NodeWrapper emptyStatementNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(emptyStatementTree, NodeTypes.EMPTY_STATEMENT);
         methodState.putCfgNodeInCache(emptyStatementTree, emptyStatementNode);
         GraphUtils.connectWithParent(emptyStatementNode, t);
-
         return null;
     }
 
@@ -692,7 +600,6 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitExpressionStatement(ExpressionStatementTree expressionStatementTree,
                                                      Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
         NodeWrapper expressionStatementNode = DatabaseFacade.CURRENT_DB_FACHADE
                 .createSkeletonNode(expressionStatementTree, NodeTypes.EXPRESSION_STATEMENT);
         GraphUtils.connectWithParent(expressionStatementNode, t);
@@ -701,20 +608,13 @@ public class ASTTypesVisitor
                 Pair.createPair(expressionStatementNode, RelationTypes.ENCLOSES_EXPR,
                         PDGProcessing.getExprStatementArg(expressionStatementTree)));
         addInvocationInStatement(expressionStatementNode);
-        // System.out.println("PUTTING \n:");
-        // System.out.println(expressionStatementTree);
-        // System.out.println(expressionStatementNode);
-
         methodState.putCfgNodeInCache(expressionStatementTree, expressionStatementNode);
-
         return null;
     }
 
     @Override
     public ASTVisitorResult visitForLoop(ForLoopTree forLoopTree,
                                          Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        //		System.out.println(forLoopTree);
-
         NodeWrapper forLoopNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(forLoopTree, NodeTypes.FOR_LOOP);
         GraphUtils.connectWithParent(forLoopNode, t);
@@ -736,13 +636,9 @@ public class ASTTypesVisitor
         return null;
     }
 
-    static int foo;
-
     @Override
     public ASTVisitorResult visitIdentifier(IdentifierTree identifierTree,
                                             Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
-        // System.out.println(identifierTree);
         NodeWrapper identifierNode;
         if (((JCIdent) identifierTree).sym == null) {
             identifierNode =
@@ -763,11 +659,6 @@ public class ASTTypesVisitor
             identifierNode = DatabaseFacade.CURRENT_DB_FACHADE
                     .createSkeletonNodeExplicitCats(identifierTree, NodeTypes.IDENTIFIER, NodeCategory.LVALUE,
                             NodeCategory.EXPRESSION);
-
-        // identifierNode.setProperty();
-        // It can be useful or not, by the moment it is not necessary for
-        // coding
-        // any rule. so it is commented
         identifierNode.setProperty("name", identifierTree.getName().toString());
         attachTypeDirect(identifierNode, identifierTree);
         GraphUtils.connectWithParent(identifierNode, t);
@@ -781,7 +672,6 @@ public class ASTTypesVisitor
 
     @Override
     public ASTVisitorResult visitIf(IfTree ifTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
         NodeWrapper ifNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(ifTree, NodeTypes.IF_STATEMENT);
         GraphUtils.connectWithParent(ifNode, t);
         scan(ifTree.getCondition(), Pair.createPair(ifNode, RelationTypes.IF_CONDITION));
@@ -811,21 +701,16 @@ public class ASTTypesVisitor
         importNode.setProperty("isStatic", importTree.isStatic());
 
         GraphUtils.connectWithParent(importNode, t, RelationTypes.IMPORTS);
-        // Posteriormente relacionar classfile con classfile o con typedec....
-        // En caso de imports as� import a.b.* liada jejeje
         return null;
     }
 
     @Override
     public ASTVisitorResult visitInstanceOf(InstanceOfTree instanceOfTree,
                                             Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        //		System.out.println(instanceOfTree);
         NodeWrapper instanceOfNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(instanceOfTree, NodeTypes.INSTANCE_OF);
         GraphUtils.attachTypeDirect(instanceOfNode, instanceOfTree, "boolean", "BOOLEAN", ast);
         GraphUtils.connectWithParent(instanceOfNode, t);
-        //		System.out.println( instanceOfTree.getType().);
-
         if (instanceOfTree.getType() instanceof IdentifierTree)
             addClassIdentifier(((JCIdent) instanceOfTree.getType()).type);
 
@@ -838,7 +723,6 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitIntersectionType(IntersectionTypeTree intersectionTypeTree,
                                                   Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        // System.out.println(intersectionTypeTree);
         NodeWrapper intersectionTypeNode = DatabaseFacade.CURRENT_DB_FACHADE
                 .createSkeletonNodeExplicitCats(intersectionTypeTree, NodeTypes.INTERSECTION_TYPE,
                         NodeCategory.AST_TYPE, NodeCategory.AST_NODE);
@@ -857,8 +741,6 @@ public class ASTTypesVisitor
 
         NodeWrapper labeledStatementNode = DatabaseFacade.CURRENT_DB_FACHADE
                 .createSkeletonNode(labeledStatementTree, NodeTypes.LABELED_STATEMENT);
-        // methodState.putCfgNodeInCache(this,labeledStatementTree,
-        // labeledStatementNode);
         labeledStatementNode.setProperty("name", labeledStatementTree.getLabel().toString());
         GraphUtils.connectWithParent(labeledStatementNode, t);
         methodState.putCfgNodeInCache(labeledStatementTree, labeledStatementNode);
@@ -890,24 +772,11 @@ public class ASTTypesVisitor
         inALambda = true;
         scan(lambdaExpressionTree.getBody(),
                 Pair.createPair(lambdaExpressionNode, RelationTypes.LAMBDA_EXPRESSION_BODY));
-        //DEBERIAMOS PROCESAR PRIMERO LOS PARAMETROS??
         for (int i = 0; i < lambdaExpressionTree.getParameters().size(); i++)
             scan(lambdaExpressionTree.getParameters().get(i), Pair.createPair(
                     new PartialRelationWithProperties<>(lambdaExpressionNode,
                             RelationTypes.LAMBDA_EXPRESSION_PARAMETERS, "paramIndex", i + 1)));
-        // scan(lambdaExpressionTree.getParameters(),
-        // Pair.createPair(lambdaExpressionNode,
-        // RelationTypes.LAMBDA_EXPRESSION_PARAMETERS));
         inALambda = false;
-        //lambda expressions do not have this ref!
-        //		pdgUtils.setThisRefOfInstanceMethod(methodState, classState.currentClassDec);
-        //		This line is to do posterior processing like PDG intraprocedural
-        //		ast.addInfo(methodTree, methodNode, methodState);
-
-        //Currently, we do not support control flow analysis of lambdas
-        //			CFGVisitor.doCFGAnalysis(methodNode, methodTree, methodState.cfgNodeCache,
-        //					ast.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
-        //					methodState.finallyCache);
         insideConstructor = prevInside;
         isInAccessibleContext = prevIsInAccesibleCtxt;
         must = true;
@@ -946,9 +815,6 @@ public class ASTTypesVisitor
         scan(memberReferenceTree.getQualifierExpression(),
                 Pair.createPair(memberReferenceNode, RelationTypes.MEMBER_REFERENCE_EXPRESSION));
 
-        // scan(memberReferenceTree.getTypeArguments(),
-        // Pair.createPair(memberReferenceNode,
-        // RelationTypes.MEMBER_REFERENCE_TYPE_ARGUMENTS));
         if (memberReferenceTree.getTypeArguments() != null)
             for (int i = 0; i < memberReferenceTree.getTypeArguments().size(); i++)
                 scan(memberReferenceTree.getTypeArguments().get(i), Pair.createPair(
@@ -964,12 +830,6 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitMemberSelect(MemberSelectTree memberSelectTree,
                                               Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        // System.out.println(memberSelectTree);
-        // System.out.println(memberSelectTree);
-
-        // NodeWrapper memberSelect =
-        // DatabaseFachade.CURRENT_DB_FACHADE.createSkeletonNode(memberSelectTree,
-        // NodeTypes.MEMBER_SELECTION);
         NodeWrapper memberSelectNode;
         Symbol memberSymbol = ((JCFieldAccess) memberSelectTree).sym;
         ElementKind idKind = memberSymbol.getKind();
@@ -985,22 +845,10 @@ public class ASTTypesVisitor
             memberSelectNode = DatabaseFacade.CURRENT_DB_FACHADE
                     .createSkeletonNodeExplicitCats(memberSelectTree, NodeTypes.MEMBER_SELECTION, NodeCategory.LVALUE,
                             NodeCategory.EXPRESSION);
-        // System.out.println(NodeUtils.nodeToString(memberSelect));
         memberSelectNode.setProperty("memberName", memberSelectTree.getIdentifier().toString());
-        // System.out.println(((JCFieldAccess) memberSelectTree).sym);
-        // System.out.println(((JCFieldAccess) memberSelectTree).sym.type ==
-        // ((JCFieldAccess) memberSelectTree).type);
-        // System.out.println(((JCFieldAccess)
-        // memberSelectTree).sym.getClass());
-        // if (((JCFieldAccess) memberSelectTree).sym instanceof MethodSymbol)
-        // System.out.println(((MethodSymbol) ((JCFieldAccess)
-        // memberSelectTree).sym).owner);
 
         attachTypeDirect(memberSelectNode, memberSelectTree);
         GraphUtils.connectWithParent(memberSelectNode, t);
-
-        // Symbol innerSymbol =
-        // JavacInfo.getSymbolFromTree(memberSelectTree.getExpression());
 
         if (idKind == ElementKind.CLASS || idKind == ElementKind.INTERFACE || idKind == ElementKind.ENUM)
             addClassIdentifier(memberSymbol);
@@ -1058,16 +906,9 @@ public class ASTTypesVisitor
         }
     }
 
-    // EL EFECTO DE ESTO EN VISIT METHOD ES SOLO PARA A�ADIR EL ARCO DEPENDS,
-    // PORUQE EL IDENTIFICADOR YA SE A�ADE AL SER VISITADO con scan
-    // (methodTree.getReturnType() o scan(methodTree.getThrowws...), son s�lo
-    // para el USES LO MISMO PAL NEW CLASS LO MISMO PAL VARIABLE NO EST� CLARO
-    // PAL METHOD_INV
-
     private void addClassIdentifier(TypeMirror typeMirror) {
         if (typeMirror instanceof ClassType)
             addClassIdentifier(((ClassType) typeMirror).tsym);
-
     }
 
     private void addClassIdentifier(Symbol symbol) {
@@ -1076,126 +917,66 @@ public class ASTTypesVisitor
         addToTypeDependencies(newTypeDec, symbol.packge());
     }
 
-    //    private void addExistingClassIdentifier(Symbol symbol) {
-    //
-    //        NodeWrapper newTypeDec = DefinitionCache.getExistingType(symbol.type);
-    //        addToTypeDependencies(newTypeDec, symbol.packge());
-    //
-    //    }
-
     public void addToTypeDependencies(NodeWrapper newTypeDec, Symbol newPackageSymbol) {
         addToTypeDependencies(classState.currentClassDec, newTypeDec, newPackageSymbol, typeDecUses,
                 PackageInfo.PACKAGE_INFO.currentPackage);
-        // if (!typeDecUses.contains(newTypeDec)) {
-        // PackageInfo.PACKAGE_INFO.handleNewDependency(newPackageSymbol);
-        // classState.currentClassDec.createRelationshipTo(newTypeDec,
-        // CDGRelationTypes.USES_TYPE_DEF);
-        // // AuxDebugInfo.lastMessage = null;
-        // typeDecUses.add(newTypeDec);
-        // }
     }
 
     public static void addToTypeDependencies(NodeWrapper currentClass, NodeWrapper newTypeDec, Symbol newPackageSymbol,
                                              Set<NodeWrapper> typeDecUses, Symbol dependentPackage) {
-        // if (trace)
-        // { System.out.println(!typeDecUses.contains(newTypeDec));
-        // System.out.println(newTypeDec.getProperty("fullyQualifiedName"));
-        // System.out.println(
-        // classState.currentClassDec.getProperty("fullyQualifiedName"));
-        // }
         if (!typeDecUses.contains(newTypeDec) && !currentClass.equals(newTypeDec)) {
             PackageInfo.PACKAGE_INFO.handleNewDependency(dependentPackage, newPackageSymbol);
             currentClass.createRelationshipTo(newTypeDec, CDGRelationTypes.USES_TYPE_DEF);
-            // AuxDebugInfo.lastMessage = null;
             typeDecUses.add(newTypeDec);
         }
     }
 
     @Override
-    public ASTVisitorResult visitMethod(MethodTree methodTree,
-                                        Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
-        if (DEBUG) {
-            System.out.println("\tVisiting method declaration " + methodTree.getName());
-            //		System.out.println(((JCMethodDecl)methodTree).getReceiverParameter());
-            //		System.out.println(((JCMethodDecl)methodTree).completesNormally);
-            //		System.out.println(((JCMethodDecl)methodTree).defaultValue);
-            //		System.out.println(((JCMethodDecl)methodTree).sym.isVarArgs());
-            //            System.out.println(methodTree);
-        }
-
-        //		System.out.println(((JCMethodDecl)methodTree).);
-
-
+    public ASTVisitorResult visitMethod(MethodTree methodTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         MethodSymbol methodSymbol = ((JCMethodDecl) methodTree).sym;
-
-        // System.out.println(methodSymbol.isConstructor());
-        //        String name = methodTree.getName().toString(), completeName = methodSymbol.owner + ":" + name,
-        //                fullyQualifiedName = completeName + methodSymbol.type;
         MethodNameInfo nameInfo = new MethodNameInfo(methodSymbol);
-
-        //        System.out.println("METHOD:\t" + fullyQualifiedName);
-        //        System.out.println(methodTree);
         NodeWrapper methodNode;
 
         boolean prev = false;
         RelationTypes rel;
         if (methodSymbol.isConstructor()) {
-            // System.out.println(methodTree);
             prev = insideConstructor;
             insideConstructor = true;
             methodNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(methodTree, NodeTypes.CONSTRUCTOR_DEF);
 
             ((Pair<Pair, List<NodeWrapper>>) t.getSecond()).getSecond().add(methodNode);
             rel = RelationTypes.DECLARES_CONSTRUCTOR;
-
         } else {
             methodNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(methodTree, NodeTypes.METHOD_DEF);
-            // System.out.println(t.getFirst().getStartingNode() + " DECLARES
-            // METHOD IN VISIT " + methodTree);
             rel = RelationTypes.DECLARES_METHOD;
         }
 
         if (DefinitionCache.METHOD_DEF_CACHE.containsKey(nameInfo.getFullyQualifiedName())) {
             ast.deleteAccesibleMethod(methodSymbol);
-            //            System.out.println(fullyQualifiedName + " DECLARED METHOD PUT");
-            // For methods that are invoked in this class, after the removal of the
-            // non-declared edges of the class and before the visit of the method
             DefinitionCache.METHOD_DEF_CACHE.putDefinition(nameInfo.getFullyQualifiedName(), methodNode);
 
             if (!methodNode.hasRelationship(rel, Direction.INCOMING))
                 GraphUtils.connectWithParent(methodNode, t, rel);
         } else {
-            //            System.out.println(fullyQualifiedName + " DECLARED METHOD PUT--- no prev found");
             DefinitionCache.METHOD_DEF_CACHE.putDefinition(nameInfo.getFullyQualifiedName(), methodNode);
             GraphUtils.connectWithParent(methodNode, t, rel);
         }
-
 
         setMethodModifiersAndAnnotations(methodTree.getModifiers().getFlags(), methodNode,
                 t.getFirst().getStartingNode().hasLabel(NodeTypes.INTERFACE_DEF),
                 methodTree.getModifiers().getAnnotations());
         String accessLevel = methodNode.getProperty("accessLevel").toString();
 
-        //		System.out.println(NodeUtils.nodeToString(classState.currentClassDec));
-
         if (!methodSymbol.isConstructor() && isInAccessibleContext && (accessLevel.contentEquals("public") ||
                 accessLevel.contentEquals("protected") && !(Boolean) classState.currentClassDec.getProperty("isFinal")))
 
             ast.addAccesibleMethod(methodSymbol, methodNode);
-
-        // System.out.println(isInAccessibleContext);
-        // System.out.println(!methodSymbol.isConstructor());
-        // System.out.println((accessLevel.contentEquals("public") ||
-        // accessLevel.contentEquals("protected")
-        // && !(Boolean) classState.currentClassDec.getProperty("isFinal")));
 
         boolean prevIsInAccesibleCtxt = isInAccessibleContext;
         isInAccessibleContext = false;
         MethodState prevState = methodState;
         must = true;
         methodState = new MethodState(methodNode);
-        //		System.out.println("NEW STATE for \n"+methodTree);
         pdgUtils.visitNewMethod();
         ast.newMethodDeclaration(methodState);
         methodNode.setProperty("name", nameInfo.getSimpleName());
@@ -1204,26 +985,12 @@ public class ASTTypesVisitor
         methodNode.setProperty("isDeclared", true);
         methodNode.setProperty("isVarArgs", methodSymbol.isVarArgs());
 
-        if (DEBUG) {
-            System.out.println("METHOD DECLARATION :" + methodTree.getClass());
-
-            System.out.println("Symbol:" + ((JCMethodDecl) methodTree).sym.toString());
-        }
-
         scan(methodTree.getReturnType(), Pair.createPair(methodNode, RelationTypes.CALLABLE_RETURN_TYPE));
-
-        // methodNode.createRelationshipTo(DefinitionCache.getOrCreateType(((Tree)
-        // methodTree.getReturnType()).),
-        // RelationTypes.RETURN_TYPE);
         GraphUtils.attachType(methodNode, ((JCMethodDecl) methodTree).type, ast);
 
-        // EL EFECTO DE ESTO ES SOLO PARA A�ADIR EL ARCO DEPENDS, PORUQE EL
-        // IDENTIFICADOR YA SE A�ADE AL SER VISITADO
         if (!methodSymbol.isConstructor())
             addClassIdentifier(((JCTree) methodTree.getReturnType()).type);
 
-        // scan(methodTree.getTypeParameters(), Pair.createPair(methodNode,
-        // RelationTypes.CALLABLE_HAS_TYPEPARAMETERS));
         for (int i = 0; i < methodTree.getTypeParameters().size(); i++)
             scan(methodTree.getTypeParameters().get(i), Pair.createPair(
                     new PartialRelationWithProperties<>(methodNode, RelationTypes.CALLABLE_HAS_TYPEPARAMETERS,
@@ -1240,7 +1007,6 @@ public class ASTTypesVisitor
             scan(throwsTree, Pair.createPair(methodNode, RelationTypes.CALLABLE_HAS_THROWS));
         });
 
-        //		System.out.println("Visiting body:\n"+methodTree.getBody());
         scan(methodTree.getBody(), Pair.createPair(methodNode, RelationTypes.CALLABLE_HAS_BODY));
         scan(methodTree.getDefaultValue(), Pair.createPair(methodNode, RelationTypes.HAS_DEFAULT_VALUE));
         scan(methodTree.getReceiverParameter(), Pair.createPair(methodNode, RelationTypes.HAS_RECEIVER_PARAMETER));
@@ -1248,9 +1014,6 @@ public class ASTTypesVisitor
         pdgUtils.setThisRefOfInstanceMethod(methodState, classState.currentClassDec);
         ast.addInfo(methodTree, methodNode, methodState,
                 methodSymbol.isVarArgs() ? nParams : ASTAuxiliarStorage.NO_VARG_ARG);
-
-        //		System.out.println("Initiating cfg for:\n"+methodTree);
-        //		System.out.println("... AND BODY "+methodTree.getBody());
         if (methodTree.getBody() != null)
             CFGVisitor.doCFGAnalysis(methodNode, methodTree, methodState.cfgNodeCache,
                     ast.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
@@ -1260,10 +1023,7 @@ public class ASTTypesVisitor
         must = true;
         methodState = prevState;
         ast.endMethodDeclaration();
-        //		if(fullyQualifiedName.contains("com.intuit.karate.core.ScenarioEngine:executeFunction"))
-        //			throw new IllegalArgumentException("STOOOP");
         return null;
-
     }
 
     private boolean isUnknownOrErrorType(Type type) {
@@ -1283,7 +1043,6 @@ public class ASTTypesVisitor
                                                   Pair<PartialRelation<RelationTypesInterface>, Object> pair) {
         NodeWrapper methodInvocationNode = DatabaseFacade.CURRENT_DB_FACHADE
                 .createSkeletonNode(methodInvocationTree, NodeTypes.METHOD_INVOCATION);
-        //		Le dejo de tipo error type?=> Habria que ver todos los eror type anteriores....
         attachTypeDirect(methodInvocationNode, methodInvocationTree);
         GraphUtils.connectWithParent(methodInvocationNode, pair);
 
@@ -1291,37 +1050,18 @@ public class ASTTypesVisitor
         NodeWrapper decNode = null;
 
         if (isDynamicallyGenerated(symbol, methodInvocationTree)) {
-            //fullname=<any>.baseDirectory.inPlace.namedCheckers.importOrganizer
-            //como diagnosticar cast + errortype
-            //Solo name, paramnumber y poco más, no se puede sacar el owner=> Clase dinamica => No pueden tener cacheee
-            //            printType(methodInvocationTree.getMethodSelect());
-            //            printType(methodInvocationTree);
-            //            methodInvocationTree.getArguments().forEach(a -> printType(a));
-            //
-            //=> Solo paquete de la clase dinamica?? => paquete raro
-            //1)Añadir a type deps en este escenario no puede seer.... sera en el memberAcces en too caso
-            //Tampoco podemos saber que excepcones lanza
-            //2)Nombres method dec
             String methodName = (methodInvocationTree.getMethodSelect() instanceof JCIdent ?
                     ((JCIdent) methodInvocationTree.getMethodSelect()).name :
                     ((JCFieldAccess) methodInvocationTree.getMethodSelect()).name).toString();
             final String GEN_CLASS = "GENERATED_CLASS";
             String completeName = GEN_CLASS + ":" + methodName;
-            //	fullyQualifiedName = completeName + methodSymbol.type;
-            //intentar sacar el fully con inferencia viola el sound but not complete
             decNode = createNonDeclaredMethodWithoutSymbol(new MethodNameInfo(methodName, completeName, completeName));
-            //3) cache no aplica=> no puede ser constructor.... así que solo aplica a CreateGeneratedMethod
-
-            //4) Podría ser común CALLS, HAS_REF,, REFERS_TO
-
         } else {
             if (symbol == null) {
                 System.err.println("Invocation " + methodInvocationTree + " with no symbol, at" + currentTypeDecSymbol);
                 return null;
 
             } else if (symbol instanceof ClassSymbol && ((ClassSymbol) symbol).sourcefile == null) {
-                //HERE SOME INFO COULD BE EXTRACTED, args owner resulting type etc.
-                //It may happen with certain (super) constructor of external APIs
                 System.err.println("Invocation " + methodInvocationTree +
                         " probably from constructor, class symbol and no source file; at" + currentTypeDecSymbol);
                 return null;
@@ -1339,23 +1079,18 @@ public class ASTTypesVisitor
                     DefinitionCache.METHOD_DEF_CACHE.get(nameInfo.getFullyQualifiedName()) :
                     methodSymbol.isConstructor() ? getNotDeclaredConsFromInv(methodSymbol, nameInfo) :
                             getNotDeclaredMethodDecNode(methodSymbol, nameInfo);
-
-            //Es trustuble en el sentido de que no tenemos herencia aqui ... no sabemos nada del metodo llamado
             ast.checkIfTrustableInvocation(methodInvocationTree, methodSymbol, methodInvocationNode);
-
         }
-        //LATER USED FOR INTERPROCEDURAL PROCESSING
+
         if (!inALambda) {
             RelationshipWrapper callRelation =
                     methodState.lastMethodDecVisited.createRelationshipTo(methodInvocationNode, CGRelationTypes.CALLS);
             callRelation.setProperty("mustBeExecuted", must);
         }
-        //////
 
         methodInvocationNode.createRelationshipTo(decNode, CGRelationTypes.HAS_DEF);
         methodInvocationNode.createRelationshipTo(decNode, CGRelationTypes.REFERS_TO);
 
-        //Check if params still asigned for PDG interprocedural... se pùede hacer aunque de momento no vale pa na
         pdgUtils.addParamsPrevModifiedForInv(methodInvocationNode, methodState);
 
         scan(methodInvocationTree.getMethodSelect(),
@@ -1369,47 +1104,39 @@ public class ASTTypesVisitor
             scan(methodInvocationTree.getArguments().get(i), Pair.createPair(
                     new PartialRelationWithProperties<>(methodInvocationNode, RelationTypes.METHODINVOCATION_ARGUMENTS,
                             "argumentIndex", i + 1)));
-
         return null;
     }
 
     public static void modifierAccessLevelToNodeForClasses(Set<Modifier> modifiers, NodeWrapper modNode) {
         modNode.setProperty("accessLevel", modifiers.contains(Modifier.PUBLIC) ? "public" :
                 modifiers.contains(Modifier.PRIVATE) ? "private" : "package");
-
     }
 
     public static void modifierAccessLevelToNode(Set<Modifier> modifiers, NodeWrapper modNode) {
         modNode.setProperty("accessLevel", modifiers.contains(Modifier.PUBLIC) ? "public" :
                 modifiers.contains(Modifier.PROTECTED) ? "protected" :
                         modifiers.contains(Modifier.PRIVATE) ? "private" : "package");
-
     }
 
     public static void modifierAccessLevelToNodeExceptPrivate(Set<Modifier> modifiers, NodeWrapper modNode) {
         modNode.setProperty("accessLevel", modifiers.contains(Modifier.PUBLIC) ? "public" :
                 modifiers.contains(Modifier.PROTECTED) ? "protected" : "package");
-
     }
 
     public static void modifierAccessLevelLimitedToNode(Set<Modifier> modifiers, NodeWrapper modNode) {
         modNode.setProperty("accessLevel", modifiers.contains(Modifier.PUBLIC) ? "public" : "package");
-
     }
 
     public static void checkFinalMod(Set<Modifier> modifiers, NodeWrapper node) {
         node.setProperty("isFinal", modifiers.contains(Modifier.FINAL));
-
     }
 
     public static void checkStaticMod(Set<Modifier> modifiers, NodeWrapper node) {
         node.setProperty("isStatic", modifiers.contains(Modifier.STATIC));
-
     }
 
     public static void checkVolatileMod(Set<Modifier> modifiers, NodeWrapper node) {
         node.setProperty("isVolatile", modifiers.contains(Modifier.VOLATILE));
-
     }
 
     public static void checkTransientMod(Set<Modifier> modifiers, NodeWrapper node) {
@@ -1433,7 +1160,6 @@ public class ASTTypesVisitor
     }
 
     private void visitAnonymousClassModifiers(ModifiersTree modifiersTree, NodeWrapper classNode) {
-
         Pair<PartialRelation<RelationTypesInterface>, Object> n =
                 Pair.createPair(classNode, RelationTypes.HAS_ANNOTATIONS);
         scan(modifiersTree.getAnnotations(), n);
@@ -1456,7 +1182,6 @@ public class ASTTypesVisitor
                                            Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper parent = t.getFirst().getStartingNode();
         Set<Modifier> modifiers = modifiersTree.getFlags();
-        // Pair<PartialRelation<RelationTypes>, Object> n = ;
         scan(modifiersTree.getAnnotations(), Pair.createPair(parent, RelationTypes.HAS_ANNOTATIONS));
         if (parent.hasLabel(NodeTypes.LOCAL_VAR_DEF) || parent.hasLabel(NodeTypes.PARAMETER_DEF))
             checkFinalMod(modifiers, parent);
@@ -1465,11 +1190,6 @@ public class ASTTypesVisitor
             checkAttrDecModifiers(modifiers, parent);
 
         } else if (parent.hasLabel(NodeTypes.CONSTRUCTOR_DEF)) {
-            // checkAbstractMod(modifiers, parent);
-            // checkFinalMod(modifiers, parent);
-            // checkSynchroMod(modifiers, parent);
-            // checkNativeMod(modifiers, parent);
-            // checkStrictfpMod(modifiers, parent);
             modifierAccessLevelToNode(modifiers, parent);
         } else if (parent.hasLabel(NodeTypes.CLASS_DEF)) {
             checkStaticMod(modifiers, parent);
@@ -1494,15 +1214,12 @@ public class ASTTypesVisitor
         } else
             throw new IllegalStateException(
                     "Label with modifiers no checked.\n" + NodeUtils.nodeToString(t.getFirst().getStartingNode()));
-
         return null;
-
     }
 
     @Override
     public ASTVisitorResult visitNewArray(NewArrayTree newArrayTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
         NodeWrapper newArrayNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(newArrayTree, NodeTypes.NEW_ARRAY);
         attachTypeDirect(newArrayNode, newArrayTree);
@@ -1514,50 +1231,30 @@ public class ASTTypesVisitor
         return null;
     }
 
-    // OJO FALTA REVISAR
     @Override
     public ASTVisitorResult visitNewClass(NewClassTree newClassTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> pair) {
-        //		System.out.println(newClassTree);
         NodeWrapper newClassNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(newClassTree, NodeTypes.NEW_INSTANCE);
-
-        //the possible body (ANONYMOUS CLASS NEWS) is visited before, to create the declared CONSTRUCTOR_DEFINITION
-        // before instantiate a non-declared
-        // node that need to be updated in the cache, also for the embedded mode leads to errors -->
-        // the nondelcared constructor def created before visiting the body, is correctly substituted when visiting
-        // body,
-        // and then when you try to link newClassNode with it s definition Neo4j says, cannot create a relationship
-        // to a deleted node
         scan(newClassTree.getClassBody(), Pair.createPair(newClassNode, RelationTypes.NEW_CLASS_BODY));
 
-        //POrque no hay trustuble invocations??? TODO Checkear
         Type type = JavacInfo.getTypeDirect(newClassTree.getIdentifier());
         Symbol newClassConstructor = ((JCNewClass) newClassTree).constructor;
         NodeWrapper constructorDef;
-        if (newClassConstructor instanceof ClassSymbol && isUnknownOrErrorType(type) &&
-                ((ClassSymbol) newClassConstructor).sourcefile == null
-            //&& ((ClassSymbol) newClassConstructor).getTypeParameters().size() == 0
-        ) {
-
+        if (newClassConstructor instanceof ClassSymbol && isUnknownOrErrorType(type) && ((ClassSymbol) newClassConstructor).sourcefile == null) {
             NodeWrapper generatedCLassNode =
                     TypeVisitor.generatedClassType((ClassSymbol) newClassConstructor.owner, ast);
 
             if (!typeDecUses.contains(generatedCLassNode)) {
                 classState.currentClassDec.createRelationshipTo(generatedCLassNode, CDGRelationTypes.USES_TYPE_DEF);
-                // AuxDebugInfo.lastMessage = null;
                 typeDecUses.add(generatedCLassNode);
             }
 
             String methodName = "<init>";
             String completeName = ((ClassSymbol) newClassConstructor.owner).getQualifiedName() + ":" + methodName;
-            //	fullyQualifiedName = completeName + methodSymbol.type;
-            //intentar sacar el fully con inferencia viola el sound but not complete
             constructorDef =
                     createNonDeclaredMethodWithoutSymbol(new MethodNameInfo(methodName, completeName, completeName));
             generatedCLassNode.createRelationshipTo(constructorDef, RelationTypes.DECLARES_CONSTRUCTOR);
-
-
         } else {
             if (newClassConstructor == null) {
                 System.err.println("Invocation " + newClassTree + " with no symbol, at" + currentTypeDecSymbol);
@@ -1569,28 +1266,15 @@ public class ASTTypesVisitor
             constructorDef = DefinitionCache.METHOD_DEF_CACHE.get(nameInfo.getFullyQualifiedName());
             if (constructorDef == null)
                 constructorDef = getNotDeclaredConsFromInv(consSymbol, nameInfo);
-
-
             if (consSymbol.getThrownTypes().size() > 0)
                 currentMethodInvocations.add(consSymbol);
         }
-        // Igual no hace falta el attachType porque la expresi�n siempre es del
-        // tipo de la clase pero paquete + identifier no vale, igual se puede
-        // hacer algo con el Symbol s y el getTypeMirror para obtener el nombre
-        // completo---->Demomento lo dejo as�
-
-        //PAra todos igual, o aprovecha  le meto el tipo REAL???? Tengo la clase generada por ahí, TIPO DE LA
-        // EXPRESION => clasegenerada
         GraphUtils.attachType(newClassNode, type, ast);
         GraphUtils.connectWithParent(newClassNode, pair);
-        // Aqu� hay que encontrar la declaracion del constructor de la clase,
-        // para relacionar el CALLS, y el �IS_CALLED?
         pdgUtils.addParamsPrevModifiedForInv(newClassNode, methodState);
         scan(newClassTree.getEnclosingExpression(),
                 Pair.createPair(newClassNode, RelationTypes.NEWCLASS_ENCLOSING_EXPRESSION));
         scan(newClassTree.getIdentifier(), Pair.createPair(newClassNode, RelationTypes.NEWCLASS_IDENTIFIER));
-        // scan(newClassTree.getTypeArguments(), Pair.createPair(newClassNode,
-        // RelationTypes.NEW_CLASS_TYPE_ARGUMENTS));
         for (int i = 0; i < newClassTree.getTypeArguments().size(); i++)
             scan(newClassTree.getTypeArguments().get(i), Pair.createPair(
                     new PartialRelationWithProperties<>(newClassNode, RelationTypes.NEW_CLASS_TYPE_ARGUMENTS,
@@ -1600,21 +1284,14 @@ public class ASTTypesVisitor
                     new PartialRelationWithProperties<>(newClassNode, RelationTypes.NEW_CLASS_ARGUMENTS,
                             "argumentIndex", i + 1)));
 
-
-        // Redundancia justificada para las consultas
         newClassNode.createRelationshipTo(constructorDef, CGRelationTypes.HAS_DEF);
         newClassNode.createRelationshipTo(constructorDef, CGRelationTypes.REFERS_TO);
 
-        //Later used for interprocedural processing
         if (!inALambda) {
             RelationshipWrapper callRelation =
                     methodState.lastMethodDecVisited.createRelationshipTo(newClassNode, CGRelationTypes.CALLS);
             callRelation.setProperty("mustBeExecuted", must);
         }
-
-
-        // Si no podemos sacar el methodType de la expresi�n como con las
-        // invocaciones, tendremos que buscar entre los contructores de la clase
         return null;
     }
 
@@ -1627,20 +1304,11 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitParameterizedType(ParameterizedTypeTree parameterizedTypeTree,
                                                    Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        //		System.out.println("PARAMETERIZED TYPE:\t" + parameterizedTypeTree);
-        // System.out.println(parameterizedTypeTree);
         NodeWrapper parameterizedNode = DatabaseFacade.CURRENT_DB_FACHADE
                 .createSkeletonNodeExplicitCats(parameterizedTypeTree, NodeTypes.PARAMETERIZED_TYPE,
                         NodeCategory.AST_TYPE, NodeCategory.AST_NODE);
         GraphUtils.connectWithParent(parameterizedNode, t);
-
-        //		System.out.println("PARAMETERIZED . GETTYPE " + parameterizedTypeTree.getType());
-        //		System.out.println("PARAMETERIZED . GETTYPE CLASS " + parameterizedTypeTree.getType().getClass());
-        //		System.out.println(((JCTree)parameterizedTypeTree.getType()).type);
-        //		System.out.println(((JCTree)parameterizedTypeTree.getType()).type.getClass());
-
         scan(parameterizedTypeTree.getType(), Pair.createPair(parameterizedNode, RelationTypes.PARAMETERIZES_AST_TYPE));
-        //		addClassIdentifier(JavacInfo.getTypeMirror(parameterizedTypeTree.getType()));
         addClassIdentifier(((JCTree) parameterizedTypeTree.getType()).type);
         for (int i = 0; i < parameterizedTypeTree.getTypeArguments().size(); i++) {
             Tree typeArg = parameterizedTypeTree.getTypeArguments().get(i);
@@ -1649,11 +1317,6 @@ public class ASTTypesVisitor
                     new PartialRelationWithProperties<>(parameterizedNode, RelationTypes.AST_TYPE_ARGUMENT,
                             "argumentIndex", i + 1)));
         }
-
-        // TODO INSTEAD of L<> to denote it is parameterized, use the visitor to
-        // L<T<U>,D>--> changes return null by types--> NO HACE FALTA EL TIPO DE
-        // JAVA YA LO TIENE
-
         parameterizedNode
                 .setProperty("actualType", ((JCTypeApply) parameterizedTypeTree).type.tsym.getQualifiedName() + "<>");
         return null;
@@ -1662,18 +1325,7 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitParenthesized(ParenthesizedTree parenthesizedTree,
                                                Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        // Esto no deber�a entrar por aqu�, porque los par�ntesis no deben
-        // preservarse, o s�, y soy yo el que los tiene que obviar //Si los dejo
-        // puedo detectar fallos de cuando sobran par�ntesis, no s� si sale
-        // rentable
-
-        // NodeWrapper parenthesizedNode=
-        // DatabaseFachade.CURRENT_DB_FACHADE.createSkeletonNode(parenthesizedTree,
-        // NodeTypes.PARENTHESIZED_EXPRESSION);
-        // attachTypeDirect(parenthesizedNode, parenthesizedTree);
-        // GraphUtils.connectWithParent(parenthesizedNode, t);
         return scan(parenthesizedTree.getExpression(), t);
-
     }
 
     @Override
@@ -1682,8 +1334,6 @@ public class ASTTypesVisitor
         NodeWrapper primitiveTypeNode = DatabaseFacade.CURRENT_DB_FACHADE
                 .createSkeletonNodeExplicitCats(primitiveTypeTree, NodeTypes.PRIMITIVE_TYPE, NodeCategory.AST_TYPE,
                         NodeCategory.AST_NODE);
-        // primitiveTypeNode.setProperty("primitiveTypeKind",
-        // primitiveTypeTree.getPrimitiveTypeKind().toString());
 
         primitiveTypeNode.setProperty("fullyQualifiedName", primitiveTypeTree.toString());
         primitiveTypeNode.setProperty("simpleName", primitiveTypeTree.toString());
@@ -1695,11 +1345,9 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitReturn(ReturnTree returnTree,
                                         Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
         NodeWrapper returnNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(returnTree, NodeTypes.RETURN_STATEMENT);
         methodState.putCfgNodeInCache(returnTree, returnNode);
-        //		System.out.println(returnTree +" PUT IN CACHE \n hashcode "+returnTree.hashCode());
         GraphUtils.connectWithParent(returnNode, t);
         int hash = returnTree.hashCode();
         scan(returnTree.getExpression(), Pair.createPair(returnNode, RelationTypes.RETURN_EXPR));
@@ -1736,7 +1384,6 @@ public class ASTTypesVisitor
             if (!unconditionalFound &&
                     switchTree.getCases().get(switchTree.getCases().size() - 1).getExpression() == null)
                 pdgUtils.unionWithCurrent(paramsModifiedInAllCases);
-
         }
         return null;
     }
@@ -1756,7 +1403,6 @@ public class ASTTypesVisitor
 
     @Override
     public ASTVisitorResult visitThrow(ThrowTree throwTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
         NodeWrapper throwNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(throwTree, NodeTypes.THROW_STATEMENT);
         methodState.putCfgNodeInCache(throwTree, throwNode);
@@ -1769,8 +1415,6 @@ public class ASTTypesVisitor
 
     @Override
     public ASTVisitorResult visitTry(TryTree tryTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
-        //        System.out.println(tryTree);
         NodeWrapper tryNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(tryTree, NodeTypes.TRY_STATEMENT);
         GraphUtils.connectWithParent(tryNode, t);
         boolean hasCatchingComponent = tryTree.getCatches().size() > 0 || tryTree.getFinallyBlock() != null;
@@ -1794,23 +1438,18 @@ public class ASTTypesVisitor
             methodState.putFinallyInCache(tryTree.getFinallyBlock(), finallyNode, lastStmtInFinally);
             finallyNode.createRelationshipTo(lastStmtInFinally, CFGRelationTypes.CFG_FINALLY_TO_LAST_STMT);
         }
-
         return null;
-
     }
 
     @Override
     public ASTVisitorResult visitTypeCast(TypeCastTree typeCastTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
         NodeWrapper typeCastNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(typeCastTree, NodeTypes.TYPE_CAST);
         attachTypeDirect(typeCastNode, typeCastTree);
         GraphUtils.connectWithParent(typeCastNode, t);
-
         scan(typeCastTree.getType(), Pair.createPair(typeCastNode, RelationTypes.CAST_TYPE));
         scan(typeCastTree.getExpression(), Pair.createPair(typeCastNode, RelationTypes.CAST_ENCLOSES));
-
         if (typeCastTree.getType() instanceof IdentifierTree)
             addClassIdentifier(((JCIdent) typeCastTree.getType()).type);
         return null;
@@ -1825,37 +1464,26 @@ public class ASTTypesVisitor
         GraphUtils.connectWithParent(typeParameterNode, t);
         scan(typeParameterTree.getAnnotations(), Pair.createPair(typeParameterNode, RelationTypes.HAS_ANNOTATIONS));
         scan(typeParameterTree.getBounds(), Pair.createPair(typeParameterNode, RelationTypes.TYPEPARAMETER_EXTENDS));
-        //        NodeWrapper typeNode =
-        //                GraphUtils.attachType(typeParameterNode, ((JCTypeParameter) typeParameterTree).type, ast);
-        //        typeNode.setProperty("isDeclared", true);
-
         return null;
     }
 
     @Override
     public ASTVisitorResult visitUnary(UnaryTree unaryTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
         NodeWrapper unaryNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(unaryTree, NodeTypes.UNARY_OPERATION);
         unaryNode.setProperty("operator", unaryTree.getKind().toString());
-
         boolean impliesModification =
                 unaryTree.getKind() == Kind.POSTFIX_INCREMENT || unaryTree.getKind() == Kind.POSTFIX_DECREMENT ||
                         unaryTree.getKind() == Kind.PREFIX_INCREMENT || unaryTree.getKind() == Kind.PREFIX_DECREMENT;
-
         GraphUtils.connectWithParent(unaryNode, t);
         attachTypeDirect(unaryNode, unaryTree);
-
         if (impliesModification) {
             NodeWrapper lastAssignInfo = beforeScanAnyAssign(unaryNode, t);
-
             scan(unaryTree.getExpression(),
                     Pair.createPair(unaryNode, RelationTypes.UNARY_ENCLOSES, PDGProcessing.getLefAssignmentArg(t)));
             afterScanAnyAssign(lastAssignInfo);
-
         } else
             scan(unaryTree.getExpression(), Pair.createPair(unaryNode, RelationTypes.UNARY_ENCLOSES));
-
         return null;
     }
 
@@ -1866,15 +1494,8 @@ public class ASTTypesVisitor
                 .createSkeletonNodeExplicitCats(unionTypeTree, NodeTypes.UNION_TYPE, NodeCategory.AST_TYPE,
                         NodeCategory.AST_NODE);
         GraphUtils.connectWithParent(unionTypeNode, t);
-        // System.out.println(unionTypeTree);
-        // System.out.println(unionTypeTree.getTypeAlternatives().size());
-        // System.out.println(unionTypeTree.getTypeAlternatives().get(unionTypeTree.getTypeAlternatives().size()
-        // - 1));
-
         scan(unionTypeTree.getTypeAlternatives(), Pair.createPair(unionTypeNode, RelationTypes.AST_UNION_ALTERNATIVE));
-        // IGUAL SOBRA... porque lo tengo a null pa to los tipos y funciona
         return null;
-
     }
 
     private void createVarInit(VariableTree varTree, NodeWrapper varDecNode, boolean isAttr, boolean isStatic) {
@@ -1892,48 +1513,25 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitVariable(VariableTree variableTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        /*
-         *
-         * 1� buscar los scans en este metodo u otros que llame, init o algo as� 2�
-         * asegurarse de que el tipo no se visita 3� visitarlo (con el de tipos) y usar
-         * el retorno de NodeWrapper tipo parametrizered type 4� en vez de las dos
-         * llamadas es VAR_DEC - itsTYPEis-> tipo <-USES_TYPE-current
-         */
-        //		System.out.println("VARIABLE!!!");
-        //        System.out.println(variableTree);
-
         boolean isAttr = t.getFirst().getRelationType().equals(RelationTypes.HAS_STATIC_INIT);
         boolean isMethodParam = t.getFirst().getRelationType().equals(RelationTypes.CALLABLE_HAS_PARAMETER) ||
                 t.getFirst().getRelationType().equals(RelationTypes.LAMBDA_EXPRESSION_PARAMETERS);
-        // This can be calculated cehcking if the param Object is null or not?
         boolean isEnum = false;
         NodeWrapper variableNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(variableTree, isAttr ?
                 (isEnum = variableTree.toString().contains("/*")) ? NodeTypes.ENUM_ELEMENT : NodeTypes.ATTR_DEF :
                 isMethodParam ? NodeTypes.PARAMETER_DEF : NodeTypes.LOCAL_VAR_DEF);
         variableNode.setProperty("name", variableTree.getName().toString());
 
-        /*
-         * TODO variableTree.getType() instead of ((JCVariableDecl) variableTree).type
-         */
         Type type = ((JCVariableDecl) variableTree).type;
-        // System.out.println("Attributing var " + variableTree);
         GraphUtils.attachType(variableNode, type, ast);
         addClassIdentifier(type);
-        if (DEBUG)
-            System.out
-                    .println("VARIABLE:" + variableTree.getName() + "(" + variableNode.getProperty("actualType") + ")");
         scan(variableTree.getModifiers(), Pair.createPair(variableNode, null));
-
         Symbol s = ((JCVariableDecl) variableTree).sym;
-
         MethodState previousState = methodState;
         if (isAttr) {
-            // Warning, lineNumber and position should be added depending on the
-            // constructor
             variableNode.setProperty("isDeclared", true);
             GraphUtils.connectWithParent(variableNode, t,
                     isEnum ? RelationTypes.HAS_ENUM_ELEMENT : RelationTypes.DECLARES_FIELD);
-
             methodState = new MethodState(variableNode);
             Pair<List<NodeWrapper>, List<NodeWrapper>> param =
                     ((Pair<Pair<List<NodeWrapper>, List<NodeWrapper>>, List<NodeWrapper>>) t.getSecond()).getFirst();
@@ -1941,39 +1539,28 @@ public class ASTTypesVisitor
 
         } else
             GraphUtils.connectWithParent(variableNode, t);
-
         createVarInit(variableTree, variableNode, isAttr, s.isStatic());
-
         if (!(isMethodParam || isAttr)) {
             methodState.putCfgNodeInCache(variableTree, variableNode);
             addInvocationInStatement(variableNode);
         }
         pdgUtils.putDecInCache(s, variableNode);
-
         scan(variableTree.getType(), Pair.createPair(variableNode, RelationTypes.HAS_VARIABLEDECL_TYPE));
         if (isAttr) {
-            // Warning, lineNumber and position should be added depending on the
-            // constructor
             methodState = previousState;
         }
         return null;
     }
 
     @Override
-    public ASTVisitorResult visitWhileLoop(WhileLoopTree whileLoopTree,
-                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
-        NodeWrapper whileLoopNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(whileLoopTree, NodeTypes.WHILE_LOOP);
+    public ASTVisitorResult visitWhileLoop(WhileLoopTree whileLoopTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        NodeWrapper whileLoopNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(whileLoopTree, NodeTypes.WHILE_LOOP);
         GraphUtils.connectWithParent(whileLoopNode, t);
-
         scan(whileLoopTree.getCondition(), Pair.createPair(whileLoopNode, RelationTypes.WHILE_CONDITION));
         addInvocationInStatement(whileLoopNode);
         methodState.putCfgNodeInCache(whileLoopTree, whileLoopNode);
-
         prevMust = must;
         must = false;
-
         pdgUtils.enteringNewBranch();
         scan(whileLoopTree.getStatement(), Pair.createPair(whileLoopNode, RelationTypes.WHILE_STATEMENT));
         pdgUtils.exitingCurrentBranch();
@@ -1984,7 +1571,6 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitWildcard(WildcardTree wildcardTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
         NodeWrapper wildcardNode = DatabaseFacade.CURRENT_DB_FACHADE
                 .createSkeletonNodeExplicitCats(wildcardTree, NodeTypes.WILDCARD_TYPE, NodeCategory.AST_TYPE,
                         NodeCategory.AST_NODE);
@@ -1993,5 +1579,4 @@ public class ASTTypesVisitor
         scan(wildcardTree.getBound(), Pair.createPair(wildcardNode, RelationTypes.WILDCARD_BOUND));
         return null;
     }
-
 }

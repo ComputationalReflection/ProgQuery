@@ -1,11 +1,8 @@
 package es.uniovi.reflection.progquery;
-import java.io.Serializable;
-import java.time.ZonedDateTime;
-
-import es.uniovi.reflection.progquery.database.*;
-import org.kohsuke.MetaInfServices;
 
 import com.sun.source.util.JavacTask;
+import org.kohsuke.MetaInfServices;
+import java.time.ZonedDateTime;
 
 @MetaInfServices(com.sun.source.util.Plugin.class)
 public class ProgQueryPlugin implements com.sun.source.util.Plugin {
@@ -14,13 +11,6 @@ public class ProgQueryPlugin implements com.sun.source.util.Plugin {
 
 	@Override
 	public void init(JavacTask task, String[] args) {
-		// final GraphDatabaseService graphDb = args.length > 0 ?
-		// DatabaseFachade.getDB(args[0]) : DatabaseFachade.getDB();
-		// First argument if any contents the db path
-		// DatabaseFachade.setDB(graphDb);
-		System.out.println(task.getClass());
-		System.out.println(task instanceof Serializable);
-
 		Thread.currentThread().setContextClassLoader(ProgQueryPlugin.class.getClassLoader());
 
 		final String ANONYMOUS_PROGRAM = "ANONYMOUS_PROGRAM_", ANONYMOUS_USER = "ANONYMOUS_USER";
@@ -40,15 +30,6 @@ public class ProgQueryPlugin implements com.sun.source.util.Plugin {
 
 		ProgQuery progquery = null;
 		//TODO: To be completed
-	}
-
-	private InsertionStrategy invalidArgs() {
-		throw new IllegalArgumentException("You need to specify the connection string to run PQ Server");
-	}
-
-	private InsertionStrategy serverTwoArgs(String arg2) {
-
-		return new Neo4jDriverLazyInsertion(arg2);
 	}
 
 	@Override

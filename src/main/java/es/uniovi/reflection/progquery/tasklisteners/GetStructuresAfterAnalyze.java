@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class GetStructuresAfterAnalyze implements TaskListener {
-    private static final boolean DEBUG = false;
     private final JavacTask task;
     private Map<JavaFileObject, Integer> classCounter = new HashMap<JavaFileObject, Integer>();
     private CompilationScheduler scheduler;

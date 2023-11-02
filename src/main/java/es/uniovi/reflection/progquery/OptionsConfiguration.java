@@ -1,7 +1,7 @@
 package es.uniovi.reflection.progquery;
 
 public class OptionsConfiguration {
-	private static final String copyrightMessage =  "ProgQuery 2.0 - Computational Reflection Research Group (University of Oviedo)\n";
+	private static final String copyrightMessage =  "ProgQuery 3.0.0 - Computational Reflection Research Group (University of Oviedo)\n";
 
 	public static final String helpMessage = copyrightMessage + "\nOptions:\n" +
 			"\t-help\n\t\tDisplays this usage message (Short form: -?).\n" +
@@ -47,7 +47,7 @@ public class OptionsConfiguration {
 	public static final String[] optionsAssignment = { "=" };
 	public static final boolean DEFAULT_VERBOSE = false;
 	public static final String DEFAULT_NEO4J_MODE = NEO4J_MODE_SERVER;
-	public static final String DEFAULT_NEO4J_PORT = "7687";
+	public static final String DEFAULT_NEO4J_PORT_NUMBER = "7687";
 	public static final String DEFAULT_NEO4J_USER = "neo4j";
 	public static final String DEFAULT_MAX_OPERATIONS_TRANSACTION = "80000";
 }

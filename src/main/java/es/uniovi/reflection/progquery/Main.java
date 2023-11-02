@@ -1,7 +1,5 @@
 package es.uniovi.reflection.progquery;
 
-import org.slf4j.LoggerFactory;
-
 import java.util.*;
 
 public class Main {
@@ -64,7 +62,7 @@ public class Main {
 
     private static void setDefaultParameters() {
         parameters.neo4j_user = OptionsConfiguration.DEFAULT_NEO4J_USER;
-        parameters.neo4j_port_number = OptionsConfiguration.DEFAULT_NEO4J_PORT;
+        parameters.neo4j_port_number = OptionsConfiguration.DEFAULT_NEO4J_PORT_NUMBER;
         parameters.neo4j_mode = OptionsConfiguration.DEFAULT_NEO4J_MODE;
         parameters.max_operations_transaction = OptionsConfiguration.DEFAULT_MAX_OPERATIONS_TRANSACTION;
         parameters.verbose = OptionsConfiguration.DEFAULT_VERBOSE;

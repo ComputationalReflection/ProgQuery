@@ -53,7 +53,7 @@ This command displays all the information about the parameters that can be used 
 * `-neo4j_database=<database_name>`: NEO4J Database name. (Default value is the -user parameter value, short form:`-ndb=<database_name>`).
 * `-neo4j_database_path=<database_path>`: NEO4J Database path, when Local mode is used. (Short form:`-ndbp=<database_path>`).
 * `-max_operations_transaction=<number>`: Maximum number of operations per transaction. (Default value is 80000, short form:`-mot=<number>`).
-* `-javac_options=\"<javac_options>\"`: Specifies the options used to run the Java compiler. (Short form:`-jo="<source_folder>"`).
+* `-javac_options=\"<javac_options>\"`: Specifies the options used to run the Java compiler. (Short form:`-jo="<javac_options>"`).
 * `-verbose`: Shows log info (Default value is `false`).
 
 ## References<a name="references"></a>

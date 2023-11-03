@@ -15,7 +15,7 @@ public class OptionsConfiguration {
 			"\t-neo4j_database=<database_name>\n\t\tNEO4J Database name. (Default value is the -user parameter value, short form:-ndb=<database_name>)\n" +
 			"\t-neo4j_database_path=<database_path>\n\t\tNEO4J Database path, when Local mode is used. (Short form:-ndbp=<database_path>)\n" +
 			"\t-max_operations_transaction=<number>\n\t\tMaximum number of operations per transaction. (Default value is 80000, short form:-mot=<number>)\n" +
-			"\t-javac_options=\"<javac_options>\"\n\t\tSpecifies the options used to run the Java compiler. (Short form:-jo=\"<source_folder>\")\n" +
+			"\t-javac_options=\"<javac_options>\"\n\t\tSpecifies the options used to run the Java compiler. (Short form:-jo=\"<javac_options>\")\n" +
 			"\t-verbose\n\t\tShows log info (Default value is false).\n" +
 			"\n";
 

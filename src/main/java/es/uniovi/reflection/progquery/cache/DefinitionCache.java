@@ -18,11 +18,10 @@ import java.util.Map;
 import java.util.Set;
 
 public class DefinitionCache<TKEY> {
-    private static final boolean DEBUG = false;
-    public static final DefinitionCache<TypeKey> TYPE_CACHE = new DefinitionCache<>();
-    public static final DefinitionCache<String> METHOD_DEF_CACHE = new DefinitionCache<>();
+    public static DefinitionCache<TypeKey> TYPE_CACHE = new DefinitionCache<>();
+    public static DefinitionCache<String> METHOD_DEF_CACHE = new DefinitionCache<>();
     private final Map<TKEY, NodeWrapper> auxNodeCache = new HashMap<>();
-    final Map<TKEY, NodeWrapper> definitionNodeCache = new HashMap<>();
+    protected final Map<TKEY, NodeWrapper> definitionNodeCache = new HashMap<>();
     public void put(TKEY k, NodeWrapper v) {
         if (auxNodeCache.containsKey(k))
             throw new IllegalArgumentException("Key " + k + " twice ");

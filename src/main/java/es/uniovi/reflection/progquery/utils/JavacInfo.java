@@ -25,7 +25,6 @@ import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeInfo;
 
 public class JavacInfo {
-
 	private static JavacInfo currentJavacInfo;
 	public static boolean isInitialized(){
 		return currentJavacInfo!=null;

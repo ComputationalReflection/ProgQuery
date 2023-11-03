@@ -15,7 +15,6 @@ import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 
 public class InfoToInsert {
-
 	final List<NodeWrapper> nodeSet = new ArrayList<>();
 	final List<RelationshipWrapper> relSet = new ArrayList<>();
 	public List<NodeWrapper> getNodeSet() {
@@ -24,7 +23,7 @@ public class InfoToInsert {
 	public List<RelationshipWrapper> getRelSet() {
 		return Collections.unmodifiableList(relSet);
 	}
-	public static final InfoToInsert INFO_TO_INSERT = new InfoToInsert();
+	public static InfoToInsert INFO_TO_INSERT = new InfoToInsert();
 	public void addNewNode(Neo4jLazyNode newNode) {
 		nodeSet.add(newNode);
 	}

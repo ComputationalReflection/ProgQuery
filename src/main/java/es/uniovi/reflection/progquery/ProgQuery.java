@@ -1,4 +1,9 @@
 package es.uniovi.reflection.progquery;
+import es.uniovi.reflection.progquery.cache.DefinitionCache;
+import es.uniovi.reflection.progquery.database.insertion.lazy.InfoToInsert;
+import es.uniovi.reflection.progquery.typeInfo.PackageInfo;
+import es.uniovi.reflection.progquery.utils.JavacInfo;
+
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,5 +36,13 @@ public class ProgQuery {
             compilationScheduler.newCompilationTask(javac_options);
         compilationScheduler.endAnalysis();
         ProgQuery.LOGGER.info("Analysis completed");
+    }
+
+    public static void resetCaches(){
+        DefinitionCache.TYPE_CACHE = new DefinitionCache<>();
+        DefinitionCache.METHOD_DEF_CACHE = new DefinitionCache<>();
+        PackageInfo.PACKAGE_INFO = new PackageInfo();
+        InfoToInsert.INFO_TO_INSERT = new InfoToInsert();
+        JavacInfo.setJavacInfo(null);
     }
 }

@@ -17,19 +17,13 @@ public class MethodState {
 	public SimpleTreeNodeCache<Tree> cfgNodeCache;
 	public Map<Tree, Pair<NodeWrapper, NodeWrapper>> finallyCache;
 	public Map<TryTree, List<Pair<NodeWrapper, List<MethodSymbol>>>> invocationsInStatements;
-
 	public NodeWrapper lastMethodDecVisited = null;
-
-
 	public Map<NodeWrapper, NodeWrapper> identificationForLeftAssignExprs;
-//	public Map<NodeWrapper, Boolean> instanceAssignsXX;
-
 	public PDGRelationTypes thisRelationsOnThisMethod;
 	public NodeWrapper thisNode;
 	public Map<NodeWrapper, PDGRelationTypes> paramsToPDGRelations;
 	public Map<NodeWrapper,Set<NodeWrapper>> callsToParamsPreviouslyModified,callsToParamsMaybePreviouslyModified;
-	
-	
+
 	public MethodState(NodeWrapper methodDec) {
 		thisRelationsOnThisMethod = null;
 		identificationForLeftAssignExprs = new HashMap<>();
@@ -37,12 +31,10 @@ public class MethodState {
 		invocationsInStatements = new HashMap<TryTree, List<Pair<NodeWrapper, List<MethodSymbol>>>>();
 		cfgNodeCache = new SimpleTreeNodeCache<Tree>();
 		finallyCache = new HashMap<Tree, Pair<NodeWrapper, NodeWrapper>>();
-//		instanceAssigns = new HashMap<>();  
 		paramsToPDGRelations = new HashMap<>();
 		callsToParamsPreviouslyModified = new HashMap<>();
 		callsToParamsMaybePreviouslyModified = new HashMap<>();
-		
-	} 
+	}
 
 	public void putCfgNodeInCache(Tree t, NodeWrapper n) {
 		cfgNodeCache.put(t, n);

@@ -24,16 +24,8 @@ public class SimplePartialRelation<T extends RelationTypesInterface> implements 
 	public T getRelationType() {
 		return relationType;
 	}
-
-	// private static int i = 0;
-
 	@Override
 	public RelationshipWrapper createRelationship(NodeWrapper endNode) {
-		//
-		// if (startingNode.hasLabel(NodeTypes.CFG_LAST_STATEMENT_IN_FINALLY) &&
-		// endNode.hasLabel(NodeTypes.FINALLY_BLOCK)
-		// && ++i == 4)
-		// throw new IllegalStateException();
 		return startingNode.createRelationshipTo(endNode, relationType);
 	}
 

@@ -12,7 +12,6 @@ public class Neo4jDriverLazyInsertion extends NotPersistentLazyInsertion{
 	public Neo4jDriverLazyInsertion(String connectionString) {
 		this(DEFAULT_MAX, connectionString);
 	}
-
 	public Neo4jDriverLazyInsertion(int maxNodes, String connectionString) {
 		super();
 		MAX_OPERATIONS_PER_TRANSACTION = maxNodes;

@@ -16,14 +16,9 @@ import es.uniovi.reflection.progquery.database.relations.RelationTypesInterface;
 
 public class Neo4jEmbeddedWrapperNode implements NodeWrapper {
 	private Node node;
-//	public static int counter = 0;
 
 	public Neo4jEmbeddedWrapperNode(Node node) {
 		this.node = node;
-//		counter++;
-//		System.out.println("CREATING NODE " + node.getId());
-		// if(node.getId()==2393)
-		// throw new IllegalStateException();
 	}
 	
 	public Node getNode() {
@@ -32,46 +27,36 @@ public class Neo4jEmbeddedWrapperNode implements NodeWrapper {
 
 	@Override
 	public void setProp(String name, Object value) {
-
 		node.setProperty(name, value);
-
 	}
 
 	@Override
 	public boolean hasProperty(String string) {
-		// TODO Auto-generated method stub
 		return node.hasProperty(string);
 	}
 
 	@Override
 	public Object getProperty(String string) {
-		// TODO Auto-generated method stub
 		return node.getProperty(string);
 	}
 
 	@Override
 	public Set<Entry<String, Object>> getAllProperties() {
-		// TODO Auto-generated method stub
 		return node.getAllProperties().entrySet();
 	}
 
 	@Override
 	public Long getId() {
-		// TODO Auto-generated method stub
 		return node.getId();
 	}
 
 	@Override
 	public RelationshipWrapper createRelationshipTo(NodeWrapper end, RelationTypesInterface relType) {
-
 		return new Neo4jEmbeddedWrapperRel(node.createRelationshipTo(((Neo4jEmbeddedWrapperNode) end).node, relType));
 	}
 
 	private List<RelationshipWrapper> fromIterToList(Iterable<Relationship> iter) {
-		// TODO Auto-generated method stub
 		List<RelationshipWrapper> res = new ArrayList<RelationshipWrapper>();
-		// for (Relationship r : iter)
-		// System.out.println(r);
 		for (Relationship r : iter)
 			res.add(new Neo4jEmbeddedWrapperRel(r));
 		return res;
@@ -84,7 +69,6 @@ public class Neo4jEmbeddedWrapperNode implements NodeWrapper {
 
 	@Override
 	public RelationshipWrapper getSingleRelationship(Direction direction, RelationTypesInterface relType) {
-		// TODO Auto-generated method stub
 		Relationship rel = node.getSingleRelationship(relType, direction);
 		return rel == null ? null : new Neo4jEmbeddedWrapperRel(rel);
 	}
@@ -93,13 +77,11 @@ public class Neo4jEmbeddedWrapperNode implements NodeWrapper {
 	@Override
 	public List<RelationshipWrapper> getRelationships(Direction direction,
 			RelationTypesInterface... possibleRelTypes) {
-		// System.out.println(NodeUtils.nodeToString(node));
 		return fromIterToList(node.getRelationships(direction, possibleRelTypes));
 	}
 
 	@Override
 	public boolean hasRelationship(RelationTypesInterface relType, Direction direction) {
-		// TODO Auto-generated method stub
 		return node.hasRelationship(direction, relType);
 	}
 
@@ -112,7 +94,6 @@ public class Neo4jEmbeddedWrapperNode implements NodeWrapper {
 
 	@Override
 	public boolean hasLabel(Label label) {
-		// TODO Auto-generated method stub
 		return node.hasLabel(label);
 	}
 
@@ -123,16 +104,11 @@ public class Neo4jEmbeddedWrapperNode implements NodeWrapper {
 
 	@Override
 	public void addLabel(Label label) {
-
 		node.addLabel(label);
-
 	}
 
 	@Override
 	public void delete() {
-//		counter--;
-		// node.getRelationships().forEach(r -> r.delete());
-//		System.out.println("DELETING "+NodeUtils.nodeToStringNoRels(this));
 		node.delete();
 	}
 
@@ -143,20 +119,8 @@ public class Neo4jEmbeddedWrapperNode implements NodeWrapper {
 
 	@Override
 	public List<RelationshipWrapper> getRelationships(Direction direction) {
-		
-		// TODO Auto-generated method stub
 		return fromIterToList(node.getRelationships(direction));
 	}
-
-//	@Override
-//	public void removeIncomingRel(RelationshipWrapper neo4jLazyServerDriverRelationship) {
-//
-//	}
-//
-//	@Override
-//	public void removeOutgoingRel(RelationshipWrapper neo4jLazyServerDriverRelationship) {
-//
-//	}
 
 	@Override
 	public int hashCode() {
@@ -187,5 +151,4 @@ public class Neo4jEmbeddedWrapperNode implements NodeWrapper {
 	public String toString() {
 		return NodeUtils.reducedClassMethodToString(this);
 	}
-
 }

@@ -16,8 +16,6 @@ abstract class AbstractNeo4jLazyServerDriverElement implements Propertiable {
 
 	public void setProp(String name, Object value) {
 		properties.put(name, value);
-//		if(value.toString().contentEquals("examples.util.EnumExample:valueOf"))
-//			throw new IllegalStateException();
 	}
 
 	public boolean hasProperty(String name) {
@@ -30,7 +28,6 @@ abstract class AbstractNeo4jLazyServerDriverElement implements Propertiable {
 	}
 
 	public Set<Entry<String, Object>> getAllProperties() {
-		// TODO Auto-generated method stub
 		return properties.entrySet();
 	}
 

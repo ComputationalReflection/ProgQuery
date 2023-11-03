@@ -16,8 +16,6 @@ public class Neo4jEmbeddedWrapperRel implements RelationshipWrapper {
 
 	public Neo4jEmbeddedWrapperRel(Relationship relationship) {
 		super();
-		// if(relationship==null)
-		// throw new IllegalArgumentException();
 		this.relationship = relationship;
 	}
 
@@ -28,25 +26,21 @@ public class Neo4jEmbeddedWrapperRel implements RelationshipWrapper {
 
 	@Override
 	public boolean hasProperty(String string) {
-		// TODO Auto-generated method stub
 		return relationship.hasProperty(string);
 	}
 
 	@Override
 	public Object getProperty(String string) {
-		// TODO Auto-generated method stub
 		return relationship.getProperty(string);
 	}
 
 	@Override
 	public Set<Entry<String, Object>> getAllProperties() {
-		// TODO Auto-generated method stub
 		return relationship.getAllProperties().entrySet();
 	}
 
 	@Override
 	public RelationTypesInterface getType() {
-		// TODO Auto-generated method stub
 		return nameToEnum(relationship.getType().name());
 	}
 
@@ -69,14 +63,11 @@ public class Neo4jEmbeddedWrapperRel implements RelationshipWrapper {
 
 	@Override
 	public NodeWrapper getStartNode() {
-		// TODO Auto-generated method stub
 		return new Neo4jEmbeddedWrapperNode(relationship.getStartNode());
 	}
 
 	@Override
 	public NodeWrapper getEndNode() {
-		// TODO Auto-generated method stub
-		// System.out.println(relationship);
 		return new Neo4jEmbeddedWrapperNode(relationship.getEndNode());
 	}
 
@@ -87,7 +78,6 @@ public class Neo4jEmbeddedWrapperRel implements RelationshipWrapper {
 
 	@Override
 	public String getTypeString() {
-		// TODO Auto-generated method stub
 		return relationship.getType().name();
 	}
 
@@ -115,5 +105,4 @@ public class Neo4jEmbeddedWrapperRel implements RelationshipWrapper {
 			return false;
 		return true;
 	}
-
 }

@@ -9,7 +9,6 @@ import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.dbms.api.DatabaseManagementServiceBuilder;
 
 public class EmbeddedDBBuilder {
-
     private static final String DEFAULT_DB_DIR = "", DEFAULT_DB_NAME = "neo4j";
 
     private DatabaseManagementService manager;

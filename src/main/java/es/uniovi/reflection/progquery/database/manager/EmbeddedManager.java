@@ -13,7 +13,9 @@ import org.neo4j.graphdb.Transaction;
 import java.util.List;
 
 public class EmbeddedManager implements NEO4JManager{
+
     private Transaction currentTransaction;
+
     public EmbeddedManager(Transaction currentTransaction) {
         this.currentTransaction = currentTransaction;
     }
@@ -27,5 +29,6 @@ public class EmbeddedManager implements NEO4JManager{
     }
 
     @Override
-    public void close() {  }
+    public void close() {
+    }
 }

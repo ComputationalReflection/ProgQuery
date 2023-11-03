@@ -47,6 +47,7 @@ public class EmbeddedInsertion implements InsertionStrategy {
         return wrapper;
     }
 
+
     @Override
     public Neo4jEmbeddedWrapperNode createNode(Object[] props) {
         Neo4jEmbeddedWrapperNode wrapper = createNode();
@@ -77,5 +78,4 @@ public class EmbeddedInsertion implements InsertionStrategy {
     public NEO4JManager getManager() {
         return new EmbeddedManager(currentTransaction);
     }
-
 }

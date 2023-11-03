@@ -11,7 +11,6 @@ public class Parameters {
     public String neo4j_host = "";
     public String neo4j_port_number = "";
     public String max_operations_transaction = "";
-    public String class_path = "";
     public boolean verbose;
-    public String sourceFolder = "";    
+    public String javac_options = "";
 }

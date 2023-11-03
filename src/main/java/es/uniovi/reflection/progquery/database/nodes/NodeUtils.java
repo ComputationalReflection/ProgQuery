@@ -13,7 +13,6 @@ public class NodeUtils {
 	public static String getNameFromDec(NodeWrapper dec) {
 		return dec.hasLabel(NodeTypes.THIS_REF) ? "THIS" : (String) dec.getProperty("name");
 	}
-
 	public static String nodeToString(NodeWrapper n) {
 		if (n == null)
 			return "NULL";
@@ -85,7 +84,6 @@ public class NodeUtils {
 									? r.getStartNode().getLabels().iterator().next() : "NO LABEL")
 							+ "(ID " + r.getStartNode().getId() + ")" + (r.getStartNode().hasProperty("lineNumber")
 									? "(line " + r.getStartNode().getProperty("lineNumber") + ")" : ""))
-
 					+ "\n";
 			for (Entry<String, Object> prop : r.getAllProperties().entrySet())
 				res += prop.getKey() + "=" + prop.getValue() + "\n";
@@ -94,7 +92,6 @@ public class NodeUtils {
 			res += "Label:\t" + label.name() + "\n";
 		for (Entry<String, Object> prop : n.getAllProperties().entrySet())
 			res += prop.getKey() + "=" + prop.getValue() + "\n";
-
 		return res;
 	}
 }

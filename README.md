@@ -33,8 +33,8 @@ java -jar ProgQuery-3.0.0.jar -user="<user_id>" -program="<program_id>" -neo4j_m
 ````
 * `-user`: (Mandatory param) It specifies User id.
 * `-program`: (Mandatory param) It specifies Program id.
-* `-neo4j_mode`: (Mandatory param) It specifies the NEO4J mode: local or server.
-* `-neo4j_database_path`: (Mandatory param, when NEO4J mode local is used) It specifies the path to the directory where the database will be stored.
+* `-neo4j_mode`: (Mandatory param) It specifies the Neo4j mode: local or server.
+* `-neo4j_database_path`: (Mandatory param, when Neo4j mode local is used) It specifies the path to the directory where the database will be stored.
 * `-javac_options`: (Mandatory param) It specifies the options used to run the Java compiler p.e. `-d .\Example\target\classes -classpath .\Example\target\classes; -sourcepath .\Example\src\main\java; -g -nowarn -target 8 -source 8`  
 
 - After the compilation process a single overlapped graph containing these 7 structures is included in a Neo4j graph database.
@@ -53,7 +53,7 @@ IEEE Access, volume 8, pp. 72239-72260.
 December 2020.
 
 <a id="2">[2]</a>
-Oscar Rodriguez-Prieto
+Oscar Rodriguez-Prieto.
 [Big Code infrastructure for building tools to improve software development](https://reflection.uniovi.es/ortin/theses/oscar.pdf).
 Ph.D. Thesis at the Computer Science Department of the [University of Oviedo](https://www.uniovi.es).
 Ph.D. Supervisor, Dr. [Francisco Ortin](https://reflection.uniovi.es/ortin/index.html).

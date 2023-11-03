@@ -13,8 +13,6 @@ For each program or compilation unit, ProgQuery extracts the following graph str
 ## Step 1: Install Maven
 ProgQuery will need Maven in order to solve the binaries dependencies needed to make it work. Unless you have Maven already installed, you have to do so. You can download it [here](https://maven.apache.org/download.cgi) and follow its installation process in the [following link](https://maven.apache.org/install.html).
 
-You also need to set M2_HOME as environment variable in your system since it is required by Static Code Analysis tool. Otherwise, an exception will be raised.
-
 ## Step 2: Clone the ProgQuery repository and generate the .jar file
 Next step consists on cloning the repository of ProgQuery project and generating .jar . Once you have cloned the repository in your computer, move to the cloned local repository you have just created and execute the following command:
 ```shell
@@ -44,6 +42,19 @@ java -jar ProgQuery-3.0.0.jar -user="<user_id>" -program="<program_id>" -neo4j_m
 java -jar ProgQuery-3.0.0.jar -help
 ````
 This command displays all the information about the parameters that can be used with .jar file.
+
+* `-user=<user_id>`: User id. (Short form:`-u=<user_id>`).
+* `-program=<program_id>`: Program identifier. (Short form:`-p=<program_id>`).
+* `-neo4j_mode={local,server}`: NEO4J mode: local or server. (Default value is server, short form:`-nm={local,server}`).
+* `-neo4j_user=<user_name>`: NEO4J User name. (Default value is neo4j, short form:`-nu=<user_name>`).
+* `-neo4j_password=<user_password>`: User password. (Short form:`-np=<user_pasword>`).
+* `-neo4j_host=<host>`: NEO4J Host address. (Short form:`-nh=<host>`).
+* `-neo4j_port_number=<port_number>`: NEO4J Port number. (Default value is 7687, short form:`-npn=<port_number>`).
+* `-neo4j_database=<database_name>`: NEO4J Database name. (Default value is the -user parameter value, short form:`-ndb=<database_name>`).
+* `-neo4j_database_path=<database_path>`: NEO4J Database path, when Local mode is used. (Short form:`-ndbp=<database_path>`).
+* `-max_operations_transaction=<number>`: Maximum number of operations per transaction. (Default value is 80000, short form:`-mot=<number>`).
+* `-javac_options=\"<javac_options>\"`: Specifies the options used to run the Java compiler. (Short form:`-jo="<source_folder>"`).
+* `-verbose`: Shows log info (Default value is `false`).
 
 ## References<a name="references"></a>
 <a id="1">[1]</a>

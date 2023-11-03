@@ -1,6 +1,9 @@
 package es.uniovi.reflection.progquery;
 
-public class Parameters {	       
+import java.util.ArrayList;
+import java.util.List;
+
+public class Parameters {
     public String userId = "";
     public String programId = "";
     public String neo4j_database = "";
@@ -12,5 +15,5 @@ public class Parameters {
     public String neo4j_port_number = "";
     public String max_operations_transaction = "";
     public boolean verbose;
-    public String javac_options = "";
+    public List<String> javac_options = new ArrayList<>();
 }

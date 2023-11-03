@@ -26,8 +26,10 @@ public class ProgQuery {
     }
 
     public void analyze(List<String> javac_options_list) {
+        ProgQuery.LOGGER.info("Analysis started");
         for (String javac_options:javac_options_list)
             compilationScheduler.newCompilationTask(javac_options);
         compilationScheduler.endAnalysis();
+        ProgQuery.LOGGER.info("Analysis completed");
     }
 }

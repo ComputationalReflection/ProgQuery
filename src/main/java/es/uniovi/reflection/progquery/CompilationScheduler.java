@@ -33,11 +33,13 @@ public class CompilationScheduler {
     private static final boolean MERGING_ALLOWED = true;
 
     public CompilationScheduler(String neo4j_host, String neo4j_port, String neo4j_user, String neo4j_password, String neo4j_database, String programID, String userID) { //TODO: Passing Max Operation Transaction
+        ProgQuery.LOGGER.info(String.format("New Compilation Scheduler: %s:%s:%s:%s:%s:%s",neo4j_host, neo4j_port, neo4j_user, neo4j_database,userID,programID));
         DatabaseFacade.init(new Neo4jDriverLazyInsertion(neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_database, OptionsConfiguration.DEFAULT_MAX_OPERATIONS_TRANSACTION));
         setCurrentProgram(programID,userID);
     }
 
     public CompilationScheduler(String neo4j_database_path, String programID, String userID) {
+        ProgQuery.LOGGER.info(String.format("New Compilation Scheduler: %s:%s:%s",neo4j_database_path,userID,programID));
         DatabaseFacade.init(new EmbeddedInsertion(neo4j_database_path));
         setCurrentProgram(programID,userID);
     }
@@ -137,6 +139,7 @@ public class CompilationScheduler {
     }
 
     public void endAnalysis() {
+        ProgQuery.LOGGER.info("Finishing analysis...");
         pdgUtils.createNotDeclaredAttrRels(ast);
         createStoredPackageDeps();
         dynamicMethodCallAnalysis();

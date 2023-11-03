@@ -15,7 +15,7 @@ public class OptionsConfiguration {
 			"\t-neo4j_database=<database_name>\n\t\tNEO4J Database name. (Default value is the -user parameter value, short form:-ndb=<database_name>)\n" +
 			"\t-neo4j_database_path=<database_path>\n\t\tNEO4J Database path, when Local mode is used. (Short form:-ndbp=<database_path>)\n" +
 			"\t-max_operations_transaction=<number>\n\t\tMaximum number of operations per transaction. (Default value is 80000, short form:-mot=<number>)\n" +
-			"\t-javac_options=\"<javac_options>\"\n\t\tSpecifies the options used to run the Java compiler. (Short form:-jo=\"<javac_options>\")\n" +
+			"\t\"javac_options_1\" ... \"javac_options_n\"\n\t\tA list of sets of options between \" separated by white spaces used to run the Java compiler several times.\n" +
 			"\t-verbose\n\t\tShows log info (Default value is false).\n" +
 			"\n";
 
@@ -23,9 +23,9 @@ public class OptionsConfiguration {
 	public static final String noUser = copyrightMessage + "\nNo user specified. Type -help for help.\n";
 	public static final String noProgram = copyrightMessage + "\nNo program specified. Type -help for help.\n";
 	public static final String noHost = copyrightMessage + "\nNo NEO4J host specified. Type -help for help.\n";
+	public static final String noJavacOptions = copyrightMessage + "\nNo javac options specified. Type -help for help.\n";
 	public static final String noPassword = copyrightMessage + "\nNo NEO4J user password specified. Type -help for help.\n";
 	public static final String noDataBasePath = copyrightMessage + "\nNo database path specified using NEO4J local mode. Type -help for help.\n";
-	public static final String noJavacOptions = copyrightMessage + "\nNo javac options specified. Type -help for help.\n";
 	public static final String unknownNEO4JMode = copyrightMessage + "\nUnknown neo4j mode option. Type -help for help.\n";
 	public static final String NEO4J_MODE_SERVER = "server";
 	public static final String NEO4J_MODE_LOCAL = "local";
@@ -41,7 +41,6 @@ public class OptionsConfiguration {
 	public static final String[] neo4j_hostOptions = { "neo4j_host","nh" };
 	public static final String[] neo4j_port_numberOptions = { "neo4j_port_number","npn" };
 	public static final String[] max_operations_transactionOptions = { "max_operations_transaction","mot" };
-	public static final String[] javac_optionsOptions = { "javac_options", "jo" };
 	public static final String[] verboseOptions = { "verbose" };
 	public static final String[] optionsPrefix = { "-" };
 	public static final String[] optionsAssignment = { "=" };

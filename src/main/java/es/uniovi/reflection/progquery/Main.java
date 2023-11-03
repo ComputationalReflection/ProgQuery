@@ -3,24 +3,27 @@ package es.uniovi.reflection.progquery;
 import java.util.*;
 
 public class Main {
-
-    //-user=progquery -program=ExampleClasses -neo4j_database_path="C:\Users\Miguel\Source\codeanalysis\codeanalysis-tool\Programs\ExampleClasses\target\neo4j"
-    //      -jo="-d C:\Users\Miguel\Source\codeanalysis\codeanalysis-tool\Programs\ExampleClasses\target\classes -classpath C:\Users\Miguel\Source\codeanalysis\codeanalysis-tool\Programs\ExampleClasses\target\classes; -sourcepath C:\Users\Miguel\Source\codeanalysis\codeanalysis-tool\Programs\ExampleClasses\src\main\java; -g -nowarn -target 8 -source 8"
+    //Example
+    //-user=progquery -program=ExampleClasses -neo4j_database_path="C:\Users\Miguel\Source\codeanalysis\codeanalysis-tool\Programs\ExampleClasses\target\neo4j" -neo4j_mode=local "-d C:\Users\Miguel\Source\codeanalysis\codeanalysis-tool\Programs\ExampleClasses\target\classes -classpath C:\Users\Miguel\Source\codeanalysis\codeanalysis-tool\Programs\ExampleClasses\target\classes; -sourcepath C:\Users\Miguel\Source\codeanalysis\codeanalysis-tool\Programs\ExampleClasses\src\main\java; -g -nowarn -target 8 -source 8"
     public static Parameters parameters = new Parameters();
 
     public static void main(String[] args) {
         parseArguments(args);
         ProgQuery progquery = parameters.neo4j_mode.equals(OptionsConfiguration.NEO4J_MODE_SERVER) ?
-                new ProgQuery(parameters.neo4j_host,parameters.neo4j_port_number,parameters.neo4j_user,parameters.neo4j_password,parameters.neo4j_database,parameters.programId,parameters.userId, parameters.verbose):
-                new ProgQuery(parameters.neo4j_database_path,parameters.programId,parameters.userId, parameters.verbose);
-        progquery.analyze(Collections.singletonList(parameters.javac_options));
+                new ProgQuery(parameters.neo4j_host,parameters.neo4j_port_number,parameters.neo4j_user,parameters.neo4j_password,parameters.neo4j_database,parameters.userId,parameters.programId, parameters.verbose):
+                new ProgQuery(parameters.neo4j_database_path,parameters.userId,parameters.programId,parameters.verbose);
+        progquery.analyze(parameters.javac_options);
     }
 
     private static void parseArguments(String[] args) {
         setDefaultParameters();
-        List<String> inputFileNames = new ArrayList<String>();
         for (String parameter : args) {
-            parseParameter(parameter, inputFileNames);
+            parseParameter(parameter);
+        }
+        if (parameters.javac_options.isEmpty()) {
+            System.out.println(OptionsConfiguration.noJavacOptions);
+            System.exit(2);
+            return;
         }
         if (parameters.userId.isEmpty()) {
             System.out.println(OptionsConfiguration.noUser);
@@ -54,10 +57,6 @@ public class Main {
                 return;
             }
         }
-        if (parameters.javac_options.isEmpty()) {
-            System.out.println(OptionsConfiguration.noJavacOptions);
-            System.exit(2);
-        }
     }
 
     private static void setDefaultParameters() {
@@ -68,17 +67,17 @@ public class Main {
         parameters.verbose = OptionsConfiguration.DEFAULT_VERBOSE;
     }
 
-    private static void parseParameter(String parameter, List<String> inputFiles) {
+    private static void parseParameter(String parameter) {
         for (String parameterPrefix : OptionsConfiguration.optionsPrefix) {
             if (parameter.startsWith(parameterPrefix)) {
-                parseOption(parameter.substring(parameterPrefix.length()).toLowerCase());
-                return;
+                if(parseOption(parameter.substring(parameterPrefix.length()).toLowerCase()))
+                    return;
             }
         }
-        inputFiles.add(parameter);
+        parameters.javac_options.add(parameter);
     }
 
-    private static void parseOption(String option) {
+    private static boolean parseOption(String option) {
         for (String opString : OptionsConfiguration.helpOptions) {
             if (option.equals(opString)) {
                 System.out.println(OptionsConfiguration.helpMessage);
@@ -88,55 +87,49 @@ public class Main {
         for (String opString : OptionsConfiguration.userOptions) {
             if (option.startsWith(opString)) {
                 parameters.userId = parseValue(option.substring(opString.length()));
-                return;
+                return true;
             }
         }
         for (String opString : OptionsConfiguration.programOptions) {
             if (option.startsWith(opString)) {
                 parameters.programId = parseValue(option.substring(opString.length()));
-                return;
+                return true;
             }
         }
         for (String opString : OptionsConfiguration.neo4j_database_pathOptions) {
             if (option.startsWith(opString)) {
                 parameters.neo4j_database_path = parseValue(option.substring(opString.length()));
-                return;
+                return true;
             }
         }
         for (String opString : OptionsConfiguration.neo4j_databaseOptions) {
             if (option.startsWith(opString)) {
                 parameters.neo4j_database = parseValue(option.substring(opString.length()));
-                return;
+                return true;
             }
         }
         for (String opString : OptionsConfiguration.neo4j_userOptions) {
             if (option.startsWith(opString)) {
                 parameters.neo4j_user = parseValue(option.substring(opString.length()));
-                return;
+                return true;
             }
         }
         for (String opString : OptionsConfiguration.neo4j_passwordOptions) {
             if (option.startsWith(opString)) {
                 parameters.neo4j_password = parseValue(option.substring(opString.length()));
-                return;
-            }
-        }
-        for (String opString : OptionsConfiguration.javac_optionsOptions) {
-            if (option.startsWith(opString)) {
-                parameters.javac_options = parseValue(option.substring(opString.length()));
-                return;
+                return true;
             }
         }
         for (String opString : OptionsConfiguration.neo4j_hostOptions) {
             if (option.startsWith(opString)) {
                 parameters.neo4j_host = parseValue(option.substring(opString.length()));
-                return;
+                return true;
             }
         }
         for (String opString : OptionsConfiguration.neo4j_port_numberOptions) {
             if (option.startsWith(opString)) {
                 parameters.neo4j_port_number = parseValue(option.substring(opString.length()));
-                return;
+                return true;
             }
         }
         for (String opString : OptionsConfiguration.neo4j_modeOptions) {
@@ -147,23 +140,22 @@ public class Main {
                     System.exit(2);
                 }
                 parameters.neo4j_mode = modeOption;
-                return;
+                return true;
             }
         }
         for (String opString : OptionsConfiguration.max_operations_transactionOptions) {
             if (option.startsWith(opString)) {
                 parameters.max_operations_transaction = parseValue(option.substring(opString.length()));
-                return;
+                return true;
             }
         }
         for (String opString : OptionsConfiguration.verboseOptions) {
             if (option.startsWith(opString)) {
                 parameters.verbose = true;
-                return;
+                return true;
             }
         }
-        System.err.println(OptionsConfiguration.errorMessage);
-        System.exit(1);  // 1 == Unknown option
+        return false;
     }
 
     private static String parseValue(String value) {

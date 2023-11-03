@@ -1,5 +1,5 @@
 # ProgQuery
-ProgQuery is a system to extract syntactic and semantic information from source code programs and store it in a Neo4j graph database for posterior analysis. 
+[ProgQuery](https://www.reflection.uniovi.es/bigcode/download/2020/ieee-access/) is a system to extract syntactic and semantic information from source code programs and store it in a Neo4j graph database for posterior analysis. 
 For each program or compilation unit, ProgQuery extracts the following graph structures:
 - Abstract Syntax Tree
 - Call Graph
@@ -45,3 +45,19 @@ java -jar ProgQuery-3.0.0.jar -help
 ````
 This command displays all the information about the parameters that can be used with .jar file.
 
+## References<a name="references"></a>
+<a id="1">[1]</a>
+Oscar Rodriguez-Prieto, Alan Mycroft, [Francisco Ortin](https://reflection.uniovi.es/ortin/index.html).
+[An efficient and scalable platform for Java source code analysis using overlaid graph representations](https://doi.org/10.1109/ACCESS.2020.2987631).
+IEEE Access, volume 8, pp. 72239-72260.
+December 2020.
+
+<a id="2">[2]</a>
+Oscar Rodriguez-Prieto
+[Big Code infrastructure for building tools to improve software development](https://reflection.uniovi.es/ortin/theses/oscar.pdf).
+Ph.D. Thesis at the Computer Science Department of the [University of Oviedo](https://www.uniovi.es).
+Ph.D. Supervisor, Dr. [Francisco Ortin](https://reflection.uniovi.es/ortin/index.html).
+June 2020.
+
+## More information
+* https://www.reflection.uniovi.es

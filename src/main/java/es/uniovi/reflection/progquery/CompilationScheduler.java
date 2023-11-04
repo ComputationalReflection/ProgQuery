@@ -60,32 +60,37 @@ public class CompilationScheduler {
     }
 
     public void newCompilationTask(String javac_options) {
-        ProgQuery.LOGGER.info(String.format("New Compilation Task: %s", javac_options));
-        List<String> options = parseOptions(javac_options);
-        String sourcepath = options.stream().filter(o-> o.startsWith("-sourcepath")).findFirst().orElse("");
-        List<File> files = new ArrayList<>();
-        if(!sourcepath.isEmpty()) {
-            for (String sourceFolder : sourcepath.substring(12).split(File.pathSeparator))
-                files.addAll(listFiles(sourceFolder));
+        try {
+            ProgQuery.LOGGER.info(String.format("New Compilation Task: %s", javac_options));
+            List<String> options = parseOptions(javac_options);
+            String sourcepath = options.stream().filter(o -> o.startsWith("-sourcepath")).findFirst().orElse("");
+            List<File> files = new ArrayList<>();
+            if (!sourcepath.isEmpty()) {
+                for (String sourceFolder : sourcepath.substring(12).split(File.pathSeparator))
+                    files.addAll(listFiles(new File(sourceFolder).getCanonicalPath()));
+            }
+
+            for (String sourceFile : options.stream().filter(o -> !o.startsWith("-")).filter(o -> o.endsWith(".java")).collect(Collectors.toList()))
+                files.add(Paths.get(new File(sourceFile).getCanonicalPath()).toAbsolutePath().toFile());
+
+            List<String> task_options = new ArrayList<>();
+            for (String option : options.stream().filter(o -> o.startsWith("-") && !o.startsWith("-sourcepath")).collect(Collectors.toList()))
+                task_options.addAll(Arrays.asList(option.split(" ")));
+
+            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+            StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, Charset.forName("UTF-8"));
+            Iterable<? extends JavaFileObject> sources = fileManager.getJavaFileObjectsFromFiles(files);
+
+            JavacTaskImpl compilerTask =
+                    (JavacTaskImpl) compiler.getTask(null, null, diagnostics, task_options, null, sources);
+
+            addListener(compilerTask, StreamSupport.stream(sources.spliterator(), false).collect(Collectors.toSet()));
+            runPQCompilationTask(compilerTask);
+            showErrors(diagnostics);
+        }catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
         }
-
-        for (String sourceFile:options.stream().filter(o->!o.startsWith("-")).filter( o-> o.endsWith(".java")).collect(Collectors.toList()))
-            files.add(Paths.get(sourceFile).toAbsolutePath().toFile());
-
-        List<String> task_options = new ArrayList<>();
-        for(String option:options.stream().filter(o-> o.startsWith("-") && !o.startsWith("-sourcepath")).collect(Collectors.toList()))
-            task_options.addAll(Arrays.asList(option.split(" ")));
-
-        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, Charset.forName("UTF-8"));
-        Iterable<? extends JavaFileObject> sources = fileManager.getJavaFileObjectsFromFiles(files);
-
-        JavacTaskImpl compilerTask =
-                (JavacTaskImpl) compiler.getTask(null, null, diagnostics, task_options , null, sources);
-
-        addListener(compilerTask, StreamSupport.stream(sources.spliterator(), false).collect(Collectors.toSet()));
-        runPQCompilationTask(compilerTask);
-        showErrors(diagnostics);
     }
 
     public static List<String> parseOptions(String options){

@@ -1,5 +1,8 @@
 package es.uniovi.reflection.progquery;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,48 +26,23 @@ public class ProgQueryParameters {
             "\t-verbose\n\t\tShows log info (Default value is false).\n" +
             "\n";
 
-    public String copyrightMessage;
-    public String helpMessage;
-    public String errorMessage;
-    public String noUserMessage;
-    public String noProgramMessage;
-    public String noHostMessage;
-    public String noJavacOptionsMessage;
-    public String noPasswordMessage;
-    public String noDataBasePathMessage;
-    public String unknownNEO4JModeMessage;
-    public String userId = "";
-    public String programId = "";
-    public String neo4j_database = "";
-    public String neo4j_mode = DEFAULT_NEO4J_MODE;
-    public String neo4j_database_path = "";
-    public String neo4j_user = DEFAULT_NEO4J_USER;
-    public String neo4j_password = "";
-    public String neo4j_host = "";
-    public String neo4j_port_number = DEFAULT_NEO4J_PORT_NUMBER;
-    public String max_operations_transaction = DEFAULT_MAX_OPERATIONS_TRANSACTION;
-    public boolean verbose = DEFAULT_VERBOSE;
-    public List<String> javac_options = new ArrayList<>();
-
-    public ProgQueryParameters(){
-        this.copyrightMessage = COPYRIGHT_MESSAGE;
-        this.helpMessage = HELP_MESSAGE;
-        this.errorMessage = copyrightMessage + "\nSome error in the input parameters. Type -help for help.\n";
-        this.noUserMessage = copyrightMessage + "\nNo user specified. Type -help for help.\n";
-        this.noProgramMessage = copyrightMessage + "\nNo program specified. Type -help for help.\n";
-        this.noHostMessage = copyrightMessage + "\nNo NEO4J host specified. Type -help for help.\n";
-        this.noJavacOptionsMessage = copyrightMessage + "\nNo javac options specified. Type -help for help.\n";
-        this.noPasswordMessage = copyrightMessage + "\nNo NEO4J user password specified. Type -help for help.\n";
-        this.noDataBasePathMessage = copyrightMessage + "\nNo database path specified using NEO4J local mode. Type -help for help.\n";
-        this.unknownNEO4JModeMessage = copyrightMessage + "\nUnknown neo4j mode option. Type -help for help.\n";
-    }
+    protected String copyrightMessage;
+    protected String helpMessage;
+    protected String errorMessage;
+    protected String noUserMessage;
+    protected String noProgramMessage;
+    protected String noHostMessage;
+    protected String noJavacOptionsMessage;
+    protected String noPasswordMessage;
+    protected String noDataBasePathMessage;
+    protected String unknownNEO4JModeMessage;
     public static final String NEO4J_MODE_SERVER = "server";
     public static final String NEO4J_MODE_LOCAL = "local";
-    public static final boolean DEFAULT_VERBOSE = false;
-    public static final String DEFAULT_NEO4J_MODE = NEO4J_MODE_SERVER;
-    public static final String DEFAULT_NEO4J_PORT_NUMBER = "7687";
-    public static final String DEFAULT_NEO4J_USER = "neo4j";
-    public static final String DEFAULT_MAX_OPERATIONS_TRANSACTION = "80000";
+    protected static final boolean DEFAULT_VERBOSE = false;
+    protected static final String DEFAULT_NEO4J_MODE = NEO4J_MODE_SERVER;
+    protected static final String DEFAULT_NEO4J_PORT_NUMBER = "7687";
+    protected static final String DEFAULT_NEO4J_USER = "neo4j";
+    protected static final String DEFAULT_MAX_OPERATIONS_TRANSACTION = "80000";
     protected static final String[] HELP_OPTIONS = { "help" , "?" };
     protected static final String[] USER_OPTIONS = { "user","u" };
     protected static final String[] PROGRAM_OPTIONS = { "program","p" };
@@ -80,8 +58,76 @@ public class ProgQueryParameters {
     protected static final String[] VERBOSE_OPTIONS = { "verbose" };
     protected static final String[] OPTIONS_PREFIX = { "-" };
     protected static final String[] OPTIONS_ASSIGNMENT = { "=" };
+    public String userId = "";
+    public String programId = "";
+    public String neo4j_database = "";
+    public String neo4j_mode = DEFAULT_NEO4J_MODE;
+    public String neo4j_database_path = "";
+    public String neo4j_user = DEFAULT_NEO4J_USER;
+    public String neo4j_password = "";
+    public String neo4j_host = "";
+    public String neo4j_port_number = DEFAULT_NEO4J_PORT_NUMBER;
+    public String max_operations_transaction = DEFAULT_MAX_OPERATIONS_TRANSACTION;
+    public boolean verbose = DEFAULT_VERBOSE;
+    public List<String> javac_options = new ArrayList<>();
 
-    public void parseParameter(String parameter) {
+    protected ProgQueryParameters(){
+        this(COPYRIGHT_MESSAGE,HELP_MESSAGE);
+    }
+
+    protected ProgQueryParameters(String copyrightMessage, String helpMessage){
+        this.copyrightMessage = copyrightMessage;
+        this.helpMessage = helpMessage;
+        this.errorMessage = copyrightMessage + "\nSome error in the input parameters. Type -help for help.\n";
+        this.noUserMessage = copyrightMessage + "\nNo user specified. Type -help for help.\n";
+        this.noProgramMessage = copyrightMessage + "\nNo program specified. Type -help for help.\n";
+        this.noHostMessage = copyrightMessage + "\nNo NEO4J host specified. Type -help for help.\n";
+        this.noJavacOptionsMessage = copyrightMessage + "\nNo javac options specified. Type -help for help.\n";
+        this.noPasswordMessage = copyrightMessage + "\nNo NEO4J user password specified. Type -help for help.\n";
+        this.noDataBasePathMessage = copyrightMessage + "\nNo database path specified using NEO4J local mode. Type -help for help.\n";
+        this.unknownNEO4JModeMessage = copyrightMessage + "\nUnknown neo4j mode option. Type -help for help.\n";
+    }
+
+    public static ProgQueryParameters parseArguments(String[] args) {
+        ProgQueryParameters parameters = new ProgQueryParameters();
+        for (String parameter : args) {
+            parameters.parseParameter(parameter);
+        }
+        if (parameters.javac_options.isEmpty()) {
+            System.out.println(parameters.noJavacOptionsMessage);
+            System.exit(2);
+        }
+        if (parameters.userId.isEmpty()) {
+            System.out.println(parameters.noUserMessage);
+            System.exit(2);
+        }
+        if (parameters.programId.isEmpty()) {
+            System.out.println(parameters.noProgramMessage);
+            System.exit(2);
+        }
+        if (parameters.neo4j_mode.equals(ProgQueryParameters.NEO4J_MODE_SERVER)) {
+            if (parameters.neo4j_host.isEmpty()) {
+                System.out.println(parameters.noHostMessage);
+                System.exit(2);
+            }
+            if (parameters.neo4j_password.isEmpty()) {
+                System.out.println(parameters.noPasswordMessage);
+                System.exit(2);
+            }
+            if (parameters.neo4j_database.isEmpty()) {
+                parameters.neo4j_database = parameters.userId;
+            }
+        }
+        else if (parameters.neo4j_mode.equals(ProgQueryParameters.NEO4J_MODE_LOCAL)) {
+            if (parameters.neo4j_database_path.isEmpty()) {
+                System.out.println(parameters.noDataBasePathMessage);
+                System.exit(2);
+            }
+        }
+        return parameters;
+    }
+
+    protected void parseParameter(String parameter) {
         for (String parameterPrefix : ProgQueryParameters.OPTIONS_PREFIX) {
             if (parameter.startsWith(parameterPrefix)) {
                 if(this.parseOption(parameter.substring(parameterPrefix.length()).toLowerCase()))
@@ -111,8 +157,16 @@ public class ProgQueryParameters {
         }
         for (String opString : ProgQueryParameters.NEO4J_DATABASE_PATH_OPTIONS) {
             if (option.startsWith(opString)) {
-                this.neo4j_database_path = parseValue(option.substring(opString.length()));
-                return true;
+                try {
+                    this.neo4j_database_path =
+                            Paths.get(new File(parseValue(option.substring(opString.length()))).getCanonicalPath()).toAbsolutePath().toString();
+                    return true;
+                }catch (IOException e)
+                {
+                    System.err.println(this.errorMessage);
+                    e.printStackTrace();
+                    System.exit(1);
+                }
             }
         }
         for (String opString : ProgQueryParameters.NEO4J_DATABASE_OPTIONS) {

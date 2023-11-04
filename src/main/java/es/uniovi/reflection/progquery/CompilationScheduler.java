@@ -32,9 +32,9 @@ public class CompilationScheduler {
 
     private static final boolean MERGING_ALLOWED = true;
 
-    public CompilationScheduler(String neo4j_host, String neo4j_port, String neo4j_user, String neo4j_password, String neo4j_database, String programID, String userID) { //TODO: Passing Max Operation Transaction
+    public CompilationScheduler(String neo4j_host, String neo4j_port, String neo4j_user, String neo4j_password, String neo4j_database, String max_operations_transaction, String programID, String userID) {
         ProgQuery.LOGGER.info(String.format("New Compilation Scheduler: %s:%s:%s:%s:%s:%s",neo4j_host, neo4j_port, neo4j_user, neo4j_database,userID,programID));
-        DatabaseFacade.init(new Neo4jDriverLazyInsertion(neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_database, OptionsConfiguration.DEFAULT_MAX_OPERATIONS_TRANSACTION));
+        DatabaseFacade.init(new Neo4jDriverLazyInsertion(neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_database, max_operations_transaction));
         setCurrentProgram(programID,userID);
     }
 

@@ -105,6 +105,9 @@ public class ProgQueryParameters {
             System.out.println(parameters.noProgramMessage);
             System.exit(2);
         }
+        if (parameters.neo4j_database.isEmpty()) {
+            parameters.neo4j_database = parameters.userId;
+        }
         if (parameters.neo4j_mode.equals(ProgQueryParameters.NEO4J_MODE_SERVER)) {
             if (parameters.neo4j_host.isEmpty()) {
                 System.out.println(parameters.noHostMessage);
@@ -113,9 +116,6 @@ public class ProgQueryParameters {
             if (parameters.neo4j_password.isEmpty()) {
                 System.out.println(parameters.noPasswordMessage);
                 System.exit(2);
-            }
-            if (parameters.neo4j_database.isEmpty()) {
-                parameters.neo4j_database = parameters.userId;
             }
         }
         else if (parameters.neo4j_mode.equals(ProgQueryParameters.NEO4J_MODE_LOCAL)) {

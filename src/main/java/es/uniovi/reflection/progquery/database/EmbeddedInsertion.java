@@ -22,9 +22,8 @@ public class EmbeddedInsertion implements InsertionStrategy {
         gDBService = dbBuilder.getNewEmbeddedDBService();
     }
 
-    public EmbeddedInsertion(String database_path) {
-        File file = new File(database_path);
-        dbBuilder = new EmbeddedDBBuilder(file.getParent(), file.getName());
+    public EmbeddedInsertion(String database_path, String database) {
+        dbBuilder = new EmbeddedDBBuilder(database_path, database);
         gDBService = dbBuilder.getNewEmbeddedDBService();
     }
 

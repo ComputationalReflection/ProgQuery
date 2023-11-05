@@ -6,8 +6,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ProgQueryParameters {
+    public final static Logger LOGGER = Logger.getLogger(ProgQuery.class.getName());
     private static final String COPYRIGHT_MESSAGE =  "ProgQuery 3.0.0 - Computational Reflection Research Group (University of Oviedo)\n";
 
     private static final String HELP_MESSAGE = COPYRIGHT_MESSAGE + "\nOptions:\n" +
@@ -93,6 +96,8 @@ public class ProgQueryParameters {
         for (String parameter : args) {
             parameters.parseParameter(parameter);
         }
+        if(!parameters.verbose)
+            LOGGER.setLevel(Level.OFF);
         if (parameters.javac_options.isEmpty()) {
             System.out.println(parameters.noJavacOptionsMessage);
             System.exit(2);
@@ -107,6 +112,7 @@ public class ProgQueryParameters {
         }
         if (parameters.neo4j_database.isEmpty()) {
             parameters.neo4j_database = parameters.userId;
+            LOGGER.info("Using neo4j_database="+parameters.neo4j_database);
         }
         if (parameters.neo4j_mode.equals(ProgQueryParameters.NEO4J_MODE_SERVER)) {
             if (parameters.neo4j_host.isEmpty()) {

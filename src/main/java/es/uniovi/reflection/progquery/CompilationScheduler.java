@@ -38,9 +38,9 @@ public class CompilationScheduler {
         setCurrentProgram(programID,userID);
     }
 
-    public CompilationScheduler(String neo4j_database_path, String programID, String userID) {
+    public CompilationScheduler(String neo4j_database_path, String neo4j_database, String programID, String userID) {
         ProgQuery.LOGGER.info(String.format("New Compilation Scheduler: %s:%s:%s",neo4j_database_path,userID,programID));
-        DatabaseFacade.init(new EmbeddedInsertion(neo4j_database_path));
+        DatabaseFacade.init(new EmbeddedInsertion(neo4j_database_path,neo4j_database));
         setCurrentProgram(programID,userID);
     }
 

@@ -1,7 +1,5 @@
 package es.uniovi.reflection.progquery;
 
-import java.util.*;
-
 public class Main {
     //Examples
     //Local
@@ -12,7 +10,7 @@ public class Main {
         ProgQueryParameters parameters = ProgQueryParameters.parseArguments(args);
         ProgQuery progquery = parameters.neo4j_mode.equals(ProgQueryParameters.NEO4J_MODE_SERVER) ?
                 new ProgQuery(parameters.neo4j_host,parameters.neo4j_port_number,parameters.neo4j_user,parameters.neo4j_password,parameters.neo4j_database,parameters.max_operations_transaction,parameters.userId,parameters.programId, parameters.verbose):
-                new ProgQuery(parameters.neo4j_database_path,parameters.userId,parameters.programId,parameters.verbose);
+                new ProgQuery(parameters.neo4j_database_path, parameters.neo4j_database, parameters.userId,parameters.programId,parameters.verbose);
         progquery.analyze(parameters.javac_options);
     }
 }

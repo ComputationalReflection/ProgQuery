@@ -3,7 +3,6 @@ import es.uniovi.reflection.progquery.cache.DefinitionCache;
 import es.uniovi.reflection.progquery.database.insertion.lazy.InfoToInsert;
 import es.uniovi.reflection.progquery.typeInfo.PackageInfo;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
-
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,12 +21,12 @@ public class ProgQuery {
         compilationScheduler = new CompilationScheduler(neo4j_host,neo4j_port,neo4j_user,neo4j_password,neo4j_database,max_operations_transaction,programId,userId);
     }
 
-    public ProgQuery(String neo4j_database_path, String userId, String programId, boolean verbose) {
+    public ProgQuery(String neo4j_database_path, String neo4j_database, String userId, String programId, boolean verbose) {
         this.userId = userId;
         this.programId = programId;
         if(!verbose) LOGGER.setLevel(Level.OFF);
         org.neo4j.internal.unsafe.IllegalAccessLoggerSuppressor.suppress();
-        compilationScheduler = new CompilationScheduler(neo4j_database_path,programId,userId);
+        compilationScheduler = new CompilationScheduler(neo4j_database_path,neo4j_database,programId,userId);
     }
 
     public void analyze(List<String> javac_options_list) {

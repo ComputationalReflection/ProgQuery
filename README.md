@@ -1,6 +1,8 @@
 # ProgQuery
-[ProgQuery](https://www.reflection.uniovi.es/bigcode/download/2020/ieee-access/) is a system to extract syntactic and semantic information from source code programs and store it in a Neo4j graph database for posterior analysis. 
-For each program or compilation unit, ProgQuery extracts the following graph structures:
+[ProgQuery](https://www.reflection.uniovi.es/bigcode/download/2020/ieee-access/) extracts syntactic and semantic information from source code programs and stores it in a Neo4j graph database. That information can be used for many different purposes, such as static program analysis, advanced code search, coding guideline checking, software metrics computation, and extraction of semantic and syntactic information to create predictive models. 
+
+For each compilation unit (program, project, component or API), ProgQuery extracts the following seven graph structures:
+
 - Abstract Syntax Tree
 - Call Graph
 - Type Graph
@@ -8,40 +10,47 @@ For each program or compilation unit, ProgQuery extracts the following graph str
 - Program Dependency Graph
 - Class Dependency Graph
 - Package Graph
+
+The previous representations are overlaid, meaning that syntactic and semantic nodes of the different graphs are interconnected to allow the combination of different kinds of information in the queries/analyses. This makes it easier to express queries that combine syntactic and semantic information
+
 # Build Instructions
 
 ## Step 1: Install Maven
-ProgQuery will need Maven in order to solve the binaries dependencies needed to make it work. Unless you have Maven already installed, you have to do so. You can download it [here](https://maven.apache.org/download.cgi) and follow its installation process in the [following link](https://maven.apache.org/install.html).
+
+ProgQuery uses Maven to resolve the binaries' dependencies. Unless you have Maven already installed, you need to [install it](https://maven.apache.org/download.cgi) and follow the installation steps detailed in [this link](https://maven.apache.org/install.html).
 
 ## Step 2: Clone the ProgQuery repository and generate the .jar file
-Next step consists on cloning the repository of ProgQuery project and generating .jar . Once you have cloned the repository in your computer, move to the cloned local repository you have just created and execute the following command:
+
+The next step consists of cloning the repository of ProgQuery project and generating a .jar file. Once you have cloned and downloaded the repository, please execute the following command in the local repository you have just created:
+
 ```shell
 mvn clean compile package
 ````
-After its execution, this command will have generated the .jar file called _ProgQuery-3.0.0.jar_ inside the maven default output folder _target_.
 
-By means of this process for getting the .jar, the users are allowed to extract information from source code programs and store it in a Neo4j graph database. 
+The previous command generates the jar file _ProgQuery-3.0.0.jar_ in Maven's default output folder _target_. This jar file allows you to extract information from source code programs and store it in a Neo4j graph database.
 
 ## Step 3: Using ProgQuery CLI to run the analysis
-With the generated .jar, the user can use different commands provided by the tool:
 
-### Command for executing the analysis using local Neo4j graph database
+What follows is the list of commands supported by the generated jar:
+
+### Program insertion in a local Neo4j graph database
 ```shell
 java -jar ProgQuery-3.0.0.jar -user="<user_id>" -program="<program_id>" -neo4j_mode="local" -neo4j_database_path="<database_path>" "<javac_options_1>" ... "<javac_options_n>" 
 ````
-* `-user`: (Mandatory param) It specifies User id.
-* `-program`: (Mandatory param) It specifies Program id.
+* `-user`: (Mandatory param) It specifies User ID.
+* `-program`: (Mandatory param) It specifies Program ID.
 * `-neo4j_mode`: (Mandatory param) It specifies the Neo4j mode: local or server.
 * `-neo4j_database_path`: (Mandatory param, when Neo4j mode local is used) It specifies the path to the directory where the database will be stored.
 * `"javac_options_1" ... "javac_options_n"`: (Mandatory param) It specifies the options used to run the Java compiler p.e. `"-d .\Example\target\classes -classpath .\Example\target\classes; -sourcepath .\Example\src\main\java; -g -nowarn -target 8 -source 8"` or just `"Java_File.java"`  
 
-- After the compilation process a single overlapped graph containing these 7 structures is included in a Neo4j graph database.
+After that execution, a graph containing the abovementioned seven structures is inserted in a Neo4j graph database.
 
 ### Help command
 ```shell
 java -jar ProgQuery-3.0.0.jar -help
 ````
-This command displays all the information about the parameters that can be used with .jar file.
+
+This command displays all the available options:
 
 * `-user=<user_id>`: User id. (Short form:`-u=<user_id>`).
 * `-program=<program_id>`: Program identifier. (Short form:`-p=<program_id>`).
@@ -53,7 +62,7 @@ This command displays all the information about the parameters that can be used 
 * `-neo4j_database=<database_name>`: NEO4J Database name. (Default value is the -user parameter value, short form:`-ndb=<database_name>`).
 * `-neo4j_database_path=<database_path>`: NEO4J Database path, when Local mode is used. (Short form:`-ndbp=<database_path>`).
 * `-max_operations_transaction=<number>`: Maximum number of operations per transaction. (Default value is 80000, short form:`-mot=<number>`).
-*  `"javac_options_1" ... "javac_options_n"`: A list of sets of options between " separated by white spaces used to run the Java compiler several times. For each set of options ProgQuery creates and executes one Java Compiler Task.
+*  `"javac_options_1" ... "javac_options_n"`: A list of sets of options between " separated by white spaces used to run the Java compiler several times. For each set of options, ProgQuery creates and executes one Java Compiler Task.
 * `-verbose`: Shows log info (Default value is `false`).
 
 ## References<a name="references"></a>

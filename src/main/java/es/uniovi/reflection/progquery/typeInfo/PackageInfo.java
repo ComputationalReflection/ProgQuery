@@ -15,7 +15,7 @@ import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 
 public class PackageInfo {
-	private static NodeWrapper currentProgram;
+	public static NodeWrapper currentProgram;
 
 	public static void createCurrentProgram(String programID, String userID) {
 		currentProgram = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.PROGRAM);

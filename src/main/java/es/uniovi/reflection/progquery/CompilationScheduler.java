@@ -81,6 +81,10 @@ public class CompilationScheduler {
             StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, Charset.forName("UTF-8"));
             Iterable<? extends JavaFileObject> sources = fileManager.getJavaFileObjectsFromFiles(files);
 
+            if(files.isEmpty()) {
+                ProgQuery.LOGGER.info("Skipping Compilation Task, no sources to compile.");
+                return;
+            }
             JavacTaskImpl compilerTask =
                     (JavacTaskImpl) compiler.getTask(null, null, diagnostics, task_options, null, sources);
 

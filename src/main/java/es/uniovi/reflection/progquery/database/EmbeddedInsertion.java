@@ -1,7 +1,7 @@
 package es.uniovi.reflection.progquery.database;
 
 import es.uniovi.reflection.progquery.database.embedded.EmbeddedDBBuilder;
-import es.uniovi.reflection.progquery.database.manager.EmbeddedManager;
+import es.uniovi.reflection.progquery.database.manager.NEO4jEmbeddedManager;
 import es.uniovi.reflection.progquery.database.manager.NEO4JManager;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
@@ -9,8 +9,6 @@ import org.neo4j.graphdb.Transaction;
 
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.node_wrappers.Neo4jEmbeddedWrapperNode;
-
-import java.io.File;
 
 public class EmbeddedInsertion implements InsertionStrategy {
     private GraphDatabaseService gDBService;
@@ -75,6 +73,6 @@ public class EmbeddedInsertion implements InsertionStrategy {
 
     @Override
     public NEO4JManager getManager() {
-        return new EmbeddedManager(currentTransaction);
+        return new NEO4jEmbeddedManager(currentTransaction);
     }
 }

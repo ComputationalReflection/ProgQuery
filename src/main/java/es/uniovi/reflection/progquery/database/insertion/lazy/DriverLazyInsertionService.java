@@ -3,7 +3,7 @@ package es.uniovi.reflection.progquery.database.insertion.lazy;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-
+import es.uniovi.reflection.progquery.database.manager.NEO4JServerManager;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
@@ -19,12 +19,11 @@ import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import static org.neo4j.driver.Values.parameters;
 
 public class DriverLazyInsertionService {
-	private static final int REPETITIONS =1 ;
+	private static final int REPETITIONS = 1;
 
 	public static void defaultDBInsertion(InfoToInsert info, String server_address, final String USER,
 			final String PASS, final int MAX_OPERATIONS_PER_TRANSACTION) {
-		final String PROTOCOL = "neo4j://";
-		try (final Driver driver = GraphDatabase.driver(PROTOCOL + server_address, AuthTokens.basic(USER, PASS));
+		try (final Driver driver = GraphDatabase.driver(NEO4JServerManager.NEO4J_PROTOCOL + server_address, AuthTokens.basic(USER, PASS));
 				Session session = driver.session()) {
 			final List<Pair<String, Object[]>> nodeInfo = info.getNodeQueriesInfo();
 			for (int i = 0; i < REPETITIONS; i++) {
@@ -38,9 +37,8 @@ public class DriverLazyInsertionService {
 	}
 	public static void insertToSpecificDB(InfoToInsert info, String server_address, final String USER,
 			final String PASS, final int MAX_OPERATIONS_PER_TRANSACTION, String DB_NAME) {
-		final String PROTOCOL = "neo4j://";
 		SessionConfig configForDB=SessionConfig.forDatabase(DB_NAME);
-		try (final Driver driver = GraphDatabase.driver(PROTOCOL + server_address, AuthTokens.basic(USER, PASS));
+		try (final Driver driver = GraphDatabase.driver(NEO4JServerManager.NEO4J_PROTOCOL + server_address, AuthTokens.basic(USER, PASS));
 				Session session = driver.session(configForDB)) {
 
 			final List<Pair<String, Object[]>> nodeInfo = info.getNodeQueriesInfo();
@@ -75,7 +73,6 @@ public class DriverLazyInsertionService {
 				}
 				return null;
 			}
-
 		});
 	}
 

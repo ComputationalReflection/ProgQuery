@@ -2,21 +2,16 @@ package es.uniovi.reflection.progquery.database.manager;
 
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.node_wrappers.Neo4jEmbeddedWrapperNode;
-import es.uniovi.reflection.progquery.node_wrappers.Neo4jLazyNode;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
-import org.neo4j.driver.Record;
-import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.Transaction;
 
-import java.util.List;
-
-public class EmbeddedManager implements NEO4JManager{
+public class NEO4jEmbeddedManager implements NEO4JManager{
 
     private Transaction currentTransaction;
 
-    public EmbeddedManager(Transaction currentTransaction) {
+    public NEO4jEmbeddedManager(Transaction currentTransaction) {
         this.currentTransaction = currentTransaction;
     }
 

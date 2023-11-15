@@ -32,7 +32,7 @@ public class NEO4JServerManager implements NEO4JManager {
     }
 
     public NEO4JServerManager(String address, String user, String password, String db_name) {
-        ProgQuery.LOGGER.info("Creating driver '" + NEO4J_PROTOCOL + address + "' created'");
+        ProgQuery.LOGGER.info("Creating driver '" + NEO4J_PROTOCOL + address + "'");
         driver = GraphDatabase.driver(NEO4J_PROTOCOL + address,AuthTokens.basic(user, password));
         this.db_name = db_name;
     }

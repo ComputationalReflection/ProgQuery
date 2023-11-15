@@ -162,7 +162,7 @@ public class CompilationScheduler {
         if (diagnostics.getDiagnostics().size() > 0) {
             for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
                 if(diagnostic.getKind().equals(Diagnostic.Kind.ERROR))
-                    System.err.format("Error on [%d,%d] in %s %s\n", diagnostic.getLineNumber(), diagnostic.getColumnNumber(),
+                    System.err.format("Error on [%d,%d] in %s %s\n", -1, -1,
                             diagnostic.getSource(), diagnostic.getMessage(null));
             }
         }

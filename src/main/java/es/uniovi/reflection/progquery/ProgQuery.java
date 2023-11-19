@@ -29,12 +29,12 @@ public class ProgQuery {
         compilationScheduler = new CompilationScheduler(neo4j_database_path,neo4j_database,programId,userId);
     }
 
-    public void analyze(List<String> javac_options_list) {
-        ProgQuery.LOGGER.info("Analysis started");
+    public void insert(List<String> javac_options_list) {
+        ProgQuery.LOGGER.info("Insertion started ...");
         for (String javac_options:javac_options_list)
             compilationScheduler.newCompilationTask(javac_options);
-        compilationScheduler.endAnalysis();
-        ProgQuery.LOGGER.info("Analysis completed");
+        compilationScheduler.finalizeInsertion();
+        ProgQuery.LOGGER.info("Insertion completed");
     }
 
     public static void resetCaches(){

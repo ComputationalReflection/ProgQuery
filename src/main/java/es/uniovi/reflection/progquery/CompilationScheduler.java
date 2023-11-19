@@ -148,8 +148,8 @@ public class CompilationScheduler {
         return ast;
     }
 
-    public void endAnalysis() {
-        ProgQuery.LOGGER.info("Finishing analysis...");
+    public void finalizeInsertion() {
+        ProgQuery.LOGGER.info("Finishing insertion ...");
         pdgUtils.createNotDeclaredAttrRels(ast);
         createStoredPackageDeps();
         dynamicMethodCallAnalysis();

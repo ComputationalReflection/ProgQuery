@@ -60,7 +60,7 @@ public class CompilationScheduler {
         PackageInfo.createCurrentProgram(programID, userID);
     }
 
-    public void newCompilationTask(String javac_options) {
+    public List<String> newCompilationTask(String javac_options) {
         try {
             ProgQuery.LOGGER.info(String.format("New Compilation Task: %s", javac_options));
             List<String> options = parseOptions(javac_options);
@@ -84,17 +84,18 @@ public class CompilationScheduler {
 
             if(files.isEmpty()) {
                 ProgQuery.LOGGER.info("Skipping Compilation Task, no sources to compile.");
-                return;
+                return new ArrayList<>();
             }
             JavacTaskImpl compilerTask =
                     (JavacTaskImpl) compiler.getTask(null, null, diagnostics, task_options, null, sources);
 
             addListener(compilerTask, StreamSupport.stream(sources.spliterator(), false).collect(Collectors.toSet()));
             runPQCompilationTask(compilerTask);
-            showErrors(diagnostics);
+            return showErrors(diagnostics);
         }catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
+            return new ArrayList<>();
         }
     }
 
@@ -158,14 +159,25 @@ public class CompilationScheduler {
         shutdownDatabase();
     }
 
-    private void showErrors(DiagnosticCollector<JavaFileObject> diagnostics) {
+    private List<String> showErrors(DiagnosticCollector<JavaFileObject> diagnostics) {
+        List<String> errors = new ArrayList<>();
         if (diagnostics.getDiagnostics().size() > 0) {
             for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
-                if(diagnostic.getKind().equals(Diagnostic.Kind.ERROR))
-                    System.err.format("Error on [%d,%d] in %s %s\n", -1, -1,
-                            diagnostic.getSource(), diagnostic.getMessage(null));
+                if(diagnostic.getKind().equals(Diagnostic.Kind.ERROR)) {
+                    String error = "";
+                    try {
+                        error = String.format("Error on [%d,%d] in %s %s\n", diagnostic.getLineNumber(), diagnostic.getColumnNumber(), diagnostic.getSource(), diagnostic.getMessage(null));
+                    }
+                    catch(Exception e)
+                    {
+                        error = String.format("Error on [%d,%d] in %s %s\n", "unknown", "unknown", diagnostic.getSource(), diagnostic.getMessage(null));
+                    }
+                    errors.add(error);
+                    System.err.println(error);
+                }
             }
         }
+        return errors;
     }
 
     private void createStoredPackageDeps() {

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import es.uniovi.reflection.progquery.typeInfo.PackageInfo;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 import org.neo4j.graphdb.Label;
 
@@ -23,7 +24,7 @@ public class InfoToInsert {
 	public List<RelationshipWrapper> getRelSet() {
 		return Collections.unmodifiableList(relSet);
 	}
-	public static InfoToInsert INFO_TO_INSERT = new InfoToInsert();
+	public static ThreadLocal<InfoToInsert> INFO_TO_INSERT  = new ThreadLocal<>();
 	public void addNewNode(Neo4jLazyNode newNode) {
 		nodeSet.add(newNode);
 	}

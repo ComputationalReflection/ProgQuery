@@ -69,8 +69,8 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
 
     public static NodeWrapper generatedClassType(ClassSymbol classSymbol, ASTAuxiliarStorage ast) {
         TypeDefinitionKey typeDefKey = new TypeDefinitionKey(classSymbol);
-        if (DefinitionCache.TYPE_CACHE.containsKey(typeDefKey))
-            return DefinitionCache.TYPE_CACHE.get(typeDefKey);
+        if (DefinitionCache.TYPE_CACHE.get().containsKey(typeDefKey))
+            return DefinitionCache.TYPE_CACHE.get().get(typeDefKey);
 
         NodeWrapper generatedTypeDec =
                 DatabaseFacade.CURRENT_DB_FACHADE.createNonDeclaredCLASSTypeDecNode(classSymbol, NodeTypes.CLASS_DEF);
@@ -121,7 +121,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
 
                         MethodNameInfo nameInfo = new MethodNameInfo((MethodSymbol) elementSymbol);
 
-                        if (!DefinitionCache.METHOD_DEF_CACHE.containsKey(nameInfo.getFullyQualifiedName()))
+                        if (!DefinitionCache.METHOD_DEF_CACHE.get().containsKey(nameInfo.getFullyQualifiedName()))
                             if (elementSymbol.getKind() == ElementKind.METHOD)
                                 ASTTypesVisitor.createNonDeclaredMethodDuringTypeCreation(nameInfo, declaredType,
                                         type.isInterface(), ast, (MethodSymbol) elementSymbol);
@@ -260,12 +260,12 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
 
     private static NodeWrapper putInCacheAsType(TypeKey key, NodeWrapper typeNode) {
         typeNode.addLabel(NodeCategory.TYPE_NODE);
-        DefinitionCache.TYPE_CACHE.put(key, typeNode);
+        DefinitionCache.TYPE_CACHE.get().put(key, typeNode);
         return typeNode;
     }
 
     private static NodeWrapper putInCache(TypeKey key, NodeWrapper typeNode) {
-        DefinitionCache.TYPE_CACHE.put(key, typeNode);
+        DefinitionCache.TYPE_CACHE.get().put(key, typeNode);
         return typeNode;
     }
 }

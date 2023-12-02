@@ -27,7 +27,7 @@ public class TypeHierarchy {
             classNode.createRelationshipTo(superTypeClass, rel);
             if (astVisitor == null) {
                 classNode.createRelationshipTo(superTypeClass, CDGRelationTypes.USES_TYPE_DEF);
-                PackageInfo.PACKAGE_INFO.handleNewDependency(classSymbol.packge(), baseType.tsym.packge());
+                PackageInfo.PACKAGE_INFO.get().handleNewDependency(classSymbol.packge(), baseType.tsym.packge());
             } else
                 astVisitor.addToTypeDependencies(superTypeClass, baseType.tsym.packge());
         }

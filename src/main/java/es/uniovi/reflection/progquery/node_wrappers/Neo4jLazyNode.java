@@ -28,7 +28,7 @@ public class Neo4jLazyNode extends AbstractNeo4jLazyServerDriverElement implemen
 	}
 	public Neo4jLazyNode() {
 		id = null;
-		InfoToInsert.INFO_TO_INSERT.addNewNode(this);
+		InfoToInsert.INFO_TO_INSERT.get().addNewNode(this);
 	}
 
 	public Neo4jLazyNode(NodeTypes... labels) {
@@ -44,7 +44,7 @@ public class Neo4jLazyNode extends AbstractNeo4jLazyServerDriverElement implemen
 
 	public Neo4jLazyNode(Object... props) {
 		super(props);
-		InfoToInsert.INFO_TO_INSERT.addNewNode(this);
+		InfoToInsert.INFO_TO_INSERT.get().addNewNode(this);
 	}
 
 	@Override
@@ -136,7 +136,7 @@ public class Neo4jLazyNode extends AbstractNeo4jLazyServerDriverElement implemen
 
 	@Override
 	public void delete() {
-		InfoToInsert.INFO_TO_INSERT.deleteNode(this);
+		InfoToInsert.INFO_TO_INSERT.get().deleteNode(this);
 	}
 
 	@Override

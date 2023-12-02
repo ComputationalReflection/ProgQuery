@@ -113,7 +113,7 @@ public class ASTTypesVisitor
         constructorDef.setProperty("fullyQualifiedName", nameInfo.getFullyQualifiedName());
         constructorDef.setProperty("completeName", nameInfo.getCompleteName());
         modifierAccessLevelToNode(s.getModifiers(), constructorDef);
-        DefinitionCache.METHOD_DEF_CACHE.put(nameInfo.getFullyQualifiedName(), constructorDef);
+        DefinitionCache.METHOD_DEF_CACHE.get().put(nameInfo.getFullyQualifiedName(), constructorDef);
         return constructorDef;
     }
 
@@ -155,7 +155,7 @@ public class ASTTypesVisitor
         NodeWrapper methodDecNode = createNonDeclaredMethodWithoutSymbol(nameInfo);
         setMethodModifiers(Flags.asModifierSet(symbol.flags()), methodDecNode, isInterface);
         ast.addAccesibleMethod(symbol, methodDecNode);
-        DefinitionCache.METHOD_DEF_CACHE.put(nameInfo.getFullyQualifiedName(), methodDecNode);
+        DefinitionCache.METHOD_DEF_CACHE.get().put(nameInfo.getFullyQualifiedName(), methodDecNode);
         return methodDecNode;
     }
 
@@ -919,13 +919,13 @@ public class ASTTypesVisitor
 
     public void addToTypeDependencies(NodeWrapper newTypeDec, Symbol newPackageSymbol) {
         addToTypeDependencies(classState.currentClassDec, newTypeDec, newPackageSymbol, typeDecUses,
-                PackageInfo.PACKAGE_INFO.currentPackage);
+                PackageInfo.PACKAGE_INFO.get().currentPackage);
     }
 
     public static void addToTypeDependencies(NodeWrapper currentClass, NodeWrapper newTypeDec, Symbol newPackageSymbol,
                                              Set<NodeWrapper> typeDecUses, Symbol dependentPackage) {
         if (!typeDecUses.contains(newTypeDec) && !currentClass.equals(newTypeDec)) {
-            PackageInfo.PACKAGE_INFO.handleNewDependency(dependentPackage, newPackageSymbol);
+            PackageInfo.PACKAGE_INFO.get().handleNewDependency(dependentPackage, newPackageSymbol);
             currentClass.createRelationshipTo(newTypeDec, CDGRelationTypes.USES_TYPE_DEF);
             typeDecUses.add(newTypeDec);
         }
@@ -951,14 +951,14 @@ public class ASTTypesVisitor
             rel = RelationTypes.DECLARES_METHOD;
         }
 
-        if (DefinitionCache.METHOD_DEF_CACHE.containsKey(nameInfo.getFullyQualifiedName())) {
+        if (DefinitionCache.METHOD_DEF_CACHE.get().containsKey(nameInfo.getFullyQualifiedName())) {
             ast.deleteAccesibleMethod(methodSymbol);
-            DefinitionCache.METHOD_DEF_CACHE.putDefinition(nameInfo.getFullyQualifiedName(), methodNode);
+            DefinitionCache.METHOD_DEF_CACHE.get().putDefinition(nameInfo.getFullyQualifiedName(), methodNode);
 
             if (!methodNode.hasRelationship(rel, Direction.INCOMING))
                 GraphUtils.connectWithParent(methodNode, t, rel);
         } else {
-            DefinitionCache.METHOD_DEF_CACHE.putDefinition(nameInfo.getFullyQualifiedName(), methodNode);
+            DefinitionCache.METHOD_DEF_CACHE.get().putDefinition(nameInfo.getFullyQualifiedName(), methodNode);
             GraphUtils.connectWithParent(methodNode, t, rel);
         }
 
@@ -1075,8 +1075,8 @@ public class ASTTypesVisitor
                 currentMethodInvocations.add(methodSymbol);
 
             MethodNameInfo nameInfo = new MethodNameInfo(methodSymbol);
-            decNode = DefinitionCache.METHOD_DEF_CACHE.containsKey(nameInfo.getFullyQualifiedName()) ?
-                    DefinitionCache.METHOD_DEF_CACHE.get(nameInfo.getFullyQualifiedName()) :
+            decNode = DefinitionCache.METHOD_DEF_CACHE.get().containsKey(nameInfo.getFullyQualifiedName()) ?
+                    DefinitionCache.METHOD_DEF_CACHE.get().get(nameInfo.getFullyQualifiedName()) :
                     methodSymbol.isConstructor() ? getNotDeclaredConsFromInv(methodSymbol, nameInfo) :
                             getNotDeclaredMethodDecNode(methodSymbol, nameInfo);
             ast.checkIfTrustableInvocation(methodInvocationTree, methodSymbol, methodInvocationNode);
@@ -1263,7 +1263,7 @@ public class ASTTypesVisitor
             addClassIdentifier(type);
             MethodSymbol consSymbol = (MethodSymbol) newClassConstructor;
             MethodNameInfo nameInfo = new MethodNameInfo(consSymbol);
-            constructorDef = DefinitionCache.METHOD_DEF_CACHE.get(nameInfo.getFullyQualifiedName());
+            constructorDef = DefinitionCache.METHOD_DEF_CACHE.get().get(nameInfo.getFullyQualifiedName());
             if (constructorDef == null)
                 constructorDef = getNotDeclaredConsFromInv(consSymbol, nameInfo);
             if (consSymbol.getThrownTypes().size() > 0)

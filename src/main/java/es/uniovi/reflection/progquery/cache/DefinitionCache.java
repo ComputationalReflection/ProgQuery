@@ -18,8 +18,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class DefinitionCache<TKEY> {
-    public static DefinitionCache<TypeKey> TYPE_CACHE = new DefinitionCache<>();
-    public static DefinitionCache<String> METHOD_DEF_CACHE = new DefinitionCache<>();
+    public static ThreadLocal<DefinitionCache<TypeKey>> TYPE_CACHE  = new ThreadLocal<>();
+    public static ThreadLocal<DefinitionCache<String>> METHOD_DEF_CACHE  = new ThreadLocal<>();
+
     private final Map<TKEY, NodeWrapper> auxNodeCache = new HashMap<>();
     protected final Map<TKEY, NodeWrapper> definitionNodeCache = new HashMap<>();
     public void put(TKEY k, NodeWrapper v) {
@@ -33,7 +34,7 @@ public class DefinitionCache<TKEY> {
 
     public static void putClassDefinition(Symbol.ClassSymbol classSymbol, NodeWrapper classDec,
                                           Set<NodeWrapper> typeDecNodeList, Set<NodeWrapper> typeDecsUses) {
-        TYPE_CACHE.putClassDefinition(classSymbol.type.accept(new KeyTypeVisitor(), null), classDec, typeDecNodeList,
+        TYPE_CACHE.get().putClassDefinition(classSymbol.type.accept(new KeyTypeVisitor(), null), classDec, typeDecNodeList,
                 typeDecsUses);
     }
 
@@ -94,8 +95,8 @@ public class DefinitionCache<TKEY> {
     }
 
     public static NodeWrapper getOrCreateType(TypeMirror type, TypeKey key, ASTAuxiliarStorage ast) {
-        if (DefinitionCache.TYPE_CACHE.containsKey(key))
-            return DefinitionCache.TYPE_CACHE.get(key);
+        if (DefinitionCache.TYPE_CACHE.get().containsKey(key))
+            return DefinitionCache.TYPE_CACHE.get().get(key);
         return createTypeDec(type, key, ast);
     }
 

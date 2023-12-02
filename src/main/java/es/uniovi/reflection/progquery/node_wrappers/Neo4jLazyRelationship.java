@@ -18,7 +18,7 @@ public class Neo4jLazyRelationship extends AbstractNeo4jLazyServerDriverElement
 	public Neo4jLazyRelationship(NodeWrapper start, RelationTypesInterface rType) {
 		this.start = start;
 		this.rType = rType;
-		InfoToInsert.INFO_TO_INSERT.addNewRel(this);
+		InfoToInsert.INFO_TO_INSERT.get().addNewRel(this);
 	}
 
 	@Override
@@ -38,7 +38,7 @@ public class Neo4jLazyRelationship extends AbstractNeo4jLazyServerDriverElement
 
 	@Override
 	public void delete() {
-		InfoToInsert.INFO_TO_INSERT.deleteRel(this);
+		InfoToInsert.INFO_TO_INSERT.get().deleteRel(this);
 		((Neo4jLazyNode) start).removeOutgoingRel(this);
 		((Neo4jLazyNode) end).removeIncomingRel(this);
 	}

@@ -34,10 +34,10 @@ public class Neo4jDriverLazyInsertion extends NotPersistentLazyInsertion{
 	@Override
 	public void endAnalysis() {
 		if (DB_NAME == null)
-			DriverLazyInsertionService.defaultDBInsertion(InfoToInsert.INFO_TO_INSERT, ADDRESS, USER, PASS,
+			DriverLazyInsertionService.defaultDBInsertion(InfoToInsert.INFO_TO_INSERT.get(), ADDRESS, USER, PASS,
 					MAX_OPERATIONS_PER_TRANSACTION);
 		else
-			DriverLazyInsertionService.insertToSpecificDB(InfoToInsert.INFO_TO_INSERT, ADDRESS, USER, PASS,
+			DriverLazyInsertionService.insertToSpecificDB(InfoToInsert.INFO_TO_INSERT.get(), ADDRESS, USER, PASS,
 					MAX_OPERATIONS_PER_TRANSACTION, DB_NAME);
 	}
 

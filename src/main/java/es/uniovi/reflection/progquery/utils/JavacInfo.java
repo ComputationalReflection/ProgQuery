@@ -23,14 +23,18 @@ import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeInfo;
+import es.uniovi.reflection.progquery.cache.DefinitionCache;
+import es.uniovi.reflection.progquery.utils.types.TypeKey;
 
 public class JavacInfo {
-	private static JavacInfo currentJavacInfo;
+
+	public static ThreadLocal<JavacInfo> currentJavacInfo  = new ThreadLocal<>();
+
 	public static boolean isInitialized(){
-		return currentJavacInfo!=null;
+		return currentJavacInfo.get()!=null;
 	}
 	public static void setJavacInfo(JavacInfo javacInfo) {
-		currentJavacInfo = javacInfo;
+		currentJavacInfo.set(javacInfo);
 	}
 	private final SourcePositions sourcePositions;
 	private final Trees trees;
@@ -49,10 +53,10 @@ public class JavacInfo {
 	}
 
 	public static Object[] getPosition(Tree tree) {
-		LineMap lineMap = currentJavacInfo.currCompilationUnit.getLineMap();
+		LineMap lineMap = currentJavacInfo.get().currCompilationUnit.getLineMap();
 		if (lineMap == null)
 			return new Object[0];
-		long position = currentJavacInfo.sourcePositions.getStartPosition(currentJavacInfo.currCompilationUnit, tree);
+		long position = currentJavacInfo.get().sourcePositions.getStartPosition(currentJavacInfo.get().currCompilationUnit, tree);
 
 		long line = -1;
 		long column = -1;
@@ -68,20 +72,20 @@ public class JavacInfo {
 	}
 
 	public static long getSize(Tree tree) {
-		return currentJavacInfo.sourcePositions.getEndPosition(currentJavacInfo.currCompilationUnit, tree)
-				- currentJavacInfo.sourcePositions.getStartPosition(currentJavacInfo.currCompilationUnit, tree);
+		return currentJavacInfo.get().sourcePositions.getEndPosition(currentJavacInfo.get().currCompilationUnit, tree)
+				- currentJavacInfo.get().sourcePositions.getStartPosition(currentJavacInfo.get().currCompilationUnit, tree);
 	}
 
 	public static TreePath getPath(Tree tree) {
-		return TreePath.getPath(currentJavacInfo.currCompilationUnit, tree);
+		return TreePath.getPath(currentJavacInfo.get().currCompilationUnit, tree);
 	}
 
 	public static TypeMirror getTypeMirror(Tree tree, TreePath path) {
-		return currentJavacInfo.trees.getTypeMirror(path);
+		return currentJavacInfo.get().trees.getTypeMirror(path);
 	}
 
 	public static TypeMirror getTypeMirror(Tree tree) {
-		return currentJavacInfo.trees.getTypeMirror(getPath(tree));
+		return currentJavacInfo.get().trees.getTypeMirror(getPath(tree));
 	}
 
 	public static Type getTypeDirect(ExpressionTree tree) {
@@ -100,31 +104,31 @@ public class JavacInfo {
 	}
 
 	public static Tree getTree(Symbol s) {
-		return currentJavacInfo.trees.getTree(s);
+		return currentJavacInfo.get().trees.getTree(s);
 	}
 
 	public static Tree getTreeFromElement(Element e) {
-		return currentJavacInfo.trees.getTree(e);
+		return currentJavacInfo.get().trees.getTree(e);
 	}
 
 	public static Tree getTreeFromElement(Tree t) {
-		return currentJavacInfo.trees.getTree(currentJavacInfo.trees.getElement(getPath(t)));
+		return currentJavacInfo.get().trees.getTree(currentJavacInfo.get().trees.getElement(getPath(t)));
 	}
 
 	public static Scope getScope(Tree t) {
-		return currentJavacInfo.trees.getScope(getPath(t));
+		return currentJavacInfo.get().trees.getScope(getPath(t));
 	}
 
 	public static boolean isSubtype(Type t1, Type t2) {
-		return currentJavacInfo.javaxTypes.isSubtype(t1, t2);
+		return currentJavacInfo.get().javaxTypes.isSubtype(t1, t2);
 	}
 
 	public static boolean isSuperType(Type t1, Type t2) {
-		return currentJavacInfo.javaxTypes.isSubtype(t2, t1);
+		return currentJavacInfo.get().javaxTypes.isSubtype(t2, t1);
 	}
 
 	public static Symtab getSymtab() {
-		return currentJavacInfo.symTab;
+		return currentJavacInfo.get().symTab;
 	}
 
 	public static Symbol getSymbolFromTree(Tree t) {
@@ -132,6 +136,6 @@ public class JavacInfo {
 	}
 
 	public static Type erasure(Type t) {
-		return t.tsym.erasure(currentJavacInfo.types);
+		return t.tsym.erasure(currentJavacInfo.get().types);
 	}
 }

@@ -27,7 +27,7 @@ public class PackageInfo {
 		PackageInfo.currentProgram=currentProgram;
 	}
 
-	public static PackageInfo PACKAGE_INFO = new PackageInfo();
+	public static ThreadLocal<PackageInfo> PACKAGE_INFO  = new ThreadLocal<>();
 	private final DefinitionCache<String> packageCache = new NotDuplicatingArcsDefCache<>();
 
 	private final Set<Pair<Symbol, Symbol>> dependenciesSet = new HashSet<>();

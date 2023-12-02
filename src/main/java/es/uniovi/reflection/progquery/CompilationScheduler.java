@@ -181,7 +181,7 @@ public class CompilationScheduler {
     }
 
     private void createStoredPackageDeps() {
-        PackageInfo.PACKAGE_INFO.createStoredPackageDeps();
+        PackageInfo.PACKAGE_INFO.get().createStoredPackageDeps();
     }
 
     private void createAllParamsToMethodsPDGRels() {

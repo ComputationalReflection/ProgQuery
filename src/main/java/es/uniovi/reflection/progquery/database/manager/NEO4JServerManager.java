@@ -39,7 +39,7 @@ public class NEO4JServerManager implements NEO4JManager {
 
     private List<Record> executeQuery(String query) throws Exception {
         try(Session session = driver.session(SessionConfig.forDatabase(db_name))){
-            return session.writeTransaction(tx -> tx.run(query).list());
+            return session.run(query).list();
         }
         catch (Exception e)
         {

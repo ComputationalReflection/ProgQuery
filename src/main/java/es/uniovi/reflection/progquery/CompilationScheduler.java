@@ -163,14 +163,14 @@ public class CompilationScheduler {
         List<String> errors = new ArrayList<>();
         if (diagnostics.getDiagnostics().size() > 0) {
             for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
-                if(diagnostic.getKind().equals(Diagnostic.Kind.ERROR)) {
+                if(diagnostic.getKind().equals(Diagnostic.Kind.WARNING) || diagnostic.getKind().equals(Diagnostic.Kind.ERROR)) {
                     String error = "";
                     try {
-                        error = String.format("Error on [%d,%d] in %s %s\n", diagnostic.getLineNumber(), diagnostic.getColumnNumber(), diagnostic.getSource(), diagnostic.getMessage(null));
+                        error = String.format("%s on [%d,%d] in %s %s\n",diagnostic.getKind().toString(), diagnostic.getLineNumber(), diagnostic.getColumnNumber(), diagnostic.getSource(), diagnostic.getMessage(null));
                     }
                     catch(Exception e)
                     {
-                        error = String.format("Error on [%d,%d] in %s %s\n", "unknown", "unknown", diagnostic.getSource(), diagnostic.getMessage(null));
+                        error = String.format("%s on [%d,%d] in %s %s\n", "unknown", "unknown",diagnostic.getKind().toString(), diagnostic.getSource(), diagnostic.getMessage(null));
                     }
                     errors.add(error);
                     System.err.println(error);

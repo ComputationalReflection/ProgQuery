@@ -116,6 +116,8 @@ public class CompilationScheduler {
                 partial = "";
             }
         }
+        if (!partial.isEmpty())
+            result.add(partial);
         return result;
     }
 

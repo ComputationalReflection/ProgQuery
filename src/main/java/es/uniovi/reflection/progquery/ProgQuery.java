@@ -63,11 +63,12 @@ public class ProgQuery {
         ProgQuery.LOGGER.info("Insertion started ...");
         for (String javac_options:javac_options_list)
             errors.addAll(compilationScheduler.newCompilationTask(javac_options));
-        compilationScheduler.finalizeInsertion();
-        if(!errors.isEmpty())
-            ProgQuery.LOGGER.info("Insertion completed with " + errors.size() + " errors.");
-        else
+        if(errors.isEmpty()) {
+            compilationScheduler.finalizeInsertion();
             ProgQuery.LOGGER.info("Insertion completed without errors.");
+        }
+        else
+            ProgQuery.LOGGER.info(errors.size() + " errors found, insertion aborted.");
         resetCaches();
         return errors;
     }

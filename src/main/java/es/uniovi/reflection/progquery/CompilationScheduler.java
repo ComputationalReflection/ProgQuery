@@ -172,7 +172,7 @@ public class CompilationScheduler {
                     }
                     catch(Exception e)
                     {
-                        error = String.format("%s on [%d,%d] in %s %s\n", "unknown", "unknown",diagnostic.getKind().toString(), diagnostic.getSource(), diagnostic.getMessage(null));
+                        error = String.format("%s in %s %s\n", diagnostic.getKind().toString(), diagnostic.getSource(), diagnostic.getMessage(null));
                     }
                     errors.add(error);
                     System.err.println(error);

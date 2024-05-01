@@ -63,9 +63,12 @@ public class ProgQuery {
         ProgQuery.LOGGER.info("Insertion started ...");
         for (String javac_options:javac_options_list)
             errors.addAll(compilationScheduler.newCompilationTask(javac_options));
-        if(errors.isEmpty()) {
+        if(errors.stream().filter(error -> error.contains(Diagnostic.Kind.ERROR.toString())).count() == 0) {
             compilationScheduler.finalizeInsertion();
-            ProgQuery.LOGGER.info("Insertion completed without errors.");
+            if(errors.isEmpty())
+                ProgQuery.LOGGER.info("Insertion completed without errors.");
+            else
+                ProgQuery.LOGGER.info("Insertion completed with warnings.");
         }
         else
             ProgQuery.LOGGER.info(errors.size() + " errors found, insertion aborted.");

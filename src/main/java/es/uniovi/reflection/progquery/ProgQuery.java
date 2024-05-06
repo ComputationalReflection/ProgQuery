@@ -63,7 +63,7 @@ public class ProgQuery {
         ProgQuery.LOGGER.info("Insertion started ...");
         for (String javac_options:javac_options_list)
             errors.addAll(compilationScheduler.newCompilationTask(javac_options));
-        if(errors.stream().filter(error -> error.contains(Diagnostic.Kind.ERROR.toString())).count() == 0) {
+        if(errors.stream().filter(error -> error.startsWith(Diagnostic.Kind.ERROR.toString())).count() == 0) {
             compilationScheduler.finalizeInsertion();
             if(errors.isEmpty())
                 ProgQuery.LOGGER.info("Insertion completed without errors.");

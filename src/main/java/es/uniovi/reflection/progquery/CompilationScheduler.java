@@ -122,16 +122,19 @@ public class CompilationScheduler {
     }
 
     public static List<File> listFiles(String path) {
-        try (Stream<Path> walk = Files.walk(Paths.get(path))) {
-            return walk
-                    .filter(Files::isRegularFile)
-                    .filter(f -> f.getFileName().toString().endsWith(".java"))
-                    .map(f -> f.toAbsolutePath().toFile())
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return new ArrayList<File>();
+        if(Files.exists(Paths.get(path))) {
+            try (Stream<Path> walk = Files.walk(Paths.get(path))) {
+                return walk
+                        .filter(Files::isRegularFile)
+                        .filter(f -> f.getFileName().toString().endsWith(".java"))
+                        .map(f -> f.toAbsolutePath().toFile())
+                        .collect(Collectors.toList());
+            } catch (IOException e) {
+                e.printStackTrace();
+                return new ArrayList<File>();
+            }
         }
+        return new ArrayList<File>();
     }
 
     public void addListener(JavacTask compilerTask, Set<JavaFileObject> sources) {

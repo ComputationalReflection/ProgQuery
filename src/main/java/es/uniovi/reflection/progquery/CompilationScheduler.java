@@ -10,6 +10,7 @@ import es.uniovi.reflection.progquery.database.manager.NEO4JManager;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.tasklisteners.GetStructuresAfterAnalyze;
 import es.uniovi.reflection.progquery.typeInfo.PackageInfo;
+import es.uniovi.reflection.progquery.utils.JavacInfo;
 import es.uniovi.reflection.progquery.visitors.PDGProcessing;
 import javax.tools.*;
 import java.io.File;
@@ -88,7 +89,7 @@ public class CompilationScheduler {
             }
             JavacTaskImpl compilerTask =
                     (JavacTaskImpl) compiler.getTask(null, null, diagnostics, task_options, null, sources);
-
+            JavacInfo.currentJavacInfo.set(new JavacInfo(compilerTask));
             addListener(compilerTask, StreamSupport.stream(sources.spliterator(), false).collect(Collectors.toSet()));
             runPQCompilationTask(compilerTask);
             return showErrors(diagnostics);

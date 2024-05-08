@@ -109,12 +109,12 @@ public class GetStructuresAfterAnalyze implements TaskListener {
         }
     }
 
-    private void firstScanIfNoTypeDecls(CompilationUnitTree u) {
-        JavacInfo.setJavacInfo(new JavacInfo(u, task));
-        String fileName = u.getSourceFile().toUri().toString();
+    private void firstScanIfNoTypeDecls(CompilationUnitTree cu) {
+        JavacInfo.currentJavacInfo.get().setCurrCompilationUnit(cu);
+        String fileName = cu.getSourceFile().toUri().toString();
         NodeWrapper compilationUnitNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(u, NodeTypes.COMPILATION_UNIT);
-        addPackageInfo(((JCCompilationUnit) u).packge, compilationUnitNode);
+                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(cu, NodeTypes.COMPILATION_UNIT);
+        addPackageInfo(((JCCompilationUnit) cu).packge, compilationUnitNode);
         compilationUnitNode.setProperty("fileName", fileName);
         argument = Pair.createPair(compilationUnitNode, null);
     }
@@ -127,8 +127,7 @@ public class GetStructuresAfterAnalyze implements TaskListener {
     }
 
     private void firstScan(CompilationUnitTree cu, Tree typeDeclaration) {
-        if (!JavacInfo.isInitialized())
-            JavacInfo.setJavacInfo(new JavacInfo(cu, task));
+        JavacInfo.currentJavacInfo.get().setCurrCompilationUnit(cu);
         String fileName = cu.getSourceFile().getName();
         NodeWrapper compilationUnitNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(cu, NodeTypes.COMPILATION_UNIT);

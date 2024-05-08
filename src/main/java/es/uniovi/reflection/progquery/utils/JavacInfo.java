@@ -38,13 +38,12 @@ public class JavacInfo {
 	}
 	private final SourcePositions sourcePositions;
 	private final Trees trees;
-	private final CompilationUnitTree currCompilationUnit;
+	private CompilationUnitTree currCompilationUnit;
 	private final Types javaxTypes;
 	private final com.sun.tools.javac.code.Types types;
 	private final Symtab symTab;
 
-	public JavacInfo(CompilationUnitTree currCompilationUnit, JavacTask task) {
-		this.currCompilationUnit = currCompilationUnit;
+	public JavacInfo(JavacTask task) {
 		this.trees = Trees.instance(task);
 		javaxTypes = task.getTypes();
 		types = com.sun.tools.javac.code.Types.instance(((com.sun.tools.javac.api.BasicJavacTask) task).getContext());
@@ -137,5 +136,9 @@ public class JavacInfo {
 
 	public static Type erasure(Type t) {
 		return t.tsym.erasure(currentJavacInfo.get().types);
+	}
+
+	public void setCurrCompilationUnit(CompilationUnitTree currCompilationUnit) {
+		this.currCompilationUnit = currCompilationUnit;
 	}
 }

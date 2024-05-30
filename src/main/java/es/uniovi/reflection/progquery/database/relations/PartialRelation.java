@@ -10,5 +10,6 @@ public interface PartialRelation<T extends RelationTypesInterface>  {
 	NodeWrapper getStartingNode();
 	T getRelationType();
 	RelationshipWrapper createRelationship(NodeWrapper endNode);
+	RelationshipWrapper createRelationship(NodeWrapper endNode, T rel);
 	List<Pair<String, Object>> getProperties();
 }

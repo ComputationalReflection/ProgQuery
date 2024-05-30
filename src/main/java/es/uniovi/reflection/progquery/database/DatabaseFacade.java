@@ -51,7 +51,7 @@ public class DatabaseFacade {
     public NodeWrapper createSkeletonNode(Tree tree, NodeTypes nodeType) {
         NodeWrapper node = createNodeWithoutExplicitTree(nodeType);
 
-        node.setProperties(((JCTree) tree).pos == -1 ?
+        node.setProperties(((JCTree) tree).pos == IMPLICIT_POSITION ?
                 new Object[]{"lineNumber", IMPLICIT_POSITION, "column", IMPLICIT_POSITION, "position",
                         IMPLICIT_POSITION} : getPosition(tree));
         return node;

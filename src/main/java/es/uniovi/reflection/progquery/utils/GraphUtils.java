@@ -25,7 +25,7 @@ public class GraphUtils {
 	public static <T extends RelationTypesInterface> void connectWithParent(NodeWrapper child,
 																			Pair<PartialRelation<T>, Object> pair,
 																			T r) {
-		pair.getFirst().getStartingNode().createRelationshipTo(child, r);
+		pair.getFirst().createRelationship(child, r);
 	}
 
 

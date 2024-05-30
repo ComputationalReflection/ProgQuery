@@ -26,7 +26,12 @@ public class SimplePartialRelation<T extends RelationTypesInterface> implements 
 	}
 	@Override
 	public RelationshipWrapper createRelationship(NodeWrapper endNode) {
-		return startingNode.createRelationshipTo(endNode, relationType);
+		return createRelationship(endNode, relationType);
+	}
+
+	@Override
+	public RelationshipWrapper createRelationship(NodeWrapper endNode, T rel) {
+		return startingNode.createRelationshipTo(endNode, rel);
 	}
 
 	@Override
@@ -35,6 +40,6 @@ public class SimplePartialRelation<T extends RelationTypesInterface> implements 
 	}
 
 	public List<Pair<String, Object>> getProperties() {
-		return new ArrayList<Pair<String,Object>>();
+		return new ArrayList<>();
 	}
 }

@@ -5,5 +5,5 @@ public enum PDGRelationTypes implements RelationTypesInterface {
 	MODIFIED_BY,
 	STATE_MODIFIED_BY,
 	STATE_MAY_BE_MODIFIED_BY,
-	HAS_THIS_REFERENCE
+	HAS_THIS_REFERENCE;
 }

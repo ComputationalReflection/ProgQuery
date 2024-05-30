@@ -136,14 +136,14 @@ public class PDGProcessing {
             else {
                 list = toDo.get(s);
                 if (list == null) {
-                    list = new ArrayList<Consumer<NodeWrapper>>();
+                    list = new ArrayList<>();
                     toDo.put(s, list);
                 }
             }
         boolean isAttr = decNode == null || decNode.hasLabel(NodeTypes.ATTR_DEF);
         boolean isStatic = s.isStatic();
         if (ASTVisitorParam == null)
-            addRelWithoutAnalysis(list, decNode, node, PDGRelationTypes.USED_BY, methodState, isAttr || isThis,
+            addRelWithoutAnalysis(list, decNode, node, PDGRelationTypes.USED_BY, isAttr || isThis,
                     isInstance, isStatic);
         else
             for (PDGRelationTypes pdgRel : (PDGRelationTypes[]) ASTVisitorParam)
@@ -156,7 +156,7 @@ public class PDGProcessing {
                                NodeWrapper currentClassDec, boolean isAttr, boolean isThis, boolean isInstance,
                                boolean isStatic) {
         if (rel == PDGRelationTypes.USED_BY)
-            addRelWithoutAnalysis(list, dec, concrete, rel, methodState, isAttr || isThis, isInstance, isStatic);
+            addRelWithoutAnalysis(list, dec, concrete, rel, isAttr || isThis, isInstance, isStatic);
         else
             addNotUseRelWithAnalysis(lastAssignment, dec, rel, isIdent, methodState, list, currentClassDec, isAttr,
                     isThis, isInstance, isStatic);
@@ -265,12 +265,12 @@ public class PDGProcessing {
     }
 
     private void addRelWithoutAnalysis(List<Consumer<NodeWrapper>> list, NodeWrapper start, NodeWrapper end,
-                                       PDGRelationTypes rel, MethodState methodState, boolean isAttrOrThis,
+                                       PDGRelationTypes rel, boolean isAttrOrThis,
                                        boolean isOwnAccess, boolean isStatic) {
         if (list == null)
             createRel(start, end, rel, isAttrOrThis, isOwnAccess, isStatic);
         else
-            futureCreateRelInToDoList(list, end, rel, methodState, isAttrOrThis, isOwnAccess, isStatic);
+            futureCreateRelInToDoList(list, end, rel, isAttrOrThis, isOwnAccess, isStatic);
     }
 
     private static NodeWrapper createRel(NodeWrapper start, NodeWrapper end, PDGRelationTypes rel,
@@ -282,8 +282,7 @@ public class PDGProcessing {
     }
 
     private void futureCreateRelInToDoList(List<Consumer<NodeWrapper>> list, NodeWrapper end, PDGRelationTypes rel,
-                                           MethodState methodState, boolean isAttrDecOrThis, boolean isOwnAccess,
-                                           boolean isStatic) {
+                                           boolean isAttrDecOrThis, boolean isOwnAccess, boolean isStatic) {
 
         list.add(decNode -> createRel(decNode, end, rel, isAttrDecOrThis, isOwnAccess, isStatic));
     }
@@ -304,11 +303,9 @@ public class PDGProcessing {
         if (identSymbol.getKind() == ElementKind.METHOD || identSymbol.getKind() == ElementKind.CONSTRUCTOR ||
                 identSymbol.getKind() == ElementKind.TYPE_PARAMETER)
             return false;
-        final String RECORD = "RECORD";
         if (identSymbol.getKind() == ElementKind.CLASS || identSymbol.getKind() == ElementKind.INTERFACE ||
                 identSymbol.getKind() == ElementKind.ENUM || identSymbol.getKind() == ElementKind.PACKAGE ||
-                identSymbol.getKind() == ElementKind.ANNOTATION_TYPE ||
-                identSymbol.getKind().toString().contentEquals(RECORD))
+                identSymbol.getKind() == ElementKind.ANNOTATION_TYPE || identSymbol.getKind() == ElementKind.RECORD)
             return true;
         NodeWrapper decNode = definitionTable.get(identSymbol);
         boolean isThis = identSymbol.name.contentEquals("this") || identSymbol.name.contentEquals("super"), isInstance =
@@ -362,7 +359,7 @@ public class PDGProcessing {
                                       Pair<PartialRelation<RelationTypesInterface>, Object> t, MethodState methodState,
                                       NodeWrapper currentClassDec, boolean isInstance) {
         Symbol symbol = ((JCFieldAccess) memberSelectTree).sym;
-		final String RECORD = "RECORD";
+        final String RECORD = "RECORD";
         if (symbol.getKind() == ElementKind.CLASS || symbol.getKind() == ElementKind.ANNOTATION_TYPE ||
                 symbol.getKind() == ElementKind.INTERFACE || symbol.getKind() == ElementKind.ENUM ||
                 symbol.getKind() == ElementKind.METHOD || symbol.getKind() == ElementKind.CONSTRUCTOR ||
@@ -370,8 +367,8 @@ public class PDGProcessing {
             return;
         NodeWrapper decNode = definitionTable.get(symbol);
 
-        addRels(symbol, memberSelectNode, t.getSecond(), currentClassDec,
-                false, methodState, decNode, memberSelectTree.getIdentifier().contentEquals("this") ||
+        addRels(symbol, memberSelectNode, t.getSecond(), currentClassDec, false, methodState, decNode,
+                memberSelectTree.getIdentifier().contentEquals("this") ||
                         memberSelectTree.getIdentifier().contentEquals("super"), isInstance, memberSelectTree);
     }
 

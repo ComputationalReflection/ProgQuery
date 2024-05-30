@@ -1,5 +1,6 @@
 package es.uniovi.reflection.progquery.pdg;
 
+import es.uniovi.reflection.progquery.database.nodes.NodeCategory;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.CGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.PDGRelationTypes;
@@ -36,7 +37,7 @@ public class GetDeclarationFromExpression {
 
 	private Pair<List<PDGMutatedDecInfoInMethod>, Boolean> scan(NodeWrapper n) {
 
-		return n.hasLabel(NodeTypes.IDENTIFIER) ? scanIdentifier(n) :
+		return n.hasLabel(NodeCategory.IDENTIFIER) ? scanIdentifier(n) :
 				n.hasLabel(NodeTypes.MEMBER_SELECTION) ? scanMemberSel(n) :
 						n.hasLabel(NodeTypes.METHOD_INVOCATION) ? scanMethodInvocation(n) :
 								n.hasLabel(NodeTypes.ASSIGNMENT) ? scanAPart(n, RelationTypes.ASSIGNMENT_LHS) :
@@ -71,7 +72,7 @@ public class GetDeclarationFromExpression {
 
 	private Pair<List<PDGMutatedDecInfoInMethod>, Boolean> scanMemberSel(NodeWrapper memberSel) {
 		Pair<List<PDGMutatedDecInfoInMethod>, Boolean> defsToTheLeft =
-				scanAPart(memberSel, RelationTypes.MEMBER_SELECT_EXPR);
+				scanAPart(memberSel, RelationTypes.IDENT_SELECTION_EXPR);
 		NodeWrapper dec = getDecFromExp(memberSel);
 		if (dec != null)
 			defsToTheLeft.getFirst().add(new PDGMutatedDecInfoInMethod(defsToTheLeft.getSecond(),

@@ -14,10 +14,7 @@ import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import es.uniovi.reflection.progquery.CompilationScheduler;
 import es.uniovi.reflection.progquery.database.DatabaseFacade;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
-import es.uniovi.reflection.progquery.database.relations.CDGRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.PartialRelation;
-import es.uniovi.reflection.progquery.database.relations.RelationTypes;
-import es.uniovi.reflection.progquery.database.relations.RelationTypesInterface;
+import es.uniovi.reflection.progquery.database.relations.*;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.typeInfo.PackageInfo;
 import es.uniovi.reflection.progquery.utils.GraphUtils;
@@ -71,12 +68,13 @@ public class GetStructuresAfterAnalyze implements TaskListener {
                                     arg0.getTypeElement().toString();
                             boolean found = false;
                             for (int i = 0; i < cuTree.getTypeDecls().size(); i++) {
+                                //This stands for a ";" in the Compilation Unit parsed as type declaration
                                 if (cuTree.getTypeDecls().get(i) instanceof JCTree.JCSkip) {
                                     if (firstClass) {
                                         GraphUtils.connectWithParent(DatabaseFacade.CURRENT_DB_FACHADE
                                                         .createSkeletonNode(cuTree.getTypeDecls().get(i),
-                                                                NodeTypes.EMPTY_STATEMENT),
-                                                argument.getFirst().getStartingNode(), RelationTypes.ENCLOSES);
+                                                                NodeTypes.CU_SKIPPED_DEC),
+                                                argument.getFirst().getStartingNode(), RelationTypes.CU_ENCLOSES);
                                         currentTypeCounter--;
                                     }
                                     continue;
@@ -122,7 +120,7 @@ public class GetStructuresAfterAnalyze implements TaskListener {
     private NodeWrapper addPackageInfo(Symbol currentPackage, NodeWrapper compilationUnitNode) {
         PackageInfo.PACKAGE_INFO.get().currentPackage = currentPackage;
         NodeWrapper packageNode = PackageInfo.PACKAGE_INFO.get().putDeclaredPackage(currentPackage);
-        packageNode.createRelationshipTo(compilationUnitNode, CDGRelationTypes.PACKAGE_HAS_COMPILATION_UNIT);
+        packageNode.createRelationshipTo(compilationUnitNode, PGRelationTypes.PACKAGE_HAS_COMPILATION_UNIT);
         return packageNode;
     }
 

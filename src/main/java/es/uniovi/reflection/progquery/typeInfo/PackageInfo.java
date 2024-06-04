@@ -11,6 +11,7 @@ import es.uniovi.reflection.progquery.cache.NotDuplicatingArcsDefCache;
 import es.uniovi.reflection.progquery.database.DatabaseFacade;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.CDGRelationTypes;
+import es.uniovi.reflection.progquery.database.relations.PGRelationTypes;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 
@@ -44,7 +45,7 @@ public class PackageInfo {
 		NodeWrapper packageNode = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.PACKAGE);
 		if (isDeclared) {
 			packageCache.putDefinition(s.toString(), packageNode);
-			currentProgram.createRelationshipTo(packageNode, CDGRelationTypes.PROGRAM_DECLARES_PACKAGE);
+			currentProgram.createRelationshipTo(packageNode, PGRelationTypes.PROGRAM_DECLARES_PACKAGE);
 		} else
 			packageCache.put(s.toString(), packageNode);
 		packageNode.setProperty("name", s.toString());
@@ -60,7 +61,7 @@ public class PackageInfo {
 			NodeWrapper packageNode = getPackageNode(packageSymbol);
 			if (packageNode != null) {
 				packageNode.setProperty("isDeclared", true);
-				currentProgram.createRelationshipTo(packageNode, CDGRelationTypes.PROGRAM_DECLARES_PACKAGE);
+				currentProgram.createRelationshipTo(packageNode, PGRelationTypes.PROGRAM_DECLARES_PACKAGE);
 				packageCache.putDefinition(packageSymbol.toString(), packageNode);
 			} else
 				packageNode = addPackage(packageSymbol, true);
@@ -90,10 +91,10 @@ public class PackageInfo {
 			NodeWrapper dependencyPack = packageCache.get(packageDep.getSecond().toString());
 			if ((Boolean) dependencyPack.getProperty("isDeclared"))
 				packageCache.get(packageDep.getFirst().toString()).createRelationshipTo(dependencyPack,
-						CDGRelationTypes.DEPENDS_ON_PACKAGE);
+						PGRelationTypes.DEPENDS_ON_PACKAGE);
 			else
 				packageCache.get(packageDep.getFirst().toString()).createRelationshipTo(dependencyPack,
-						CDGRelationTypes.DEPENDS_ON_NON_DECLARED_PACKAGE);
+						PGRelationTypes.DEPENDS_ON_NON_DECLARED_PACKAGE);
 		}
 	}
 }

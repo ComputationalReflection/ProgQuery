@@ -35,7 +35,7 @@ public class DatabaseFacade {
         return createNode(type, new Object[]{});
     }
 
-    private NodeWrapper createNode(NodeTypes type, Object[] properties) {
+    public NodeWrapper createNode(NodeTypes type, Object[] properties) {
         NodeWrapper node = insertionStrategy.createNode(type, properties);
         addMultiLabelHypernyms(node, type);
         return node;
@@ -114,13 +114,9 @@ public class DatabaseFacade {
         NodeWrapper typeDef = createNode(classTree.getKind() == Kind.CLASS ? NodeTypes.CLASS_DEF :
                         classTree.getKind() == Kind.INTERFACE ? NodeTypes.INTERFACE_DEF : NodeTypes.ENUM_DEF,
                 getTypeDecProperties(simpleName, fullyQualifiedType, true));
+        typeDef.addLabel(NodeCategory.AST_NODE);
         typeDef.setProperties(getPosition(classTree));
         return typeDef;
-    }
-
-    public NodeWrapper createTypeDecNode(NodeTypes typeNode, Object[] props) {
-        return createNode(typeNode, props);
-
     }
 
     public NodeWrapper createNonDeclaredCLASSTypeDecNode(ClassType c, NodeTypes type) {

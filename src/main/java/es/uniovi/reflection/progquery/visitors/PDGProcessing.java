@@ -82,7 +82,7 @@ public class PDGProcessing {
 
     public void setThisRefOfInstanceMethod(MethodState methodState, NodeWrapper currentClassDec) {
         NodeWrapper method = methodState.lastMethodDecVisited;
-        if (!method.hasLabel(NodeTypes.ATTR_DEF)) {
+        if (!method.hasLabel(NodeTypes.ATTR_DEC)) {
             boolean isStatic = (boolean) method.getProperty("isStatic");
             if (!isStatic && methodState.thisNode == null)
                 methodState.thisNode = getOrCreateThisNode(currentClassDec).getEndNode();
@@ -140,7 +140,7 @@ public class PDGProcessing {
                     toDo.put(s, list);
                 }
             }
-        boolean isAttr = decNode == null || decNode.hasLabel(NodeTypes.ATTR_DEF);
+        boolean isAttr = decNode == null || decNode.hasLabel(NodeTypes.ATTR_DEC);
         boolean isStatic = s.isStatic();
         if (ASTVisitorParam == null)
             addRelWithoutAnalysis(list, decNode, node, PDGRelationTypes.USED_BY, isAttr || isThis,
@@ -230,10 +230,10 @@ public class PDGProcessing {
     }
 
     private boolean isNormalParameter(MethodState methodState, NodeWrapper dec) {
-        if (dec.hasLabel(NodeTypes.PARAMETER_DEF)) {
+        if (dec.hasLabel(NodeTypes.PARAMETER_DEC)) {
             RelationshipWrapper paramRel =
-                    dec.getRelationships(Direction.INCOMING, RelationTypes.CALLABLE_HAS_PARAMETER,
-                            RelationTypes.LAMBDA_EXPRESSION_PARAMETERS).get(0);
+                    dec.getRelationships(Direction.INCOMING, RelationTypes.CALLABLE_PARAM,
+                            RelationTypes.LAMBDA_EXPR_PARAM).get(0);
             return paramRel.getStartNode() == methodState.lastMethodDecVisited;
         }
         return false;
@@ -310,7 +310,7 @@ public class PDGProcessing {
         NodeWrapper decNode = definitionTable.get(identSymbol);
         boolean isThis = identSymbol.name.contentEquals("this") || identSymbol.name.contentEquals("super"), isInstance =
 
-                (decNode == null || decNode.hasLabel(NodeTypes.ATTR_DEF) || decNode.hasLabel(NodeTypes.THIS_REF)) &&
+                (decNode == null || decNode.hasLabel(NodeTypes.ATTR_DEC) || decNode.hasLabel(NodeTypes.THIS_REF)) &&
                         !identSymbol.isStatic();
         addRels(identSymbol, identifierNode, t.getSecond(), currentClassDec, true, methodState, decNode, isThis,
                 isInstance, identifierTree);
@@ -344,7 +344,7 @@ public class PDGProcessing {
     }
 
     private NodeWrapper createNotDeclaredAttr(VarSymbol s, ASTAuxiliarStorage ast) {
-        NodeWrapper decNode = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.ATTR_DEF);
+        NodeWrapper decNode = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.ATTR_DEC);
 
         decNode.setProperty("isDeclared", false);
         decNode.setProperty("name", s.name.toString());

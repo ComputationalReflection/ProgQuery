@@ -38,13 +38,13 @@ public class GetDeclarationFromExpression {
 	private Pair<List<PDGMutatedDecInfoInMethod>, Boolean> scan(NodeWrapper n) {
 
 		return n.hasLabel(NodeCategory.IDENTIFIER) ? scanIdentifier(n) :
-				n.hasLabel(NodeTypes.MEMBER_SELECTION) ? scanMemberSel(n) :
+				n.hasLabel(NodeCategory.IDENTIFIER_SELECTION) ? scanMemberSel(n) :
 						n.hasLabel(NodeTypes.METHOD_INVOCATION) ? scanMethodInvocation(n) :
 								n.hasLabel(NodeTypes.ASSIGNMENT) ? scanAPart(n, RelationTypes.ASSIGNMENT_LHS) :
 										n.hasLabel(NodeTypes.ARRAY_ACCESS) ?
-												scanAPart(n, RelationTypes.ARRAYACCESS_EXPR) :
+												scanAPart(n, RelationTypes.ARRAY_ACCESS_EXPR) :
 												n.hasLabel(NodeTypes.TYPE_CAST) ?
-														scanAPart(n, RelationTypes.CAST_ENCLOSES) :
+														scanAPart(n, RelationTypes.CAST_EXPR) :
 														n.hasLabel(NodeTypes.CONDITIONAL_EXPRESSION) ?
 																scanConditionalExpression(n) : unknownScan(n);
 	}
@@ -61,8 +61,8 @@ public class GetDeclarationFromExpression {
 						.getStartNode();
 			else {
 				RelationshipWrapper methodInvocationRelIfExists = identOrMemberSel
-						.getSingleRelationship(Direction.INCOMING, RelationTypes.METHODINVOCATION_METHOD_SELECT);
-				if (methodInvocationRelIfExists == null || identOrMemberSel.hasLabel(NodeTypes.MEMBER_SELECTION)) {
+						.getSingleRelationship(Direction.INCOMING, RelationTypes.INVOCATION_METHOD_SELECTION);
+				if (methodInvocationRelIfExists == null || identOrMemberSel.hasLabel(NodeCategory.IDENTIFIER_SELECTION)) {
 					return null;
 				}
 				return currentThisRef;
@@ -72,7 +72,7 @@ public class GetDeclarationFromExpression {
 
 	private Pair<List<PDGMutatedDecInfoInMethod>, Boolean> scanMemberSel(NodeWrapper memberSel) {
 		Pair<List<PDGMutatedDecInfoInMethod>, Boolean> defsToTheLeft =
-				scanAPart(memberSel, RelationTypes.IDENT_SELECTION_EXPR);
+				scanAPart(memberSel, RelationTypes.IDENT_SELECTION_FROM);
 		NodeWrapper dec = getDecFromExp(memberSel);
 		if (dec != null)
 			defsToTheLeft.getFirst().add(new PDGMutatedDecInfoInMethod(defsToTheLeft.getSecond(),
@@ -87,7 +87,7 @@ public class GetDeclarationFromExpression {
 		if (dec != null) {
 			List<PDGMutatedDecInfoInMethod> identInfo = new ArrayList<>();
 			identInfo.add(new PDGMutatedDecInfoInMethod(false,
-					dec.hasLabel(NodeTypes.ATTR_DEF) && !(Boolean) dec.getProperty("isStatic") ||
+					dec.hasLabel(NodeTypes.ATTR_DEC) && !(Boolean) dec.getProperty("isStatic") ||
 							dec.hasLabel(NodeTypes.THIS_REF)
 							? IsInstance.YES : IsInstance.NO, dec));
 			return Pair.create(identInfo, false);
@@ -131,11 +131,11 @@ public class GetDeclarationFromExpression {
 		boolean isDeclared = (Boolean) calleeMethodNode.getProperty("isDeclared");
 		thisArgRet = calleeMethodNode.hasLabel(NodeTypes.CONSTRUCTOR_DEF) ||
 				(isDeclared && !(Boolean) calleeMethodNode.getProperty("isStatic")) ? scan(methodInvocation
-				.getSingleRelationship(Direction.OUTGOING, RelationTypes.METHODINVOCATION_METHOD_SELECT).getEndNode()) :
+				.getSingleRelationship(Direction.OUTGOING, RelationTypes.INVOCATION_METHOD_SELECTION).getEndNode()) :
 				Pair.create(new ArrayList<>(), false);
 		varDecsInArguments.put(0, thisArgRet.getFirst());
 		for (RelationshipWrapper argumentRel : methodInvocation
-				.getRelationships(Direction.OUTGOING, RelationTypes.METHODINVOCATION_ARGUMENTS))
+				.getRelationships(Direction.OUTGOING, RelationTypes.INVOCATION_ARG))
 			varDecsInArguments.put((int) argumentRel.getProperty("argumentIndex"),
 					isDeclared ? scan(argumentRel.getEndNode()).getFirst() : new ArrayList<>());
 		invocationsMayModifyVars.put(methodInvocation, varDecsInArguments);
@@ -148,7 +148,7 @@ public class GetDeclarationFromExpression {
 		varDecsInArguments.put(0, new ArrayList<>());
 
 		for (RelationshipWrapper argumentRel : newClass
-				.getRelationships(Direction.OUTGOING, RelationTypes.NEW_CLASS_ARGUMENTS))
+				.getRelationships(Direction.OUTGOING, RelationTypes.NEW_INSTANCE_ARG))
 			varDecsInArguments
 					.put((int) argumentRel.getProperty("argumentIndex"), scan(argumentRel.getEndNode()).getFirst());
 		invocationsMayModifyVars.put(newClass, varDecsInArguments);

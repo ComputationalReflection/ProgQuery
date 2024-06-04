@@ -605,7 +605,7 @@ public class ASTTypesVisitor
                 DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(erroneousTree, NodeTypes.ERRONEOUS_NODE);
         attachTypeDirect(erroneousNode, erroneousTree);
         GraphUtils.connectWithParent(erroneousNode, t);
-        scan(erroneousTree.getErrorTrees(), Pair.createPair(erroneousNode, RelationTypes.ERRONEOUS_NODE_CAUSED_BY));
+        scan(erroneousTree.getErrorTrees(), Pair.createPair(erroneousNode, RelationTypes.ERRONEOUS_CAUSED_BY));
         return null;
     }
 
@@ -781,9 +781,9 @@ public class ASTTypesVisitor
         boolean prevIsInAccesibleCtxt = isInAccessibleContext;
         isInAccessibleContext = false;
         inALambda = true;
-        scan(lambdaExpressionTree.getBody(), Pair.createPair(lambdaExpressionNode, RelationTypes.LAMBDA_EXPR_BODY));
+        scan(lambdaExpressionTree.getBody(), Pair.createPair(lambdaExpressionNode, RelationTypes.LAMBDA_BODY));
         visitListWithPropertyIndex(lambdaExpressionTree.getParameters(), lambdaExpressionNode,
-                RelationTypes.LAMBDA_EXPR_PARAM, "paramIndex");
+                RelationTypes.LAMBDA_PARAM, "paramIndex");
         inALambda = false;
         insideConstructor = prevInside;
         isInAccessibleContext = prevIsInAccesibleCtxt;
@@ -1520,7 +1520,7 @@ public class ASTTypesVisitor
                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         boolean isAttr = t.getFirst().getRelationType().equals(RelationTypes.TYPE_STATIC_INIT);
         boolean isMethodParam = t.getFirst().getRelationType().equals(RelationTypes.CALLABLE_PARAM) ||
-                t.getFirst().getRelationType().equals(RelationTypes.LAMBDA_EXPR_PARAM);
+                t.getFirst().getRelationType().equals(RelationTypes.LAMBDA_PARAM);
         boolean isEnum = false;
         NodeWrapper variableNode;
         if (isAttr)

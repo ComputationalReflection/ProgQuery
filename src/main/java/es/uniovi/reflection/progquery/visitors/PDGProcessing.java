@@ -233,7 +233,7 @@ public class PDGProcessing {
         if (dec.hasLabel(NodeTypes.PARAMETER_DEC)) {
             RelationshipWrapper paramRel =
                     dec.getRelationships(Direction.INCOMING, RelationTypes.CALLABLE_PARAM,
-                            RelationTypes.LAMBDA_EXPR_PARAM).get(0);
+                            RelationTypes.LAMBDA_PARAM).get(0);
             return paramRel.getStartNode() == methodState.lastMethodDecVisited;
         }
         return false;

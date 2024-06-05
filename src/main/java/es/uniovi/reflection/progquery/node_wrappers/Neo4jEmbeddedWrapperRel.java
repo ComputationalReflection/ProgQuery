@@ -7,7 +7,7 @@ import org.neo4j.graphdb.Relationship;
 
 import es.uniovi.reflection.progquery.database.relations.CDGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.CGRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.RelationTypes;
+import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.RelationTypesInterface;
 import es.uniovi.reflection.progquery.database.relations.TypeRelations;
 
@@ -46,7 +46,7 @@ public class Neo4jEmbeddedWrapperRel implements RelationshipWrapper {
 
 	static RelationTypesInterface nameToEnum(String name) {
 		try {
-			return RelationTypes.valueOf(name);
+			return ASTRelationTypes.valueOf(name);
 		} catch (IllegalArgumentException e) {
 			try {
 				return TypeRelations.valueOf(name);

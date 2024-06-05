@@ -3,7 +3,7 @@ package es.uniovi.reflection.progquery.cache;
 import com.sun.tools.javac.code.Symbol;
 import es.uniovi.reflection.progquery.ast.ASTAuxiliarStorage;
 import es.uniovi.reflection.progquery.database.relations.CDGRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.RelationTypes;
+import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.TypeRelations;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
@@ -44,7 +44,7 @@ public class DefinitionCache<TKEY> {
         if (auxNodeCache.containsKey(classSymbol)) {
             oldClassNode = auxNodeCache.get(classSymbol);
             for (RelationshipWrapper r : oldClassNode.getRelationships(Direction.OUTGOING,
-                    RelationTypes.DECLARES_FIELD, TypeRelations.IS_SUBTYPE_EXTENDS,
+                    ASTRelationTypes.DECLARES_FIELD, TypeRelations.IS_SUBTYPE_EXTENDS,
                     TypeRelations.IS_SUBTYPE_IMPLEMENTS))
                 r.delete();
             typeDecNodeList.remove(oldClassNode);

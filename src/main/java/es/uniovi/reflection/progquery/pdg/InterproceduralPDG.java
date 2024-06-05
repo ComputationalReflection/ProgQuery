@@ -3,7 +3,7 @@ package es.uniovi.reflection.progquery.pdg;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.CGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.PDGRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.RelationTypes;
+import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import es.uniovi.reflection.progquery.pdg.GetDeclarationFromExpression.IsInstance;
@@ -58,8 +58,8 @@ public class InterproceduralPDG {
                         ) {
                             int paramIndex = paramMutatedInCalledMethodDec.getKey().hasLabel(NodeTypes.THIS_REF) ? 0 :
                                     (Integer) paramMutatedInCalledMethodDec.getKey()
-                                            .getRelationships(Direction.INCOMING, RelationTypes.CALLABLE_PARAM,
-                                                    RelationTypes.LAMBDA_PARAM).get(0)
+                                            .getRelationships(Direction.INCOMING, ASTRelationTypes.CALLABLE_PARAM,
+                                                    ASTRelationTypes.LAMBDA_PARAM).get(0)
                                             .getProperty("paramIndex");
                             MutatedParamInCallInfo mutatedParamIndexAndMust = new MutatedParamInCallInfo(paramIndex,
                                     paramMutatedInCalledMethodDec.getValue() == PDGRelationTypes.STATE_MODIFIED_BY,
@@ -129,8 +129,8 @@ public class InterproceduralPDG {
             Map<NodeWrapper, PDGRelationTypes> paramRelsOnMethod = methodInfo.paramsToPDGRelations;
             Set<NodeWrapper> paramsSet = methodInfo.callsToParamsPreviouslyModified.get(callRel.getEndNode());
             if (varMayOrMustBeModified.dec.hasLabel(NodeTypes.PARAMETER_DEC) && varMayOrMustBeModified.dec
-                    .getRelationships(Direction.INCOMING, RelationTypes.CALLABLE_PARAM,
-                            RelationTypes.LAMBDA_PARAM).get(0).getStartNode() ==
+                    .getRelationships(Direction.INCOMING, ASTRelationTypes.CALLABLE_PARAM,
+                            ASTRelationTypes.LAMBDA_PARAM).get(0).getStartNode() ==
                     methodInfo.methodNode && (paramsSet == null || !paramsSet.contains(varMayOrMustBeModified.dec)))
 
                 addNewPDGRelFromParamToMethod(

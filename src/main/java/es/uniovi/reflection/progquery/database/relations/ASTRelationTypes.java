@@ -1,6 +1,6 @@
 package es.uniovi.reflection.progquery.database.relations;
 
-public enum RelationTypes implements RelationTypesInterface {
+public enum ASTRelationTypes implements RelationTypesInterface {
 	/*Compilation Unit to AST Node*/
 	CU_ENCLOSES, CU_IMPORTS,
 

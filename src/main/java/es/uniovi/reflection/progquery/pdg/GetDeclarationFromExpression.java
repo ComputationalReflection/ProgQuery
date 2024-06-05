@@ -4,7 +4,7 @@ import es.uniovi.reflection.progquery.database.nodes.NodeCategory;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.CGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.PDGRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.RelationTypes;
+import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodInfo;
@@ -40,11 +40,11 @@ public class GetDeclarationFromExpression {
 		return n.hasLabel(NodeCategory.IDENTIFIER) ? scanIdentifier(n) :
 				n.hasLabel(NodeCategory.IDENTIFIER_SELECTION) ? scanMemberSel(n) :
 						n.hasLabel(NodeTypes.METHOD_INVOCATION) ? scanMethodInvocation(n) :
-								n.hasLabel(NodeTypes.ASSIGNMENT) ? scanAPart(n, RelationTypes.ASSIGNMENT_LHS) :
+								n.hasLabel(NodeTypes.ASSIGNMENT) ? scanAPart(n, ASTRelationTypes.ASSIGNMENT_LHS) :
 										n.hasLabel(NodeTypes.ARRAY_ACCESS) ?
-												scanAPart(n, RelationTypes.ARRAY_ACCESS_EXPR) :
+												scanAPart(n, ASTRelationTypes.ARRAY_ACCESS_EXPR) :
 												n.hasLabel(NodeTypes.TYPE_CAST) ?
-														scanAPart(n, RelationTypes.CAST_EXPR) :
+														scanAPart(n, ASTRelationTypes.CAST_EXPR) :
 														n.hasLabel(NodeTypes.CONDITIONAL_EXPRESSION) ?
 																scanConditionalExpression(n) : unknownScan(n);
 	}
@@ -61,7 +61,7 @@ public class GetDeclarationFromExpression {
 						.getStartNode();
 			else {
 				RelationshipWrapper methodInvocationRelIfExists = identOrMemberSel
-						.getSingleRelationship(Direction.INCOMING, RelationTypes.INVOCATION_METHOD_SELECTION);
+						.getSingleRelationship(Direction.INCOMING, ASTRelationTypes.INVOCATION_METHOD_SELECTION);
 				if (methodInvocationRelIfExists == null || identOrMemberSel.hasLabel(NodeCategory.IDENTIFIER_SELECTION)) {
 					return null;
 				}
@@ -72,7 +72,7 @@ public class GetDeclarationFromExpression {
 
 	private Pair<List<PDGMutatedDecInfoInMethod>, Boolean> scanMemberSel(NodeWrapper memberSel) {
 		Pair<List<PDGMutatedDecInfoInMethod>, Boolean> defsToTheLeft =
-				scanAPart(memberSel, RelationTypes.IDENT_SELECTION_FROM);
+				scanAPart(memberSel, ASTRelationTypes.IDENT_SELECTION_FROM);
 		NodeWrapper dec = getDecFromExp(memberSel);
 		if (dec != null)
 			defsToTheLeft.getFirst().add(new PDGMutatedDecInfoInMethod(defsToTheLeft.getSecond(),
@@ -104,16 +104,16 @@ public class GetDeclarationFromExpression {
 	public Pair<List<PDGMutatedDecInfoInMethod>, Boolean> scanConditionalExpression(NodeWrapper conditionalExpr) {
 		List<PDGMutatedDecInfoInMethod> ret = new ArrayList<>();
 		Pair<List<PDGMutatedDecInfoInMethod>, Boolean> retThen =
-				scan(conditionalExpr.getSingleRelationship(Direction.OUTGOING, RelationTypes.CONDITIONAL_EXPR_THEN)
+				scan(conditionalExpr.getSingleRelationship(Direction.OUTGOING, ASTRelationTypes.CONDITIONAL_EXPR_THEN)
 						.getEndNode()), retElse =
-				scan(conditionalExpr.getSingleRelationship(Direction.OUTGOING, RelationTypes.CONDITIONAL_EXPR_ELSE)
+				scan(conditionalExpr.getSingleRelationship(Direction.OUTGOING, ASTRelationTypes.CONDITIONAL_EXPR_ELSE)
 						.getEndNode());
 		ret.addAll(convertMustToMay(retElse));
 		ret.addAll(convertMustToMay(retThen));
 		return Pair.create(ret, false);
 	}
 
-	public Pair<List<PDGMutatedDecInfoInMethod>, Boolean> scanAPart(NodeWrapper memberSelection, RelationTypes r) {
+	public Pair<List<PDGMutatedDecInfoInMethod>, Boolean> scanAPart(NodeWrapper memberSelection, ASTRelationTypes r) {
 		return scan(memberSelection.getSingleRelationship(Direction.OUTGOING, r).getEndNode());
 	}
 
@@ -131,11 +131,11 @@ public class GetDeclarationFromExpression {
 		boolean isDeclared = (Boolean) calleeMethodNode.getProperty("isDeclared");
 		thisArgRet = calleeMethodNode.hasLabel(NodeTypes.CONSTRUCTOR_DEF) ||
 				(isDeclared && !(Boolean) calleeMethodNode.getProperty("isStatic")) ? scan(methodInvocation
-				.getSingleRelationship(Direction.OUTGOING, RelationTypes.INVOCATION_METHOD_SELECTION).getEndNode()) :
+				.getSingleRelationship(Direction.OUTGOING, ASTRelationTypes.INVOCATION_METHOD_SELECTION).getEndNode()) :
 				Pair.create(new ArrayList<>(), false);
 		varDecsInArguments.put(0, thisArgRet.getFirst());
 		for (RelationshipWrapper argumentRel : methodInvocation
-				.getRelationships(Direction.OUTGOING, RelationTypes.INVOCATION_ARG))
+				.getRelationships(Direction.OUTGOING, ASTRelationTypes.INVOCATION_ARG))
 			varDecsInArguments.put((int) argumentRel.getProperty("argumentIndex"),
 					isDeclared ? scan(argumentRel.getEndNode()).getFirst() : new ArrayList<>());
 		invocationsMayModifyVars.put(methodInvocation, varDecsInArguments);
@@ -148,7 +148,7 @@ public class GetDeclarationFromExpression {
 		varDecsInArguments.put(0, new ArrayList<>());
 
 		for (RelationshipWrapper argumentRel : newClass
-				.getRelationships(Direction.OUTGOING, RelationTypes.NEW_INSTANCE_ARG))
+				.getRelationships(Direction.OUTGOING, ASTRelationTypes.NEW_INSTANCE_ARG))
 			varDecsInArguments
 					.put((int) argumentRel.getProperty("argumentIndex"), scan(argumentRel.getEndNode()).getFirst());
 		invocationsMayModifyVars.put(newClass, varDecsInArguments);

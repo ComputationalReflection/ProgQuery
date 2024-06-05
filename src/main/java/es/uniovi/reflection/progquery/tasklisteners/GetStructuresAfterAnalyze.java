@@ -74,7 +74,7 @@ public class GetStructuresAfterAnalyze implements TaskListener {
                                         GraphUtils.connectWithParent(DatabaseFacade.CURRENT_DB_FACHADE
                                                         .createSkeletonNode(cuTree.getTypeDecls().get(i),
                                                                 NodeTypes.CU_SKIPPED_DEC),
-                                                argument.getFirst().getStartingNode(), RelationTypes.CU_ENCLOSES);
+                                                argument.getFirst().getStartingNode(), ASTRelationTypes.CU_ENCLOSES);
                                         currentTypeCounter--;
                                     }
                                     continue;

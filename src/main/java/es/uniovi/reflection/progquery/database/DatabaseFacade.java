@@ -3,7 +3,6 @@ package es.uniovi.reflection.progquery.database;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.Tree.Kind;
-import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.tree.JCTree;
@@ -12,9 +11,7 @@ import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.WrapperUtils;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
-
-import javax.lang.model.element.Modifier;
-import java.util.Set;
+import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 
 public class DatabaseFacade {
     private final InsertionStrategy insertionStrategy;
@@ -93,20 +90,8 @@ public class DatabaseFacade {
 
 
     private static Object[] getTypeDecProperties(ClassSymbol symbol, boolean isDeclared) {
-        Set<Modifier> modifiers = Flags.asModifierSet(symbol.flags_field);
-        Object[] classProps =
-                symbol.isEnum() ? new Object[]{"isFinal", true, "isStatic", true, "accessLevel", "public"} :
-                        symbol.isInterface() ?
-                                new Object[]{"isAbstract", modifiers.contains(Modifier.ABSTRACT), "accessLevel",
-                                        modifiers.contains(Modifier.PUBLIC) ? "public" : "package"} :
-                                new Object[]{"isAbstract", modifiers.contains(Modifier.ABSTRACT), "isStatic",
-                                        modifiers.contains(Modifier.STATIC), "isFinal",
-                                        modifiers.contains(Modifier.FINAL), "accessLevel",
-                                        modifiers.contains(Modifier.PUBLIC) ? "public" :
-                                                modifiers.contains(Modifier.PRIVATE) ? "private" : "package"};
-
-        return join(getTypeDecProperties(symbol.getSimpleName().toString(), symbol.getQualifiedName().toString(),
-                isDeclared), classProps);
+        return getTypeDecProperties(symbol.getSimpleName().toString(), symbol.getQualifiedName().toString(),
+                isDeclared);
 
     }
 
@@ -119,13 +104,14 @@ public class DatabaseFacade {
         return typeDef;
     }
 
-    public NodeWrapper createNonDeclaredCLASSTypeDecNode(ClassType c, NodeTypes type) {
-        return createNonDeclaredCLASSTypeDecNode((ClassSymbol) c.tsym, type);
+    public NodeWrapper createNonDeclaredTypeDecNode(ClassType c, NodeTypes type) {
+        return createNonDeclaredTypeDecNode((ClassSymbol) c.tsym, type);
 
     }
 
-    public NodeWrapper createNonDeclaredCLASSTypeDecNode(ClassSymbol c, NodeTypes type) {
-        return createNode(type, getTypeDecProperties(c, false));
-
+    public NodeWrapper createNonDeclaredTypeDecNode(ClassSymbol symbol, NodeTypes type) {
+        NodeWrapper typeDecNode = createNode(type, getTypeDecProperties(symbol, false));
+        ASTTypesVisitor.setTypeDecModifiers(symbol.getModifiers(), typeDecNode, symbol.isStatic() || symbol.isInner());
+        return typeDecNode;
     }
 }

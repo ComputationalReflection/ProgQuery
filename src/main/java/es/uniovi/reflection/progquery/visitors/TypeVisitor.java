@@ -72,7 +72,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
             return DefinitionCache.TYPE_CACHE.get().get(typeDefKey);
 
         NodeWrapper generatedTypeDec =
-                DatabaseFacade.CURRENT_DB_FACHADE.createNonDeclaredCLASSTypeDecNode(classSymbol,
+                DatabaseFacade.CURRENT_DB_FACHADE.createNonDeclaredTypeDecNode(classSymbol,
                         classSymbol.isInterface() ? NodeTypes.INTERFACE_DEF :
                                 classSymbol.isEnum() ? NodeTypes.ENUM_DEF : NodeTypes.CLASS_DEF);
         putInCache(typeDefKey, generatedTypeDec);
@@ -104,7 +104,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
             typeArgKeys = t.getTypeArguments().stream()
                     .map(typeParam -> new TypeVariableKey((TypeVariable) typeParam, declaredTypeKey))
                     .collect(Collectors.toList());
-            declaredType = DatabaseFacade.CURRENT_DB_FACHADE.createNonDeclaredCLASSTypeDecNode(((ClassType) t),
+            declaredType = DatabaseFacade.CURRENT_DB_FACHADE.createNonDeclaredTypeDecNode(((ClassType) t),
                             type.isInterface() ? NodeTypes.INTERFACE_DEF :
                                     type.tsym.isEnum() ? NodeTypes.ENUM_DEF : NodeTypes.CLASS_DEF);
 

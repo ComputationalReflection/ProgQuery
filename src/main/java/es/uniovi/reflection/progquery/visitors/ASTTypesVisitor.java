@@ -45,6 +45,10 @@ public class ASTTypesVisitor
     private static final String PACKAGE_ACCESS = "package";
     private static final String PROTECTED_ACCESS = "protected";
     private static final String ACCESS_LEVEL = "accessLevel";
+    private static final String IS_DECLARED_PROP = "isDeclared";
+    private static final String IS_STATIC_PROP = "isStatic";
+    private static final String IS_ABSTRACT_PROP = "isAbstract";
+    private static final String IS_FINAL_PROP = "isFinal";
     private NodeWrapper lastStaticConsVisited = null;
     private ClassTree typeDec;
     private boolean first;
@@ -113,7 +117,7 @@ public class ASTTypesVisitor
     private static NodeWrapper getNotDeclaredConstructorDecNode(Symbol s, MethodNameInfo nameInfo) {
         NodeWrapper constructorDef =
                 DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.CONSTRUCTOR_DEF);
-        constructorDef.setProperty("isDeclared", false);
+        constructorDef.setProperty(IS_DECLARED_PROP, false);
         constructorDef.setProperty("name", nameInfo.getSimpleName());
         constructorDef.setProperty("fullyQualifiedName", nameInfo.getFullyQualifiedName());
         constructorDef.setProperty("completeName", nameInfo.getCompleteName());
@@ -152,7 +156,7 @@ public class ASTTypesVisitor
     private static NodeWrapper createNonDeclaredMethodWithoutSymbol(MethodNameInfo nameInfo) {
         NodeWrapper methodDecNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.METHOD_DEF);
-        methodDecNode.setProperty("isDeclared", false);
+        methodDecNode.setProperty(IS_DECLARED_PROP, false);
         methodDecNode.setProperty("name", nameInfo.getSimpleName());
         methodDecNode.setProperty("completeName", nameInfo.getCompleteName());
         methodDecNode.setProperty("fullyQualifiedName", nameInfo.getFullyQualifiedName());
@@ -303,7 +307,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitBlock(BlockTree blockTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper blockNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(blockTree, NodeTypes.BLOCK);
         lastBlockVisited = blockNode;
-        blockNode.setProperty("isStatic", blockTree.isStatic());
+        blockNode.setProperty(IS_STATIC_PROP, blockTree.isStatic());
         boolean isStaticInit = t.getFirst().getRelationType() == ASTRelationTypes.TYPE_STATIC_INIT;
         MethodState prevState = null;
         if (isStaticInit) {
@@ -380,8 +384,32 @@ public class ASTTypesVisitor
         return null;
     }
 
-    @Override
+    private void setTypeModifiersAndAnnotations(ModifiersTree modifiersTree, NodeWrapper typeNode, boolean isNested) {
+        scan(modifiersTree.getAnnotations(), Pair.createPair(typeNode, ASTRelationTypes.HAS_ANNOTATION));
+        setTypeDecModifiers(modifiersTree.getFlags(), typeNode, isNested);
+    }
 
+    public static void setTypeDecModifiers(Set<Modifier> modifiers, NodeWrapper typeDecNode, boolean isNested) {
+        modifierAccessLevelToNode(modifiers, typeDecNode);
+        checkStrictfpMod(modifiers, typeDecNode);
+
+        if (typeDecNode.hasLabel(NodeTypes.CLASS_DEF)) {
+            checkAbstractMod(modifiers, typeDecNode);
+            checkFinalMod(modifiers, typeDecNode);
+            checkStaticMod(modifiers, typeDecNode);
+        } else {
+            typeDecNode.setProperty(IS_STATIC_PROP, isNested);
+            if (typeDecNode.hasLabel(NodeTypes.INTERFACE_DEF)) {
+                typeDecNode.setProperty(IS_ABSTRACT_PROP, true);
+                typeDecNode.setProperty(IS_FINAL_PROP, false);
+            } else if (typeDecNode.hasLabel(NodeTypes.ENUM_DEF)) {
+                typeDecNode.setProperty(IS_ABSTRACT_PROP, false);
+                typeDecNode.setProperty(IS_FINAL_PROP, true);
+            }
+        }
+    }
+
+    @Override
     public ASTVisitorResult visitClass(ClassTree classTree,
                                        Pair<PartialRelation<RelationTypesInterface>, Object> pair) {
 
@@ -396,14 +424,14 @@ public class ASTTypesVisitor
             simpleName = simpleName.substring(0, simpleName.length() - 1);
         }
 
-        NodeWrapper classNode =
+        NodeWrapper typeNode =
                 DatabaseFacade.CURRENT_DB_FACHADE.createTypeDecNode(classTree, simpleName, fullyQualifiedType);
-        classNode.addLabel(NodeCategory.AST_NODE);
+        typeNode.addLabel(NodeCategory.AST_NODE);
 
-        ast.typeDecNodes.add(classNode);
+        ast.typeDecNodes.add(typeNode);
 
         ClassState previousClassState = classState;
-        classState = new ClassState(classNode);
+        classState = new ClassState(typeNode);
 
         Set<NodeWrapper> previousTypeDecUses = typeDecUses;
         typeDecUses = new HashSet<>();
@@ -412,39 +440,40 @@ public class ASTTypesVisitor
 
         if (currentTypeDecSymbol != outerMostClass)
             addClassIdentifier(outerMostClass);
-        if (!pair.getFirst().getStartingNode().hasLabel(NodeTypes.COMPILATION_UNIT))
-            currentCU.createRelationshipTo(classNode, CDGRelationTypes.NESTED_TYPE_DEF);
+        boolean isNested = !pair.getFirst().getStartingNode().hasLabel(NodeTypes.COMPILATION_UNIT);
+        if (isNested)
+            currentCU.createRelationshipTo(typeNode, CDGRelationTypes.NESTED_TYPE_DEF);
 
-        GraphUtils.connectWithParent(classNode, pair, ASTRelationTypes.DECLARES_TYPE);
+        GraphUtils.connectWithParent(typeNode, pair, ASTRelationTypes.DECLARES_TYPE);
 
-        DefinitionCache.putClassDefinition(currentTypeDecSymbol, classNode, ast.typeDecNodes, typeDecUses);
+        DefinitionCache.putClassDefinition(currentTypeDecSymbol, typeNode, ast.typeDecNodes, typeDecUses);
 
-        TypeHierarchy.addTypeHierarchy(currentTypeDecSymbol, classNode, this, ast);
+        TypeHierarchy.addTypeHierarchy(currentTypeDecSymbol, typeNode, this, ast);
         boolean prevIsInAccesibleContext = isInAccessibleContext;
         if (pair.getFirst().getRelationType() == ASTRelationTypes.NEW_INSTANCE_BODY) {
-            visitAnonymousClassModifiers(classTree.getModifiers(), classNode);
+            visitAnonymousClassModifiers(classTree.getModifiers(), typeNode);
 
             isInAccessibleContext = false;
         } else {
-            scan(classTree.getModifiers(), Pair.createPair(classNode, null));
+            setTypeModifiersAndAnnotations(classTree.getModifiers(), typeNode, isNested);
 
-            isInAccessibleContext = isInAccessibleContext &&
-                    classNode.getProperty(ACCESS_LEVEL).toString().contentEquals(PUBLIC_ACCESS);
+            isInAccessibleContext =
+                    isInAccessibleContext && typeNode.getProperty(ACCESS_LEVEL).toString().contentEquals(PUBLIC_ACCESS);
         }
 
-        visitListWithPropertyIndex(classTree.getTypeParameters(), classNode, ASTRelationTypes.TYPE_HAS_TYPE_PARAM,
+        visitListWithPropertyIndex(classTree.getTypeParameters(), typeNode, ASTRelationTypes.TYPE_HAS_TYPE_PARAM,
                 "paramIndex");
         if (classTree.getTypeParameters().size() > 0)
-            classNode.addLabel(NodeTypes.GENERIC_TYPE);
+            typeNode.addLabel(NodeTypes.GENERIC_TYPE);
 
-        scan(classTree.getExtendsClause(), Pair.createPair(classNode, ASTRelationTypes.EXTENDS_CLAUSE));
-        scan(classTree.getImplementsClause(), Pair.createPair(classNode, ASTRelationTypes.IMPLEMENTS_CLAUSE));
+        scan(classTree.getExtendsClause(), Pair.createPair(typeNode, ASTRelationTypes.EXTENDS_CLAUSE));
+        scan(classTree.getImplementsClause(), Pair.createPair(typeNode, ASTRelationTypes.IMPLEMENTS_CLAUSE));
 
         List<NodeWrapper> attrs = new ArrayList<NodeWrapper>(), staticAttrs = new ArrayList<NodeWrapper>(),
                 constructors = new ArrayList<NodeWrapper>();
         NodeWrapper prevStaticCons = lastStaticConsVisited;
 
-        scan(classTree.getMembers(), Pair.createPair(classNode, ASTRelationTypes.TYPE_STATIC_INIT,
+        scan(classTree.getMembers(), Pair.createPair(typeNode, ASTRelationTypes.TYPE_STATIC_INIT,
                 Pair.create(Pair.create(attrs, staticAttrs), constructors)));
         for (NodeWrapper constructor : constructors)
             for (NodeWrapper instanceAttr : attrs)
@@ -597,7 +626,8 @@ public class ASTTypesVisitor
         prevMust = must;
         must = false;
         pdgUtils.enteringNewBranch();
-        scan(enhancedForLoopTree.getStatement(), Pair.createPair(enhancedForLoopNode, ASTRelationTypes.FOREACH_STATEMENT));
+        scan(enhancedForLoopTree.getStatement(),
+                Pair.createPair(enhancedForLoopNode, ASTRelationTypes.FOREACH_STATEMENT));
         pdgUtils.exitingCurrentBranch();
         must = prevMust;
         return null;
@@ -714,7 +744,7 @@ public class ASTTypesVisitor
 
         NodeWrapper importNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(importTree, NodeTypes.IMPORT);
         importNode.setProperty("qualifiedIdentifier", importTree.getQualifiedIdentifier().toString());
-        importNode.setProperty("isStatic", importTree.isStatic());
+        importNode.setProperty(IS_STATIC_PROP, importTree.isStatic());
 
         GraphUtils.connectWithParent(importNode, t, ASTRelationTypes.CU_IMPORTS);
         return null;
@@ -892,22 +922,23 @@ public class ASTTypesVisitor
         boolean isAbstract = false;
         if (isInterface) {
             boolean isStatic;
-            methodNode.setProperty("isStatic", isStatic = modifiers.contains(Modifier.STATIC));
-            methodNode.setProperty("isAbstract", isAbstract = !(isStatic || modifiers.contains(Modifier.DEFAULT)));
+            methodNode.setProperty(IS_STATIC_PROP, isStatic = modifiers.contains(Modifier.STATIC));
+            methodNode.setProperty(IS_ABSTRACT_PROP, isAbstract = !(isStatic || modifiers.contains(Modifier.DEFAULT)));
             if (isAbstract)
                 methodNode.setProperty("isStrictfp", false);
             else
                 checkStrictfpMod(modifiers, methodNode);
             methodNode.setProperty("isNative", false);
             methodNode.setProperty("isSynchronized", false);
-            methodNode.setProperty("isFinal", false);
-            methodNode.setProperty(ACCESS_LEVEL, PUBLIC_ACCESS);
+            methodNode.setProperty(IS_FINAL_PROP, false);
+            methodNode.setProperty(ACCESS_LEVEL,
+                    isStatic && modifiers.contains(Modifier.PRIVATE) ? PRIVATE_ACCESS : PUBLIC_ACCESS);
         } else {
-            methodNode.setProperty("isAbstract", isAbstract = modifiers.contains(Modifier.ABSTRACT));
+            methodNode.setProperty(IS_ABSTRACT_PROP, isAbstract = modifiers.contains(Modifier.ABSTRACT));
             if (isAbstract) {
-                methodNode.setProperty("isFinal", false);
+                methodNode.setProperty(IS_FINAL_PROP, false);
                 methodNode.setProperty("isSynchronized", false);
-                methodNode.setProperty("isStatic", false);
+                methodNode.setProperty(IS_STATIC_PROP, false);
                 methodNode.setProperty("isNative", false);
                 methodNode.setProperty("isStrictfp", false);
                 modifierAccessLevelToNodeExceptPrivate(modifiers, methodNode);
@@ -956,7 +987,8 @@ public class ASTTypesVisitor
 
         boolean prev = false;
         ASTRelationTypes rel;
-        if (methodSymbol.isConstructor()) {
+        boolean isConstructor = methodSymbol.isConstructor();
+        if (isConstructor) {
             prev = insideConstructor;
             insideConstructor = true;
             methodNode = DatabaseFacade.CURRENT_DB_FACHADE
@@ -980,15 +1012,16 @@ public class ASTTypesVisitor
             DefinitionCache.METHOD_DEF_CACHE.get().putDefinition(nameInfo.getFullyQualifiedName(), methodNode);
             GraphUtils.connectWithParent(methodNode, t, rel);
         }
-
-        setMethodModifiersAndAnnotations(methodTree.getModifiers().getFlags(), methodNode,
-                t.getFirst().getStartingNode().hasLabel(NodeTypes.INTERFACE_DEF),
-                methodTree.getModifiers().getAnnotations());
+        if (isConstructor)
+            scan(methodTree.getModifiers(), Pair.createPair(methodNode, null));
+        else
+            setMethodModifiersAndAnnotations(methodTree.getModifiers().getFlags(), methodNode,
+                    t.getFirst().getStartingNode().hasLabel(NodeTypes.INTERFACE_DEF),
+                    methodTree.getModifiers().getAnnotations());
         String accessLevel = methodNode.getProperty(ACCESS_LEVEL).toString();
-
-        if (!methodSymbol.isConstructor() && isInAccessibleContext && (accessLevel.contentEquals(PUBLIC_ACCESS) ||
+        if (!isConstructor && isInAccessibleContext && (accessLevel.contentEquals(PUBLIC_ACCESS) ||
                 accessLevel.contentEquals(PROTECTED_ACCESS) &&
-                        !(Boolean) classState.currentClassDec.getProperty("isFinal")))
+                        !(Boolean) classState.currentClassDec.getProperty(IS_FINAL_PROP)))
 
             ast.addAccesibleMethod(methodSymbol, methodNode);
 
@@ -1002,18 +1035,19 @@ public class ASTTypesVisitor
         methodNode.setProperty("name", nameInfo.getSimpleName());
         methodNode.setProperty("fullyQualifiedName", nameInfo.getFullyQualifiedName());
         methodNode.setProperty("completeName", nameInfo.getCompleteName());
-        methodNode.setProperty("isDeclared", true);
+        methodNode.setProperty(IS_DECLARED_PROP, true);
         methodNode.setProperty("isVarArgs", methodSymbol.isVarArgs());
 
         scan(methodTree.getReturnType(), Pair.createPair(methodNode, ASTRelationTypes.METHOD_RETURN_TYPE));
         GraphUtils.attachType(methodNode, ((JCMethodDecl) methodTree).type, ast);
 
-        if (!methodSymbol.isConstructor())
+        if (!isConstructor)
             addClassIdentifier(((JCTree) methodTree.getReturnType()).type);
 
         visitListWithPropertyIndex(methodTree.getTypeParameters(), methodNode, ASTRelationTypes.CALLABLE_TYPE_PARAM,
                 "paramIndex");
-        visitListWithPropertyIndex(methodTree.getParameters(), methodNode, ASTRelationTypes.CALLABLE_PARAM, "paramIndex");
+        visitListWithPropertyIndex(methodTree.getParameters(), methodNode, ASTRelationTypes.CALLABLE_PARAM,
+                "paramIndex");
 
         methodTree.getThrows().forEach((throwsTree) -> {
             TypeMirror type = ((JCExpression) throwsTree).type;
@@ -1129,11 +1163,11 @@ public class ASTTypesVisitor
     }
 
     public static void checkFinalMod(Set<Modifier> modifiers, NodeWrapper node) {
-        node.setProperty("isFinal", modifiers.contains(Modifier.FINAL));
+        node.setProperty(IS_FINAL_PROP, modifiers.contains(Modifier.FINAL));
     }
 
     public static void checkStaticMod(Set<Modifier> modifiers, NodeWrapper node) {
-        node.setProperty("isStatic", modifiers.contains(Modifier.STATIC));
+        node.setProperty(IS_STATIC_PROP, modifiers.contains(Modifier.STATIC));
     }
 
     public static void checkVolatileMod(Set<Modifier> modifiers, NodeWrapper node) {
@@ -1145,7 +1179,7 @@ public class ASTTypesVisitor
     }
 
     public static void checkAbstractMod(Set<Modifier> modifiers, NodeWrapper node) {
-        node.setProperty("isAbstract", modifiers.contains(Modifier.ABSTRACT));
+        node.setProperty(IS_ABSTRACT_PROP, modifiers.contains(Modifier.ABSTRACT));
     }
 
     public static void checkSynchroMod(Set<Modifier> modifiers, NodeWrapper node) {
@@ -1164,9 +1198,9 @@ public class ASTTypesVisitor
         Pair<PartialRelation<RelationTypesInterface>, Object> n =
                 Pair.createPair(classNode, ASTRelationTypes.HAS_ANNOTATION);
         scan(modifiersTree.getAnnotations(), n);
-        classNode.setProperty("isStatic", false);
-        classNode.setProperty("isAbstract", false);
-        classNode.setProperty("isFinal", false);
+        classNode.setProperty(IS_STATIC_PROP, false);
+        classNode.setProperty(IS_ABSTRACT_PROP, false);
+        classNode.setProperty(IS_FINAL_PROP, false);
         classNode.setProperty(ACCESS_LEVEL, PRIVATE_ACCESS);
     }
 
@@ -1184,36 +1218,22 @@ public class ASTTypesVisitor
         NodeWrapper parent = t.getFirst().getStartingNode();
         Set<Modifier> modifiers = modifiersTree.getFlags();
         scan(modifiersTree.getAnnotations(), Pair.createPair(parent, ASTRelationTypes.HAS_ANNOTATION));
-        if (parent.hasLabel(NodeTypes.CONSTRUCTOR_DEF) || parent.hasLabel(NodeTypes.ENUM_ELEMENT))
+        if (parent.hasLabel(NodeTypes.ENUM_ELEMENT))
             return null;
-
-        if (parent.hasLabel(NodeCategory.LOCAL_DEC))
-
+        if (parent.hasLabel(NodeTypes.CONSTRUCTOR_DEF)) {
+            parent.setProperty(IS_FINAL_PROP, false);
+            parent.setProperty("isSynchronized", false);
+            parent.setProperty(IS_STATIC_PROP, false);
+            parent.setProperty("isNative", false);
+            parent.setProperty("isStrictfp", false);
+        } else if (parent.hasLabel(NodeCategory.LOCAL_DEC))
             checkFinalMod(modifiers, parent);
-        else if (parent.hasLabel(NodeTypes.ATTR_DEC)) {
-
+        else if (parent.hasLabel(NodeTypes.ATTR_DEC))
             checkAttrDecModifiers(modifiers, parent);
-        } else {
-            modifierAccessLevelToNode(modifiers, parent);
+        else
+            throw new IllegalStateException(
+                    "Label with modifiers no checked.\n" + NodeUtils.nodeToString(t.getFirst().getStartingNode()));
 
-            if (parent.hasLabel(NodeTypes.CLASS_DEF)) {
-                checkStaticMod(modifiers, parent);
-                checkAbstractMod(modifiers, parent);
-                checkFinalMod(modifiers, parent);
-
-            } else if (parent.hasLabel(NodeTypes.INTERFACE_DEF)) {
-                parent.setProperty("isAbstract", true);
-                parent.setProperty("isFinal", false);
-                parent.setProperty("isStatic", false);
-
-            } else if (parent.hasLabel(NodeTypes.ENUM_DEF)) {
-                parent.setProperty("isFinal", true);
-                parent.setProperty("isStatic", false);
-                parent.setProperty("isAbstract", false);
-            } else
-                throw new IllegalStateException(
-                        "Label with modifiers no checked.\n" + NodeUtils.nodeToString(t.getFirst().getStartingNode()));
-        }
         return null;
     }
 
@@ -1276,8 +1296,8 @@ public class ASTTypesVisitor
         scan(newClassTree.getEnclosingExpression(),
                 Pair.createPair(newClassNode, ASTRelationTypes.NEW_INSTANCE_ENCLOSING_EXPR));
         scan(newClassTree.getIdentifier(), Pair.createPair(newClassNode, ASTRelationTypes.NEW_INSTANCE_NAME));
-        visitListWithPropertyIndex(newClassTree.getTypeArguments(), newClassNode, ASTRelationTypes.NEW_INSTANCE_TYPE_ARG,
-                "argumentIndex");
+        visitListWithPropertyIndex(newClassTree.getTypeArguments(), newClassNode,
+                ASTRelationTypes.NEW_INSTANCE_TYPE_ARG, "argumentIndex");
 
         visitListWithPropertyIndex(newClassTree.getArguments(), newClassNode, ASTRelationTypes.NEW_INSTANCE_ARG,
                 "argumentIndex");
@@ -1312,14 +1332,15 @@ public class ASTTypesVisitor
                 .createSkeletonNodeExplicitCats(parameterizedTypeTree, NodeTypes.PARAMETERIZED_TYPE,
                         NodeCategory.AST_TYPE, NodeCategory.AST_NODE);
         GraphUtils.connectWithParent(parameterizedNode, t);
-        scan(parameterizedTypeTree.getType(), Pair.createPair(parameterizedNode, ASTRelationTypes.PARAMETERIZES_AST_TYPE));
+        scan(parameterizedTypeTree.getType(),
+                Pair.createPair(parameterizedNode, ASTRelationTypes.PARAMETERIZES_AST_TYPE));
         addClassIdentifier(((JCTree) parameterizedTypeTree.getType()).type);
         for (int i = 0; i < parameterizedTypeTree.getTypeArguments().size(); i++) {
             Tree typeArg = parameterizedTypeTree.getTypeArguments().get(i);
             addClassIdentifier(((JCTree) typeArg).type);
             scan(typeArg, Pair.createPair(
-                    new PartialRelationWithProperties<>(parameterizedNode, ASTRelationTypes.AST_TYPE_ARG, "argumentIndex",
-                            i + 1)));
+                    new PartialRelationWithProperties<>(parameterizedNode, ASTRelationTypes.AST_TYPE_ARG,
+                            "argumentIndex", i + 1)));
         }
         parameterizedNode
                 .setProperty("actualType", ((JCTypeApply) parameterizedTypeTree).type.tsym.getQualifiedName() + "<>");
@@ -1378,7 +1399,8 @@ public class ASTTypesVisitor
                     caseResult == null ? new HashSet<NodeWrapper>() : caseResult.paramsPreviouslyModifiedForSwitch();
             boolean unconditionalFound = caseResult == null;
             for (int i = 1; i < switchTree.getCases().size(); i++) {
-                caseResult = scan(switchTree.getCases().get(i), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_CASE));
+                caseResult =
+                        scan(switchTree.getCases().get(i), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_CASE));
                 if (caseResult != null)
                     paramsModifiedInAllCases.retainAll(caseResult.paramsPreviouslyModifiedForSwitch());
                 else
@@ -1469,7 +1491,8 @@ public class ASTTypesVisitor
         typeParameterNode.setProperty("name", typeParameterTree.getName().toString());
         GraphUtils.connectWithParent(typeParameterNode, t);
         scan(typeParameterTree.getAnnotations(), Pair.createPair(typeParameterNode, ASTRelationTypes.HAS_ANNOTATION));
-        scan(typeParameterTree.getBounds(), Pair.createPair(typeParameterNode, ASTRelationTypes.AST_TYPE_PARAM_EXTENDS));
+        scan(typeParameterTree.getBounds(),
+                Pair.createPair(typeParameterNode, ASTRelationTypes.AST_TYPE_PARAM_EXTENDS));
         return null;
     }
 
@@ -1501,7 +1524,8 @@ public class ASTTypesVisitor
                 .createSkeletonNodeExplicitCats(unionTypeTree, NodeTypes.UNION_TYPE, NodeCategory.AST_TYPE,
                         NodeCategory.AST_NODE);
         GraphUtils.connectWithParent(unionTypeNode, t);
-        scan(unionTypeTree.getTypeAlternatives(), Pair.createPair(unionTypeNode, ASTRelationTypes.AST_UNION_ALTERNATIVE));
+        scan(unionTypeTree.getTypeAlternatives(),
+                Pair.createPair(unionTypeNode, ASTRelationTypes.AST_UNION_ALTERNATIVE));
         return null;
     }
 
@@ -1544,7 +1568,7 @@ public class ASTTypesVisitor
         }
         MethodState previousState = methodState;
         if (isAttr) {
-            variableNode.setProperty("isDeclared", true);
+            variableNode.setProperty(IS_DECLARED_PROP, true);
             GraphUtils.connectWithParent(variableNode, t,
                     isEnum ? ASTRelationTypes.ENUM_DECLARES_ELEMENT : ASTRelationTypes.DECLARES_FIELD);
             methodState = new MethodState(variableNode);

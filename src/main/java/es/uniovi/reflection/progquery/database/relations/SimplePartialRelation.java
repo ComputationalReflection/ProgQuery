@@ -36,7 +36,7 @@ public class SimplePartialRelation<T extends RelationTypesInterface> implements 
 
 	@Override
 	public String toString() {
-		return NodeUtils.nodeToString(getStartingNode()) + "\n" + getRelationType() + "\n";
+		return getStartingNode() + "\n" + getRelationType() + "\n";
 	}
 
 	public List<Pair<String, Object>> getProperties() {

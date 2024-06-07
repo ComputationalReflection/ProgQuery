@@ -111,7 +111,7 @@ public class DatabaseFacade {
 
     public NodeWrapper createNonDeclaredTypeDecNode(ClassSymbol symbol, NodeTypes type) {
         NodeWrapper typeDecNode = createNode(type, getTypeDecProperties(symbol, false));
-        ASTTypesVisitor.setTypeDecModifiers(symbol.getModifiers(), typeDecNode, symbol.isStatic() || symbol.isInner());
+        ASTTypesVisitor.typeSymbolPropsAndNestingLabels(symbol, symbol.getModifiers(), typeDecNode);
         return typeDecNode;
     }
 }

@@ -62,36 +62,4 @@ public class NodeUtils {
 		res +=  n.getProperty("fullyQualifiedName")+ "\n";
 		return res;
 	}
-	public static String nodeToString(Node n) {
-		if (n == null)
-			return "NULL";
-		String res = "Node[" + n.getId() + "]\n";
-		for (Label label : n.getLabels())
-			res += "Label:\t" + label.name() + "\n";
-		for (Entry<String, Object> prop : n.getAllProperties().entrySet())
-			res += prop.getKey() + "=" + prop.getValue() + "\n";
-		for (Relationship r : n.getRelationships()) {
-			String relType = r.getType().name();
-			res += (r.getStartNode().equals(n)
-					? "NODE--[" + relType + "]->"
-							+ (r.getEndNode().getLabels().iterator().hasNext()
-									? r.getEndNode().getLabels().iterator().next() : "NO LABEL")
-							+ "(ID " + r.getEndNode().getId() + ")"
-							+ (r.getEndNode().hasProperty("lineNumber")
-									? "(line " + r.getEndNode().getProperty("lineNumber") + ")" : "")
-					: "NODE<-[" + relType + "]--"
-							+ (r.getStartNode().getLabels().iterator().hasNext()
-									? r.getStartNode().getLabels().iterator().next() : "NO LABEL")
-							+ "(ID " + r.getStartNode().getId() + ")" + (r.getStartNode().hasProperty("lineNumber")
-									? "(line " + r.getStartNode().getProperty("lineNumber") + ")" : ""))
-					+ "\n";
-			for (Entry<String, Object> prop : r.getAllProperties().entrySet())
-				res += prop.getKey() + "=" + prop.getValue() + "\n";
-		}
-		for (Label label : n.getLabels())
-			res += "Label:\t" + label.name() + "\n";
-		for (Entry<String, Object> prop : n.getAllProperties().entrySet())
-			res += prop.getKey() + "=" + prop.getValue() + "\n";
-		return res;
-	}
 }

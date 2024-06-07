@@ -347,10 +347,10 @@ public class PDGProcessing {
         return decNode;
     }
 
-    private NodeWrapper createNotDeclaredAttr(VarSymbol s, ASTAuxiliarStorage ast) {
-        NodeWrapper decNode = createNotDeclaredFieldOrEnum(s, ast, NodeTypes.ATTR_DEC, ASTRelationTypes.DECLARES_FIELD);
-        Set<Modifier> modifiers = Flags.asModifierSet(s.flags_field);
-        ASTTypesVisitor.checkAttrDecModifiers(modifiers, decNode);
+    private NodeWrapper createNotDeclaredAttr(VarSymbol symbol, ASTAuxiliarStorage ast) {
+        NodeWrapper decNode = createNotDeclaredFieldOrEnum(symbol, ast, NodeTypes.ATTR_DEC, ASTRelationTypes.DECLARES_FIELD);
+        Set<Modifier> modifiers = Flags.asModifierSet(symbol.flags_field);
+        ASTTypesVisitor.setAttrDecModifiers(symbol, modifiers, decNode);
         return decNode;
     }
 

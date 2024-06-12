@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodInfo;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodState;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
+import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 import org.neo4j.graphdb.Direction;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
@@ -181,8 +182,8 @@ public class ASTAuxiliarStorage {
 		if (callees == null)
 			return;
 		for (NodeWrapper callee : callees)
-			if (!newNodes.contains(callee) && (Boolean) callee.getProperty("isDeclared")
-					&& callee.hasLabel(NodeTypes.METHOD_DEF)) {
+			if (!newNodes.contains(callee) && (Boolean) callee.getProperty(ASTTypesVisitor.IS_USER_CODE_PROP)
+					&& callee.hasLabel(NodeTypes.METHOD_DEC)) {
 				newNodes.add(callee);
 				addAllCallees(newNodes, callGraph.get(callee));
 			}

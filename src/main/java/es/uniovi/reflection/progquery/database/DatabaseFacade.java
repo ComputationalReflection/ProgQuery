@@ -85,7 +85,7 @@ public class DatabaseFacade {
     }
 
     public static Object[] getTypeDecProperties(String simpleName, String fullyQualifiedType, boolean declared) {
-        return join(getTypeDecProperties(simpleName, fullyQualifiedType), new Object[]{"isDeclared", declared});
+        return join(getTypeDecProperties(simpleName, fullyQualifiedType), new Object[]{ASTTypesVisitor.IS_USER_CODE_PROP, declared});
     }
 
 
@@ -96,8 +96,8 @@ public class DatabaseFacade {
     }
 
     public NodeWrapper createTypeDecNode(ClassTree classTree, String simpleName, String fullyQualifiedType) {
-        NodeWrapper typeDef = createNode(classTree.getKind() == Kind.CLASS ? NodeTypes.CLASS_DEF :
-                        classTree.getKind() == Kind.INTERFACE ? NodeTypes.INTERFACE_DEF : NodeTypes.ENUM_DEF,
+        NodeWrapper typeDef = createNode(classTree.getKind() == Kind.CLASS ? NodeTypes.CLASS_DEC :
+                        classTree.getKind() == Kind.INTERFACE ? NodeTypes.INTERFACE_DEC : NodeTypes.ENUM_DEC,
                 getTypeDecProperties(simpleName, fullyQualifiedType, true));
         typeDef.addLabel(NodeCategory.AST_NODE);
         typeDef.setProperties(getPosition(classTree));

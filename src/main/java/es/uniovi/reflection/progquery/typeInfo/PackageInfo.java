@@ -14,6 +14,7 @@ import es.uniovi.reflection.progquery.database.relations.CDGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.PGRelationTypes;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
+import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 
 public class PackageInfo {
 	public static NodeWrapper currentProgram;
@@ -49,7 +50,7 @@ public class PackageInfo {
 		} else
 			packageCache.put(s.toString(), packageNode);
 		packageNode.setProperty("name", s.toString());
-		packageNode.setProperty("isDeclared", isDeclared);
+		packageNode.setProperty(ASTTypesVisitor.IS_USER_CODE_PROP, isDeclared);
 		return packageNode;
 	}
 
@@ -60,7 +61,7 @@ public class PackageInfo {
 		else {
 			NodeWrapper packageNode = getPackageNode(packageSymbol);
 			if (packageNode != null) {
-				packageNode.setProperty("isDeclared", true);
+				packageNode.setProperty(ASTTypesVisitor.IS_USER_CODE_PROP, true);
 				currentProgram.createRelationshipTo(packageNode, PGRelationTypes.PROGRAM_DECLARES_PACKAGE);
 				packageCache.putDefinition(packageSymbol.toString(), packageNode);
 			} else
@@ -89,7 +90,7 @@ public class PackageInfo {
 	public void createStoredPackageDeps() {
 		for (Pair<Symbol, Symbol> packageDep : dependenciesSet) {
 			NodeWrapper dependencyPack = packageCache.get(packageDep.getSecond().toString());
-			if ((Boolean) dependencyPack.getProperty("isDeclared"))
+			if ((Boolean) dependencyPack.getProperty(ASTTypesVisitor.IS_USER_CODE_PROP))
 				packageCache.get(packageDep.getFirst().toString()).createRelationshipTo(dependencyPack,
 						PGRelationTypes.DEPENDS_ON_PACKAGE);
 			else

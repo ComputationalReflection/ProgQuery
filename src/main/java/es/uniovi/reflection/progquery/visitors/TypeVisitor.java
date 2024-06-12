@@ -13,7 +13,6 @@ import es.uniovi.reflection.progquery.database.relations.TypeRelations;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.typeInfo.TypeHierarchy;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
-import es.uniovi.reflection.progquery.utils.CallableNameInfo;
 import es.uniovi.reflection.progquery.utils.types.TypeKey;
 import es.uniovi.reflection.progquery.utils.types.keys.*;
 
@@ -72,8 +71,8 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
             return DefinitionCache.TYPE_CACHE.get().get(typeDefKey);
 
         NodeWrapper generatedTypeDec = DatabaseFacade.CURRENT_DB_FACHADE.createNonDeclaredTypeDecNode(classSymbol,
-                classSymbol.isInterface() ? NodeTypes.INTERFACE_DEF :
-                        classSymbol.isEnum() ? NodeTypes.ENUM_DEF : NodeTypes.CLASS_DEF);
+                classSymbol.isInterface() ? NodeTypes.INTERFACE_DEC :
+                        classSymbol.isEnum() ? NodeTypes.ENUM_DEC : NodeTypes.CLASS_DEC);
         putInCache(typeDefKey, generatedTypeDec);
         ast.typeDecNodes.add(generatedTypeDec);
         return generatedTypeDec;
@@ -104,8 +103,8 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
                     .map(typeParam -> new TypeVariableKey((TypeVariable) typeParam, declaredTypeKey))
                     .collect(Collectors.toList());
             declaredType = DatabaseFacade.CURRENT_DB_FACHADE.createNonDeclaredTypeDecNode(((ClassType) t),
-                    type.isInterface() ? NodeTypes.INTERFACE_DEF :
-                            type.tsym.isEnum() ? NodeTypes.ENUM_DEF : NodeTypes.CLASS_DEF);
+                    type.isInterface() ? NodeTypes.INTERFACE_DEC :
+                            type.tsym.isEnum() ? NodeTypes.ENUM_DEC : NodeTypes.CLASS_DEC);
 
             if (t.getTypeArguments().size() > 0)
                 declaredType.addLabel(NodeTypes.GENERIC_TYPE);

@@ -340,7 +340,7 @@ public class PDGProcessing {
     private NodeWrapper createNotDeclaredFieldOrEnum(VarSymbol s, ASTAuxiliarStorage ast, NodeTypes nodeType,
                                                      ASTRelationTypes relationWithParent) {
         NodeWrapper decNode = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(nodeType);
-        decNode.setProperty("isDeclared", false);
+        decNode.setProperty(ASTTypesVisitor.IS_USER_CODE_PROP, false);
         decNode.setProperty("name", s.name.toString());
         GraphUtils.attachType(decNode, s.type, ast);
         DefinitionCache.getOrCreateType(s.owner.type, ast).createRelationshipTo(decNode, relationWithParent);

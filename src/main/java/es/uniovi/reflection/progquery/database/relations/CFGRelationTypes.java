@@ -4,7 +4,7 @@ public enum CFGRelationTypes implements RelationTypesInterface {
 	//CFG_FINALLY_TO_LAST_STMT, No represents control flow, just links a finally block with its special node
 
 	/*Callable definitions with CFG Nodes*/
-	CFG_ENTRIES,
+	CFG_STARTS,
 	CFG_END_OF,
 	/*Unconditional Control flow*/
 	CFG_NEXT,

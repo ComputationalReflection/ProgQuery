@@ -45,7 +45,7 @@ public class ASTTypesVisitor
     private static final String PACKAGE_ACCESS = "package";
     private static final String PROTECTED_ACCESS = "protected";
     private static final String ACCESS_LEVEL_PROP = "accessLevel";
-    private static final String IS_DECLARED_PROP = "isDeclared";
+    public static final String IS_USER_CODE_PROP = "isUserCode";
     private static final String IS_STATIC_PROP = "isStatic";
     private static final String IS_ABSTRACT_PROP = "isAbstract";
     private static final String IS_FINAL_PROP = "isFinal";
@@ -130,8 +130,8 @@ public class ASTTypesVisitor
 
     private static NodeWrapper createNonDeclaredCallable(boolean isConstructor) {
         NodeWrapper methodDecNode = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(
-                isConstructor ? NodeTypes.CONSTRUCTOR_DEF : NodeTypes.METHOD_DEF);
-        methodDecNode.setProperty(IS_DECLARED_PROP, false);
+                isConstructor ? NodeTypes.CONSTRUCTOR_DEC : NodeTypes.METHOD_DEC);
+        methodDecNode.setProperty(IS_USER_CODE_PROP, false);
         return methodDecNode;
     }
 
@@ -879,7 +879,7 @@ public class ASTTypesVisitor
                                                      NodeWrapper methodNode, CallableNameInfo nameInfo) {
         scan(modifiers.getAnnotations(), Pair.createPair(methodNode, ASTRelationTypes.HAS_ANNOTATION));
         setCallableMethodSymbolProps(methodSymbol, modifiers.getFlags(), methodNode, nameInfo);
-        methodNode.setProperty(IS_DECLARED_PROP, true);
+        methodNode.setProperty(IS_USER_CODE_PROP, true);
         String accessLevel = methodNode.getProperty(ACCESS_LEVEL_PROP).toString();
         if (!methodSymbol.isConstructor() && isInAccessibleContext && (accessLevel.contentEquals(PUBLIC_ACCESS) ||
                 accessLevel.contentEquals(PROTECTED_ACCESS) &&
@@ -977,13 +977,13 @@ public class ASTTypesVisitor
             prev = insideConstructor;
             insideConstructor = true;
             methodNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNodeExplicitCats(methodTree,
-                    NodeTypes.CONSTRUCTOR_DEF, NodeCategory.AST_NODE);
+                    NodeTypes.CONSTRUCTOR_DEC, NodeCategory.AST_NODE);
 
             ((Pair<Pair, List<NodeWrapper>>) t.getSecond()).getSecond().add(methodNode);
             rel = ASTRelationTypes.DECLARES_CONSTRUCTOR;
         } else {
             methodNode =
-                    DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNodeExplicitCats(methodTree, NodeTypes.METHOD_DEF,
+                    DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNodeExplicitCats(methodTree, NodeTypes.METHOD_DEC,
                             NodeCategory.AST_NODE);
             rel = ASTRelationTypes.DECLARES_METHOD;
         }
@@ -1399,7 +1399,6 @@ public class ASTTypesVisitor
             finallyNode.removeLabel(NodeTypes.BLOCK);
             finallyNode.removeLabel(NodeCategory.STATEMENT);
             finallyNode.addLabel(NodeTypes.FINALLY_BLOCK);
-            finallyNode.addLabel(NodeCategory.STATEMENT_PART);
 
             NodeWrapper lastStmtInFinally =
                     DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.CFG_FINALLY_END);
@@ -1513,7 +1512,7 @@ public class ASTTypesVisitor
         scan(modifiers.getAnnotations(), Pair.createPair(variableNode, null));
         MethodState previousState = methodState;
         if (isAttr) {
-            variableNode.setProperty(IS_DECLARED_PROP, true);
+            variableNode.setProperty(IS_USER_CODE_PROP, true);
             GraphUtils.connectWithParent(variableNode, t,
                     isEnum ? ASTRelationTypes.ENUM_DECLARES_ELEMENT : ASTRelationTypes.DECLARES_FIELD);
             methodState = new MethodState(variableNode);

@@ -9,6 +9,7 @@ import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodInfo;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
+import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 import org.neo4j.graphdb.Direction;
 
 import java.util.ArrayList;
@@ -128,8 +129,8 @@ public class GetDeclarationFromExpression {
 		Pair<List<PDGMutatedDecInfoInMethod>, Boolean> thisArgRet;
 		NodeWrapper calleeMethodNode =
 				methodInvocation.getSingleRelationship(Direction.OUTGOING, CGRelationTypes.HAS_DEF).getEndNode();
-		boolean isDeclared = (Boolean) calleeMethodNode.getProperty("isDeclared");
-		thisArgRet = calleeMethodNode.hasLabel(NodeTypes.CONSTRUCTOR_DEF) ||
+		boolean isDeclared = (Boolean) calleeMethodNode.getProperty(ASTTypesVisitor.IS_USER_CODE_PROP);
+		thisArgRet = calleeMethodNode.hasLabel(NodeTypes.CONSTRUCTOR_DEC) ||
 				(isDeclared && !(Boolean) calleeMethodNode.getProperty("isStatic")) ? scan(methodInvocation
 				.getSingleRelationship(Direction.OUTGOING, ASTRelationTypes.INVOCATION_METHOD_SELECTION).getEndNode()) :
 				Pair.create(new ArrayList<>(), false);

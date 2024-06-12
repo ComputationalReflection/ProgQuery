@@ -34,18 +34,18 @@ public enum NodeTypes implements Label {
 
     /*Control Flow Graph Nodes*/
     CFG_NORMAL_END(NodeCategory.CFG_NODE),
-    CFG_ENTRY(NodeCategory.CFG_NODE),
+    CFG_START(NodeCategory.CFG_NODE),
     CFG_EXCEPTIONAL_END(NodeCategory.CFG_NODE),
     CFG_FINALLY_END(NodeCategory.CFG_NODE),
 
     /*Polymorphic Declarations/Definitions AST Nodes or not */
     ATTR_DEC(NodeCategory.VARIABLE_DEC),
-    CLASS_DEF(NodeCategory.TYPE_DEF),
-    CONSTRUCTOR_DEF(NodeCategory.CALLABLE_DEF),
-    ENUM_DEF(NodeCategory.TYPE_DEF),
-    ENUM_ELEMENT(NodeCategory.DEFINITION),
-    INTERFACE_DEF(NodeCategory.TYPE_DEF),
-    METHOD_DEF(NodeCategory.CALLABLE_DEF),
+    CLASS_DEC(NodeCategory.TYPE_DEC),
+    CONSTRUCTOR_DEC(NodeCategory.CALLABLE_DEC),
+    ENUM_DEC(NodeCategory.TYPE_DEC),
+    ENUM_ELEMENT(NodeCategory.DECLARATION),
+    INTERFACE_DEC(NodeCategory.TYPE_DEC),
+    METHOD_DEC(NodeCategory.CALLABLE_DEC),
 
     /*AST nodes*/
     ANNOTATION(NodeCategory.AST_NODE),
@@ -66,18 +66,18 @@ public enum NodeTypes implements Label {
     TYPE_PARAM(NodeCategory.AST_TYPE),
 
 
-    /*AST Statements OR Statement parts*/
+    /*AST Statements OR CF Entries*/
     ASSERT_STATEMENT(NodeCategory.STATEMENT),
     BLOCK(NodeCategory.STATEMENT),
     BREAK_STATEMENT(NodeCategory.STATEMENT),
-    CASE_SECTION(NodeCategory.STATEMENT_PART),
-    CATCH_BLOCK(NodeCategory.STATEMENT_PART),
+    CASE_SECTION(NodeCategory.AST_NODE),
+    CATCH_BLOCK(NodeCategory.AST_NODE),
     CONTINUE_STATEMENT(NodeCategory.STATEMENT),
     DO_WHILE_LOOP(NodeCategory.LOOP),
     EMPTY_STATEMENT(NodeCategory.STATEMENT),
     FOR_EACH_LOOP(NodeCategory.LOOP),
     EXPRESSION_STATEMENT(NodeCategory.STATEMENT),
-    FINALLY_BLOCK(NodeCategory.STATEMENT_PART),
+    FINALLY_BLOCK(NodeCategory.AST_NODE),
     FOR_LOOP(NodeCategory.LOOP),
     IF_STATEMENT(NodeCategory.STATEMENT),
     LABELED_STATEMENT(NodeCategory.STATEMENT),

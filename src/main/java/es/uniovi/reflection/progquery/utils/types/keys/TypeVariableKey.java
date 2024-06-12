@@ -2,7 +2,7 @@ package es.uniovi.reflection.progquery.utils.types.keys;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
-import es.uniovi.reflection.progquery.utils.MethodNameInfo;
+import es.uniovi.reflection.progquery.utils.CallableNameInfo;
 import es.uniovi.reflection.progquery.utils.types.TypeKey;
 
 import javax.lang.model.type.TypeVariable;
@@ -18,7 +18,7 @@ public class TypeVariableKey implements TypeKey {
         name = typeVar.toString();
 
         ownerKey =
-                new MethodNameInfo((Symbol.MethodSymbol) ((Type.TypeVar) typeVar).tsym.owner).getFullyQualifiedName();
+                new CallableNameInfo((Symbol.MethodSymbol) ((Type.TypeVar) typeVar).tsym.owner).getFullyQualifiedName();
     }
 
     public TypeVariableKey(TypeVariable typeVar, TypeKey ownerKey) {

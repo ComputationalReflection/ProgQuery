@@ -23,7 +23,7 @@ import es.uniovi.reflection.progquery.typeInfo.PackageInfo;
 import es.uniovi.reflection.progquery.typeInfo.TypeHierarchy;
 import es.uniovi.reflection.progquery.utils.GraphUtils;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
-import es.uniovi.reflection.progquery.utils.MethodNameInfo;
+import es.uniovi.reflection.progquery.utils.CallableNameInfo;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.*;
 import org.neo4j.graphdb.Direction;
 
@@ -86,7 +86,7 @@ public class ASTTypesVisitor
 
     private NodeWrapper addInvocationInStatement(NodeWrapper statement) {
         ast.addInvocationInStatement(statement, currentMethodInvocations);
-        currentMethodInvocations = new ArrayList<MethodSymbol>();
+        currentMethodInvocations = new ArrayList<>();
         return statement;
     }
 
@@ -95,72 +95,46 @@ public class ASTTypesVisitor
         return n2;
     }
 
-    private NodeWrapper getNotDeclaredConsFromInv(Symbol methodSymbol, MethodNameInfo nameInfo) {
-        NodeWrapper consDec = getNotDeclaredConstructorDecNode(methodSymbol, nameInfo);
-        DefinitionCache.getOrCreateType(methodSymbol.owner.type, ast)
-                .createRelationshipTo(consDec, ASTRelationTypes.DECLARES_CONSTRUCTOR);
-        return consDec;
+    static NodeWrapper getCallableDuringTypeCreation(MethodSymbol symbol, ASTAuxiliarStorage ast, NodeWrapper typeDec) {
+        return getNonDeclaredCallable(symbol, typeDec, ast);
     }
 
-    public static NodeWrapper getNotDeclaredConstructorDuringTypeCreation(MethodNameInfo nameInfo,
-                                                                          NodeWrapper classNode, Symbol s) {
-        NodeWrapper consDec = getNotDeclaredConstructorDecNode(s, nameInfo);
-        classNode.createRelationshipTo(consDec, ASTRelationTypes.DECLARES_CONSTRUCTOR);
-        return consDec;
+    private NodeWrapper getCallableDecFromCall(MethodSymbol symbol) {
+        return getNonDeclaredCallable(symbol, DefinitionCache.getOrCreateType(symbol.owner.type, ast), ast);
     }
 
-    public static NodeWrapper getNotDeclaredConstructorDuringTypeCreation(NodeWrapper classNode, Symbol s) {
+    private static NodeWrapper getNonDeclaredCallable(MethodSymbol symbol, NodeWrapper typeDec,
+                                                      ASTAuxiliarStorage ast) {
+        CallableNameInfo nameInfo = new CallableNameInfo(symbol);
+        if (DefinitionCache.CALLABLE_DEF_CACHE.get().containsKey(nameInfo.getFullyQualifiedName()))
+            return DefinitionCache.CALLABLE_DEF_CACHE.get().get(nameInfo.getFullyQualifiedName());
 
-        MethodNameInfo nameInfo = new MethodNameInfo((MethodSymbol) s);
-        NodeWrapper consDec = getNotDeclaredConstructorDecNode(s, nameInfo);
-        classNode.createRelationshipTo(consDec, ASTRelationTypes.DECLARES_CONSTRUCTOR);
-        return consDec;
+        NodeWrapper methodDecNode = createAndLinkNonDeclaredCallable(typeDec, symbol);
+        setCallableMethodSymbolProps(symbol, methodDecNode);
+        if (!symbol.isConstructor())
+            ast.addAccessibleMethod(symbol, methodDecNode);
+        DefinitionCache.CALLABLE_DEF_CACHE.get().put(nameInfo.getFullyQualifiedName(), methodDecNode);
+        return methodDecNode;
     }
 
-    private static NodeWrapper getNotDeclaredConstructorDecNode(Symbol s, MethodNameInfo nameInfo) {
-        NodeWrapper constructorDef =
-                DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.CONSTRUCTOR_DEF);
-        constructorDef.setProperty(IS_DECLARED_PROP, false);
-        constructorDef.setProperty("name", nameInfo.getSimpleName());
-        constructorDef.setProperty("fullyQualifiedName", nameInfo.getFullyQualifiedName());
-        constructorDef.setProperty("completeName", nameInfo.getCompleteName());
-        setCallableSymbolProps((MethodSymbol) s, s.getModifiers(), constructorDef);
-        DefinitionCache.METHOD_DEF_CACHE.get().put(nameInfo.getFullyQualifiedName(), constructorDef);
-        return constructorDef;
-    }
-
-    private NodeWrapper getNotDeclaredMethodDecNode(MethodSymbol symbol, MethodNameInfo nameInfo) {
-        NodeWrapper methodDec = createNonDeclaredMethodDuringTypeCreation(ast, symbol, nameInfo);
-        DefinitionCache.getOrCreateType(symbol.owner.type, ast)
-                .createRelationshipTo(methodDec, ASTRelationTypes.DECLARES_METHOD);
+    public static NodeWrapper createAndLinkNonDeclaredCallable(NodeWrapper classNode, boolean isConstructor) {
+        NodeWrapper methodDec = createNonDeclaredCallable(isConstructor);
+        classNode.createRelationshipTo(methodDec,
+                isConstructor ? ASTRelationTypes.DECLARES_CONSTRUCTOR : ASTRelationTypes.DECLARES_METHOD);
         return methodDec;
     }
 
-    public static NodeWrapper createNonDeclaredMethodDuringTypeCreation(MethodNameInfo nameInfo, NodeWrapper classNode,
-                                                                        ASTAuxiliarStorage ast, MethodSymbol symbol) {
-        NodeWrapper methodDec = createNonDeclaredMethodDuringTypeCreation(ast, symbol, nameInfo);
-        classNode.createRelationshipTo(methodDec, ASTRelationTypes.DECLARES_METHOD);
-        return methodDec;
+    public static NodeWrapper createAndLinkNonDeclaredCallable(NodeWrapper classNode, MethodSymbol symbol) {
+        return createAndLinkNonDeclaredCallable(classNode, symbol.isConstructor());
     }
 
-    private static NodeWrapper createNonDeclaredMethodWithoutSymbol(MethodNameInfo nameInfo) {
-        NodeWrapper methodDecNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.METHOD_DEF);
+    private static NodeWrapper createNonDeclaredCallable(boolean isConstructor) {
+        NodeWrapper methodDecNode = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(
+                isConstructor ? NodeTypes.CONSTRUCTOR_DEF : NodeTypes.METHOD_DEF);
         methodDecNode.setProperty(IS_DECLARED_PROP, false);
-        methodDecNode.setProperty("name", nameInfo.getSimpleName());
-        methodDecNode.setProperty("completeName", nameInfo.getCompleteName());
-        methodDecNode.setProperty("fullyQualifiedName", nameInfo.getFullyQualifiedName());
         return methodDecNode;
     }
 
-    private static NodeWrapper createNonDeclaredMethodDuringTypeCreation(ASTAuxiliarStorage ast, MethodSymbol symbol,
-                                                                         MethodNameInfo nameInfo) {
-        NodeWrapper methodDecNode = createNonDeclaredMethodWithoutSymbol(nameInfo);
-        setCallableSymbolProps(symbol, symbol.getModifiers(), methodDecNode);
-        ast.addAccesibleMethod(symbol, methodDecNode);
-        DefinitionCache.METHOD_DEF_CACHE.get().put(nameInfo.getFullyQualifiedName(), methodDecNode);
-        return methodDecNode;
-    }
 
     @Override
     public ASTVisitorResult visitAnnotatedType(AnnotatedTypeTree annotatedTypeTree,
@@ -901,10 +875,16 @@ public class ASTTypesVisitor
         return memberSelResult;
     }
 
-    private void callableSymbolPropsAndAnnotations(MethodSymbol methodSymbol, ModifiersTree modifiers,
-                                                   NodeWrapper methodNode) {
+    private void declaredCallablePropsAndAnnotations(MethodSymbol methodSymbol, ModifiersTree modifiers,
+                                                     NodeWrapper methodNode, CallableNameInfo nameInfo) {
         scan(modifiers.getAnnotations(), Pair.createPair(methodNode, ASTRelationTypes.HAS_ANNOTATION));
-        setCallableSymbolProps(methodSymbol, modifiers.getFlags(), methodNode);
+        setCallableMethodSymbolProps(methodSymbol, modifiers.getFlags(), methodNode, nameInfo);
+        methodNode.setProperty(IS_DECLARED_PROP, true);
+        String accessLevel = methodNode.getProperty(ACCESS_LEVEL_PROP).toString();
+        if (!methodSymbol.isConstructor() && isInAccessibleContext && (accessLevel.contentEquals(PUBLIC_ACCESS) ||
+                accessLevel.contentEquals(PROTECTED_ACCESS) &&
+                        !(Boolean) classState.currentClassDec.getProperty(IS_FINAL_PROP)))
+            ast.addAccessibleMethod(methodSymbol, methodNode);
     }
 
     private static void setFPSynchroNative(Set<Modifier> modifiers, NodeWrapper methodNode,
@@ -920,22 +900,43 @@ public class ASTTypesVisitor
         }
     }
 
-    private static void setCallableSymbolProps(MethodSymbol methodSymbol, Set<Modifier> modifiers,
-                                               NodeWrapper methodNode) {
+    private static void setMethodNames(NodeWrapper callableNode, CallableNameInfo nameInfo) {
+        callableNode.setProperty("name", nameInfo.getSimpleName());
+        callableNode.setProperty("completeName", nameInfo.getCompleteName());
+        callableNode.setProperty("fullyQualifiedName", nameInfo.getFullyQualifiedName());
+    }
 
-        setAccessLevel(methodSymbol, modifiers, methodNode);
-        if (methodSymbol.isConstructor()) {
-            methodNode.setProperty(IS_FINAL_PROP, true);
-            methodNode.setProperty(IS_STATIC_PROP, false);
-            methodNode.setProperty(IS_ABSTRACT_PROP, false);
-            setFPSynchroNative(modifiers, methodNode, true);
+    private static void setCallableJustSymbolProps(Symbol symbol, NodeWrapper callableNode, CallableNameInfo nameInfo) {
+        setCallableCommonProps(callableNode, symbol, symbol.getModifiers(), nameInfo, false);
+    }
+
+    private static void setCallableCommonProps(NodeWrapper callableNode, Symbol symbol, Set<Modifier> modifiers,
+                                               CallableNameInfo nameInfo, boolean isDefault) {
+        setMethodNames(callableNode, nameInfo);
+        setAccessLevel(symbol, modifiers, callableNode);
+        if (symbol.isConstructor()) {
+            callableNode.setProperty(IS_FINAL_PROP, true);
+            callableNode.setProperty(IS_STATIC_PROP, false);
+            callableNode.setProperty(IS_ABSTRACT_PROP, false);
+            setFPSynchroNative(modifiers, callableNode, true);
         } else {
-            checkStaticMod(methodSymbol, methodNode);
-            checkFinalMod(methodSymbol, methodNode);
-            boolean isAbstract = methodSymbol.isAbstract() && !methodSymbol.isDefault();
-            methodNode.setProperty(IS_ABSTRACT_PROP, isAbstract);
-            setFPSynchroNative(modifiers, methodNode, isAbstract);
+            checkStaticMod(symbol, callableNode);
+            checkFinalMod(symbol, callableNode);
+            boolean isAbstract = symbol.isAbstract() && isDefault;
+            callableNode.setProperty(IS_ABSTRACT_PROP, isAbstract);
+            setFPSynchroNative(modifiers, callableNode, isAbstract);
         }
+    }
+
+    private static void setCallableMethodSymbolProps(MethodSymbol methodSymbol, NodeWrapper callableNode) {
+        setCallableMethodSymbolProps(methodSymbol, methodSymbol.getModifiers(), callableNode,
+                new CallableNameInfo(methodSymbol));
+    }
+
+    private static void setCallableMethodSymbolProps(MethodSymbol methodSymbol, Set<Modifier> modifiers,
+                                                     NodeWrapper callableNode, CallableNameInfo nameInfo) {
+        callableNode.setProperty("isVarArgs", methodSymbol.isVarArgs());
+        setCallableCommonProps(callableNode, methodSymbol, modifiers, nameInfo, methodSymbol.isDefault());
     }
 
     private void addClassAndDep(TypeMirror typeMirror) {
@@ -966,7 +967,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitMethod(MethodTree methodTree,
                                         Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         MethodSymbol methodSymbol = ((JCMethodDecl) methodTree).sym;
-        MethodNameInfo nameInfo = new MethodNameInfo(methodSymbol);
+        CallableNameInfo nameInfo = new CallableNameInfo(methodSymbol);
         NodeWrapper methodNode;
 
         boolean prev = false;
@@ -987,23 +988,18 @@ public class ASTTypesVisitor
             rel = ASTRelationTypes.DECLARES_METHOD;
         }
 
-        if (DefinitionCache.METHOD_DEF_CACHE.get().containsKey(nameInfo.getFullyQualifiedName())) {
-            ast.deleteAccesibleMethod(methodSymbol);
-            DefinitionCache.METHOD_DEF_CACHE.get().putDefinition(nameInfo.getFullyQualifiedName(), methodNode);
+        if (DefinitionCache.CALLABLE_DEF_CACHE.get().containsKey(nameInfo.getFullyQualifiedName())) {
+            ast.deleteAccessibleMethod(methodSymbol);
+            DefinitionCache.CALLABLE_DEF_CACHE.get().putDefinition(nameInfo.getFullyQualifiedName(), methodNode);
 
             if (!methodNode.hasRelationship(rel, Direction.INCOMING))
                 GraphUtils.connectWithParent(methodNode, t, rel);
         } else {
-            DefinitionCache.METHOD_DEF_CACHE.get().putDefinition(nameInfo.getFullyQualifiedName(), methodNode);
+            DefinitionCache.CALLABLE_DEF_CACHE.get().putDefinition(nameInfo.getFullyQualifiedName(), methodNode);
             GraphUtils.connectWithParent(methodNode, t, rel);
         }
-        callableSymbolPropsAndAnnotations(methodSymbol, methodTree.getModifiers(), methodNode);
-        String accessLevel = methodNode.getProperty(ACCESS_LEVEL_PROP).toString();
-        if (!isConstructor && isInAccessibleContext && (accessLevel.contentEquals(PUBLIC_ACCESS) ||
-                accessLevel.contentEquals(PROTECTED_ACCESS) &&
-                        !(Boolean) classState.currentClassDec.getProperty(IS_FINAL_PROP)))
 
-            ast.addAccesibleMethod(methodSymbol, methodNode);
+        declaredCallablePropsAndAnnotations(methodSymbol, methodTree.getModifiers(), methodNode, nameInfo);
 
         boolean prevIsInAccesibleCtxt = isInAccessibleContext;
         isInAccessibleContext = false;
@@ -1012,11 +1008,6 @@ public class ASTTypesVisitor
         methodState = new MethodState(methodNode);
         pdgUtils.visitNewMethod();
         ast.newMethodDeclaration(methodState);
-        methodNode.setProperty("name", nameInfo.getSimpleName());
-        methodNode.setProperty("fullyQualifiedName", nameInfo.getFullyQualifiedName());
-        methodNode.setProperty("completeName", nameInfo.getCompleteName());
-        methodNode.setProperty(IS_DECLARED_PROP, true);
-        methodNode.setProperty("isVarArgs", methodSymbol.isVarArgs());
 
         scan(methodTree.getReturnType(), Pair.createPair(methodNode, ASTRelationTypes.METHOD_RETURN_TYPE));
         GraphUtils.attachType(methodNode, ((JCMethodDecl) methodTree).type, ast);
@@ -1081,9 +1072,15 @@ public class ASTTypesVisitor
             String methodName = (methodInvocationTree.getMethodSelect() instanceof JCIdent ?
                     ((JCIdent) methodInvocationTree.getMethodSelect()).name :
                     ((JCFieldAccess) methodInvocationTree.getMethodSelect()).name).toString();
-            final String GEN_CLASS = "GENERATED_CLASS";
-            String completeName = GEN_CLASS + ":" + methodName;
-            decNode = createNonDeclaredMethodWithoutSymbol(new MethodNameInfo(methodName, completeName, completeName));
+            System.err.println(
+                    "Invocation %s with methodName %s and no method symbol %s:%s detected as dynamically generated.".formatted(
+                            methodInvocationTree, methodName, symbol, symbol.getClass()));
+            if (methodName.contentEquals("this") || methodName.contentEquals("super"))
+                decNode = createDynamicallyGenConstructor(symbol);
+            else {
+                decNode = createNonDeclaredCallable(false);
+                setCallableJustSymbolProps(symbol, decNode, new CallableNameInfo(methodName, symbol.owner.toString()));
+            }
         } else {
             if (symbol == null) {
                 System.err.println("Invocation " + methodInvocationTree + " with no symbol, at" + currentTypeDecSymbol);
@@ -1102,11 +1099,7 @@ public class ASTTypesVisitor
             if (methodSymbol.getThrownTypes().size() > 0)
                 currentMethodInvocations.add(methodSymbol);
 
-            MethodNameInfo nameInfo = new MethodNameInfo(methodSymbol);
-            decNode = DefinitionCache.METHOD_DEF_CACHE.get().containsKey(nameInfo.getFullyQualifiedName()) ?
-                    DefinitionCache.METHOD_DEF_CACHE.get().get(nameInfo.getFullyQualifiedName()) :
-                    methodSymbol.isConstructor() ? getNotDeclaredConsFromInv(methodSymbol, nameInfo) :
-                            getNotDeclaredMethodDecNode(methodSymbol, nameInfo);
+            decNode = getCallableDecFromCall(methodSymbol);
             ast.checkIfTrustableInvocation(methodInvocationTree, methodSymbol, methodInvocationNode);
         }
 
@@ -1206,19 +1199,9 @@ public class ASTTypesVisitor
         NodeWrapper constructorDef;
         if (newClassConstructor instanceof ClassSymbol && isUnknownOrErrorType(type) &&
                 ((ClassSymbol) newClassConstructor).sourcefile == null) {
-            NodeWrapper generatedCLassNode =
-                    TypeVisitor.generatedClassType((ClassSymbol) newClassConstructor.owner, ast);
-
-            if (!typeDecUses.contains(generatedCLassNode)) {
-                classState.currentClassDec.createRelationshipTo(generatedCLassNode, CDGRelationTypes.USES_TYPE_DEF);
-                typeDecUses.add(generatedCLassNode);
-            }
-
-            String methodName = "<init>";
-            String completeName = newClassConstructor.owner.getQualifiedName() + ":" + methodName;
-            constructorDef =
-                    createNonDeclaredMethodWithoutSymbol(new MethodNameInfo(methodName, completeName, completeName));
-            generatedCLassNode.createRelationshipTo(constructorDef, ASTRelationTypes.DECLARES_CONSTRUCTOR);
+            constructorDef = createDynamicallyGenConstructor(newClassConstructor);
+            System.err.println("Invocation of %s with class symbol %s:%s detected as dynamically generated.".formatted(
+                    newClassTree, newClassConstructor, newClassConstructor.getClass()));
         } else {
             if (newClassConstructor == null) {
                 System.err.println("Invocation " + newClassTree + " with no symbol, at" + currentTypeDecSymbol);
@@ -1226,10 +1209,7 @@ public class ASTTypesVisitor
             }
             addClassAndDep(type);
             MethodSymbol consSymbol = (MethodSymbol) newClassConstructor;
-            MethodNameInfo nameInfo = new MethodNameInfo(consSymbol);
-            constructorDef = DefinitionCache.METHOD_DEF_CACHE.get().get(nameInfo.getFullyQualifiedName());
-            if (constructorDef == null)
-                constructorDef = getNotDeclaredConsFromInv(consSymbol, nameInfo);
+            constructorDef = getCallableDecFromCall(consSymbol);
             if (consSymbol.getThrownTypes().size() > 0)
                 currentMethodInvocations.add(consSymbol);
         }
@@ -1253,6 +1233,23 @@ public class ASTTypesVisitor
             callRelation.setProperty("mustBeExecuted", must);
         }
         return null;
+    }
+
+    private NodeWrapper createDynamicallyGenConstructor(Symbol newClassConstructor) {
+        CallableNameInfo nameInfo =
+                new CallableNameInfo("<init>", newClassConstructor.owner.getQualifiedName().toString());
+
+        if (DefinitionCache.CALLABLE_DEF_CACHE.get().containsKey(nameInfo.getFullyQualifiedName()))
+            return DefinitionCache.CALLABLE_DEF_CACHE.get().get(nameInfo.getFullyQualifiedName());
+        NodeWrapper generatedClassNode = TypeVisitor.generatedClassType((ClassSymbol) newClassConstructor.owner, ast);
+
+        if (!typeDecUses.contains(generatedClassNode)) {
+            classState.currentClassDec.createRelationshipTo(generatedClassNode, CDGRelationTypes.USES_TYPE_DEF);
+            typeDecUses.add(generatedClassNode);
+        }
+        NodeWrapper constructorDef = createAndLinkNonDeclaredCallable(generatedClassNode, true);
+        setCallableJustSymbolProps(newClassConstructor, constructorDef, nameInfo);
+        return constructorDef;
     }
 
     private void visitListWithPropertyIndex(List<? extends Tree> childList, NodeWrapper parentNode,

@@ -41,7 +41,7 @@ public class ASTAuxiliarStorage {
 	private Map<NodeWrapper, MethodInfo> methodInfo = new HashMap<>();
 	public final Set<NodeWrapper> typeDecNodes = new HashSet<NodeWrapper>();
 	private final Set<NodeWrapper> trustableInvocations = new HashSet<NodeWrapper>();
-	private final Map<MethodSymbol, NodeWrapper> accesibleMethods = new HashMap<>();
+	private final Map<MethodSymbol, NodeWrapper> accessibleMethods = new HashMap<>();
 	private final Map<NodeWrapper, Set<NodeWrapper>> callGraph = new HashMap<>();
 	public static final int NO_VARG_ARG=-1;
 
@@ -73,16 +73,16 @@ public class ASTAuxiliarStorage {
 						methodState.callsToParamsPreviouslyModified, methodState.callsToParamsMaybePreviouslyModified, varArgParamIndex));
 	}
 
-	public void addAccesibleMethod(MethodSymbol ms, NodeWrapper method) {
-		accesibleMethods.put(ms, method);
+	public void addAccessibleMethod(MethodSymbol ms, NodeWrapper method) {
+		accessibleMethods.put(ms, method);
 	}
 
-	public void deleteAccesibleMethod(MethodSymbol ms) {
-		accesibleMethods.remove(ms);
+	public void deleteAccessibleMethod(MethodSymbol ms) {
+		accessibleMethods.remove(ms);
 	}
 
 	public void enterInNewTry(TryTree tryTree, MethodState m) {
-		lastInvocationInStatementLists.push(new ArrayList<Pair<NodeWrapper, List<MethodSymbol>>>());
+		lastInvocationInStatementLists.push(new ArrayList<>());
 		m.invocationsInStatements.put(tryTree, lastInvocationInStatementLists.peek());
 	}
 
@@ -167,8 +167,8 @@ public class ASTAuxiliarStorage {
 	}
 
 	public void doInitializationAnalysis() {
-		Set<NodeWrapper> newAccessibleMethods = new HashSet<>(accesibleMethods.values());
-		for (NodeWrapper accMethod : accesibleMethods.values())
+		Set<NodeWrapper> newAccessibleMethods = new HashSet<>(accessibleMethods.values());
+		for (NodeWrapper accMethod : accessibleMethods.values())
 			addAllOverriders(newAccessibleMethods,
 					accMethod.getRelationships(Direction.INCOMING, TypeRelations.OVERRIDES));
 		for (NodeWrapper accMethod : new HashSet<>(newAccessibleMethods))

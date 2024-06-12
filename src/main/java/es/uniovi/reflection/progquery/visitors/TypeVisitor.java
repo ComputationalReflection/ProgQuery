@@ -13,7 +13,7 @@ import es.uniovi.reflection.progquery.database.relations.TypeRelations;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.typeInfo.TypeHierarchy;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
-import es.uniovi.reflection.progquery.utils.MethodNameInfo;
+import es.uniovi.reflection.progquery.utils.CallableNameInfo;
 import es.uniovi.reflection.progquery.utils.types.TypeKey;
 import es.uniovi.reflection.progquery.utils.types.keys.*;
 
@@ -120,15 +120,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
                                 elementSymbol.getKind() != ElementKind.CONSTRUCTOR)
                             return;
 
-                        MethodNameInfo nameInfo = new MethodNameInfo((MethodSymbol) elementSymbol);
-
-                        if (!DefinitionCache.METHOD_DEF_CACHE.get().containsKey(nameInfo.getFullyQualifiedName()))
-                            if (elementSymbol.getKind() == ElementKind.METHOD)
-                                ASTTypesVisitor.createNonDeclaredMethodDuringTypeCreation(nameInfo, declaredType, ast,
-                                        (MethodSymbol) elementSymbol);
-                            else
-                                ASTTypesVisitor.getNotDeclaredConstructorDuringTypeCreation(nameInfo, declaredType,
-                                        elementSymbol);
+                        ASTTypesVisitor.getCallableDuringTypeCreation((MethodSymbol) elementSymbol, ast, declaredType);
 
                     } catch (com.sun.tools.javac.code.Symbol.CompletionFailure ex) {
                         System.err.println("Failed to analyze " + elementSymbol.getKind() + " of " + t.toString() +

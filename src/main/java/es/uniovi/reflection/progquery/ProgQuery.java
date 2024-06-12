@@ -79,7 +79,7 @@ public class ProgQuery {
     public static void resetCaches(){
         ProgQuery.LOGGER.info("Resetting caches ...");
         DefinitionCache.TYPE_CACHE.remove();
-        DefinitionCache.METHOD_DEF_CACHE.remove();
+        DefinitionCache.CALLABLE_DEF_CACHE.remove();
         PackageInfo.PACKAGE_INFO.remove();
         InfoToInsert.INFO_TO_INSERT.remove();
         JavacInfo.setJavacInfo(null);
@@ -88,7 +88,7 @@ public class ProgQuery {
     public static void createCaches(){
         ProgQuery.LOGGER.info("Creating caches ...");
         DefinitionCache.TYPE_CACHE.set(new DefinitionCache<>());
-        DefinitionCache.METHOD_DEF_CACHE.set(new DefinitionCache<>());
+        DefinitionCache.CALLABLE_DEF_CACHE.set(new DefinitionCache<>());
         PackageInfo.PACKAGE_INFO.set(new PackageInfo());
         InfoToInsert.INFO_TO_INSERT.set(new InfoToInsert());
         JavacInfo.setJavacInfo(null);

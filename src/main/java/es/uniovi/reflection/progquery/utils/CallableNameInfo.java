@@ -2,8 +2,8 @@ package es.uniovi.reflection.progquery.utils;
 
 import com.sun.tools.javac.code.Symbol;
 
-public class MethodNameInfo {
-    private String simpleName, completeName, fullyQualifiedName;
+public class CallableNameInfo {
+    private final String simpleName, completeName, fullyQualifiedName;
 
     public String getSimpleName() {
         return simpleName;
@@ -17,8 +17,7 @@ public class MethodNameInfo {
         return fullyQualifiedName;
     }
 
-    public MethodNameInfo(Symbol.MethodSymbol methodSymbol) {
-
+    public CallableNameInfo(Symbol.MethodSymbol methodSymbol) {
         String methodType = methodSymbol.type.toString();
         if (methodSymbol.isConstructor()) {
             simpleName = "<init>";
@@ -31,9 +30,14 @@ public class MethodNameInfo {
         fullyQualifiedName = completeName + methodType;
     }
 
-    public MethodNameInfo(String simpleName, String completeName, String fullyQualifiedName) {
+    public CallableNameInfo(String simpleName, String completeName, String fullyQualifiedName) {
         this.simpleName = simpleName;
         this.completeName = completeName;
         this.fullyQualifiedName = fullyQualifiedName;
+    }
+    public CallableNameInfo(String simpleName, String owner) {
+        this.simpleName = simpleName;
+        this.completeName = owner + ":" + simpleName;
+        this.fullyQualifiedName = completeName;
     }
 }

@@ -19,7 +19,7 @@ import java.util.Set;
 
 public class DefinitionCache<TKEY> {
     public static ThreadLocal<DefinitionCache<TypeKey>> TYPE_CACHE  = new ThreadLocal<>();
-    public static ThreadLocal<DefinitionCache<String>> METHOD_DEF_CACHE  = new ThreadLocal<>();
+    public static ThreadLocal<DefinitionCache<String>> CALLABLE_DEF_CACHE = new ThreadLocal<>();
 
     private final Map<TKEY, NodeWrapper> auxNodeCache = new HashMap<>();
     protected final Map<TKEY, NodeWrapper> definitionNodeCache = new HashMap<>();

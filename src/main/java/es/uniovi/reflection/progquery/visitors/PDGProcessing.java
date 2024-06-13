@@ -311,7 +311,7 @@ public class PDGProcessing {
     }
 
     private static RelationshipWrapper getThisRel(NodeWrapper classDecNode) {
-        return classDecNode.getSingleRelationship(Direction.OUTGOING, PDGRelationTypes.HAS_THIS_REFERENCE);
+        return classDecNode.getSingleRelationship(Direction.OUTGOING, PDGRelationTypes.THIS_REFERENCE);
     }
 
     private static RelationshipWrapper getOrCreateThisNode(NodeWrapper classDecNode) {
@@ -320,7 +320,7 @@ public class PDGProcessing {
             return r;
         return classDecNode.createRelationshipTo(
                 DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.THIS_REF),
-                PDGRelationTypes.HAS_THIS_REFERENCE);
+                PDGRelationTypes.THIS_REFERENCE);
 
     }
 

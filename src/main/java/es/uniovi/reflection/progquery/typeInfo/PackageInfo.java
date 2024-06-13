@@ -94,7 +94,7 @@ public class PackageInfo {
 						PGRelationTypes.DEPENDS_ON_PACKAGE);
 			else
 				packageCache.get(packageDep.getFirst().toString()).createRelationshipTo(dependencyPack,
-						PGRelationTypes.DEPENDS_ON_NON_DECLARED_PACKAGE);
+						PGRelationTypes.DEPENDS_ON_EXTERNAL_PACKAGE);
 		}
 	}
 }

@@ -76,37 +76,37 @@ public class DatabaseFacade {
         return res;
     }
 
-    public static Object[] getTypeDecProperties(String fullyQualifiedType) {
+    public static Object[] getTypeProperties(String fullyQualifiedType) {
         return new Object[]{"fullyQualifiedName", WrapperUtils.stringToNeo4jQueryString(fullyQualifiedType)};
     }
 
-    public static Object[] getTypeDecProperties(String simpleName, String fullyQualifiedType) {
-        return join(getTypeDecProperties(fullyQualifiedType),
+    public static Object[] getTypeProperties(String simpleName, String fullyQualifiedType) {
+        return join(getTypeProperties(fullyQualifiedType),
                 new Object[]{"simpleName", WrapperUtils.stringToNeo4jQueryString(simpleName)});
     }
 
     public static Object[] getTypeDecProperties(String simpleName, String fullyQualifiedType, boolean isUserCode) {
-        return join(getTypeDecProperties(simpleName, fullyQualifiedType),
+        return join(getTypeProperties(simpleName, fullyQualifiedType),
                 new Object[]{ASTTypesVisitor.IS_USER_CODE_PROP, isUserCode});
     }
 
-
-    private static Object[] getTypeDecProperties(ClassSymbol symbol, boolean isUserCode) {
-        return getTypeDecProperties(symbol.getSimpleName().toString(), symbol.getQualifiedName().toString(),
-                isUserCode);
-
-    }
-
-    public NodeWrapper createTypeDecNode(ClassSymbol symbol, boolean isUserCode) {
+    public NodeWrapper createTypeDecNode(ClassSymbol symbol, String simpleName, String fullyQualifiedName, boolean isUserCode) {
         NodeWrapper typeDef = createNode(symbol.getKind() == ElementKind.CLASS ? NodeTypes.CLASS_DEC :
                         symbol.getKind() == ElementKind.INTERFACE ? NodeTypes.INTERFACE_DEC :
                                 symbol.getKind() == ElementKind.ENUM ? NodeTypes.ENUM_DEC : NodeTypes.ANNOTATION_DEC,
-                getTypeDecProperties(symbol, isUserCode));
+                getTypeDecProperties(simpleName, fullyQualifiedName, isUserCode));
         return typeDef;
     }
 
     public NodeWrapper createUserTypeDecNode(ClassTree classTree, ClassSymbol symbol){
-        NodeWrapper typeDef = createTypeDecNode(symbol, true);
+        String simpleName = classTree.getSimpleName().toString();
+        String fullyQualifiedType = symbol.toString();
+        if (simpleName.equals("")) {
+            String[] split = fullyQualifiedType.split(fullyQualifiedType.contains(".") ? "\\." : " ");
+            simpleName = split[split.length - 1];
+            simpleName = simpleName.substring(0, simpleName.length() - 1);
+        }
+        NodeWrapper typeDef = createTypeDecNode(symbol, simpleName, fullyQualifiedType, true);
         typeDef.addLabel(NodeCategory.AST_NODE);
         typeDef.setProperties(getPosition(classTree));
         return typeDef;
@@ -117,7 +117,7 @@ public class DatabaseFacade {
     }
 
     public NodeWrapper createExternalTypeDecNode(ClassSymbol symbol) {
-        NodeWrapper typeDecNode = createTypeDecNode(symbol, false);
+        NodeWrapper typeDecNode = createTypeDecNode(symbol, symbol.getSimpleName().toString(), symbol.getQualifiedName().toString(), false);
         ASTTypesVisitor.typeSymbolPropsAndNestingLabels(symbol, symbol.getModifiers(), typeDecNode);
         return typeDecNode;
     }

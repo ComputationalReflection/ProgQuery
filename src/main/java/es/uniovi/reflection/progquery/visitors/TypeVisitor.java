@@ -40,7 +40,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
     }
 
     private static Object[] onlyNamesProps(TypeMirror type) {
-        return DatabaseFacade.getTypeDecProperties(type.toString().replaceAll("(\\w+\\.)", ""), type.toString());
+        return DatabaseFacade.getTypeProperties(type.toString().replaceAll("(\\w+\\.)", ""), type.toString());
     }
 
     private static NodeWrapper createWithProps(NodeTypes nodeType, Object[] props) {
@@ -48,7 +48,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
     }
 
     private static NodeWrapper createWithSingleName(TypeMirror type, NodeTypes nodeType) {
-        return createWithProps(nodeType, DatabaseFacade.getTypeDecProperties(type.toString()));
+        return createWithProps(nodeType, DatabaseFacade.getTypeProperties(type.toString()));
     }
 
     private static NodeWrapper createWithOnlyNames(TypeMirror type, NodeTypes nodeType) {
@@ -205,7 +205,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
     @Override
     public NodeWrapper visitTypeVariable(TypeVariable t, TypeKey key) {
         NodeWrapper typeVar = createWithProps(NodeTypes.TYPE_VARIABLE,
-                DatabaseFacade.getTypeDecProperties(t.toString(), key.toString()));
+                DatabaseFacade.getTypeProperties(t.toString(), key.toString()));
         putInCache(key, typeVar);
 
         typeVar.createRelationshipTo(DefinitionCache.getOrCreateType(

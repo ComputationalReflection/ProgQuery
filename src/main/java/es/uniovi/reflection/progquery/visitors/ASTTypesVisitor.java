@@ -366,14 +366,27 @@ public class ASTTypesVisitor
                 typeDecNode.addLabel(NestingTypes.MEMBER_TYPE);
                 setAccessLevel(classSymbol, modifiers, typeDecNode);
             } else {
-                typeDecNode.addLabel(classSymbol.getNestingKind() == NestingKind.LOCAL ? NestingTypes.LOCAL_TYPE :
-                        NestingTypes.ANONYMOUS_TYPE);
+                if (classSymbol.getNestingKind() == NestingKind.LOCAL) {
+                    typeDecNode.addLabel(NestingTypes.LOCAL_TYPE);
+                    typeDecNode.addLabel(NodeCategory.STATEMENT);
+                } else
+                    typeDecNode.addLabel(NestingTypes.ANONYMOUS_TYPE);
                 typeDecNode.setProperty(ACCESS_LEVEL_PROP, PRIVATE_ACCESS);
             }
         }
         checkStrictfpMod(modifiers, typeDecNode);
         typeDecNode.setProperty(IS_ABSTRACT_PROP, classSymbol.isAbstract());
         checkFinalMod(classSymbol, typeDecNode);
+    }
+
+    private void setUserTypeParent(NestingKind nestingKind, NodeWrapper typeNode,
+                                   Pair<PartialRelation<RelationTypesInterface>, Object> pair) {
+        if (nestingKind == NestingKind.LOCAL || nestingKind == NestingKind.ANONYMOUS) {
+            if (nestingKind == NestingKind.LOCAL)
+                methodState.lastMethodDecVisited.createRelationshipTo(typeNode, ASTRelationTypes.DECLARES_TYPE);
+            GraphUtils.connectWithParent(typeNode, pair);
+        } else
+            GraphUtils.connectWithParent(typeNode, pair, ASTRelationTypes.DECLARES_TYPE);
     }
 
     @Override
@@ -402,13 +415,13 @@ public class ASTTypesVisitor
         if (isNested)
             currentCU.createRelationshipTo(typeNode, CDGRelationTypes.NESTED_TYPE_DEF);
 
-        GraphUtils.connectWithParent(typeNode, pair, ASTRelationTypes.DECLARES_TYPE);
-
+        setUserTypeParent(currentTypeDecSymbol.getNestingKind(), typeNode, pair);
         DefinitionCache.putClassDefinition(currentTypeDecSymbol, typeNode, ast.typeDecNodes, typeDecUses);
 
         TypeHierarchy.addTypeHierarchy(currentTypeDecSymbol, typeNode, this, ast);
         boolean prevIsInAccessibleContext = isInAccessibleContext;
         typeSymbolInfoAndAnnotations(currentTypeDecSymbol, classTree.getModifiers(), typeNode);
+
         if (pair.getFirst().getRelationType() == ASTRelationTypes.NEW_INSTANCE_BODY)
             isInAccessibleContext = false;
         else
@@ -424,8 +437,8 @@ public class ASTTypesVisitor
         scan(classTree.getExtendsClause(), Pair.createPair(typeNode, ASTRelationTypes.EXTENDS_CLAUSE));
         scan(classTree.getImplementsClause(), Pair.createPair(typeNode, ASTRelationTypes.IMPLEMENTS_CLAUSE));
 
-        List<NodeWrapper> attrs = new ArrayList<NodeWrapper>(), staticAttrs = new ArrayList<NodeWrapper>(),
-                constructors = new ArrayList<NodeWrapper>();
+        List<NodeWrapper> attrs = new ArrayList<>(), staticAttrs = new ArrayList<NodeWrapper>(), constructors =
+                new ArrayList<>();
         NodeWrapper prevStaticCons = lastStaticConsVisited;
 
         scan(classTree.getMembers(), Pair.createPair(typeNode, ASTRelationTypes.TYPE_STATIC_INIT,
@@ -1107,7 +1120,7 @@ public class ASTTypesVisitor
             callRelation.setProperty("mustBeExecuted", must);
         }
 
-        methodInvocationNode.createRelationshipTo(decNode, CGRelationTypes.HAS_DEF);
+        methodInvocationNode.createRelationshipTo(decNode, CGRelationTypes.CALLEE);
         methodInvocationNode.createRelationshipTo(decNode, CGRelationTypes.REFERS_TO);
 
         pdgUtils.addParamsPrevModifiedForInv(methodInvocationNode, methodState);
@@ -1222,7 +1235,7 @@ public class ASTTypesVisitor
 
         visitListWithPropertyIndex(newClassTree.getArguments(), newClassNode, ASTRelationTypes.NEW_INSTANCE_ARG,
                 "argumentIndex");
-        newClassNode.createRelationshipTo(constructorDef, CGRelationTypes.HAS_DEF);
+        newClassNode.createRelationshipTo(constructorDef, CGRelationTypes.CALLEE);
         newClassNode.createRelationshipTo(constructorDef, CGRelationTypes.REFERS_TO);
 
         if (!inALambda) {
@@ -1467,10 +1480,12 @@ public class ASTTypesVisitor
         return null;
     }
 
-    private void createVarInit(VariableTree varTree, NodeWrapper varDecNode, boolean isAttr, boolean isStatic) {
+    private void createVarInit(VariableTree varTree, NodeWrapper varDecNode, boolean isAttr, boolean isStatic,
+                               NodeWrapper varTypeNode) {
         if (varTree.getInitializer() != null) {
             NodeWrapper initNode = DatabaseFacade.CURRENT_DB_FACADE.get()
                     .createSkeletonNode(varTree.getInitializer(), NodeTypes.INITIALIZATION);
+            initNode.createRelationshipTo(varTypeNode, TypeRelations.ITS_TYPE_IS);
             varDecNode.createRelationshipTo(initNode, ASTRelationTypes.VAR_DEC_INIT);
             RelationshipWrapper r = varDecNode.createRelationshipTo(initNode, PDGRelationTypes.MODIFIED_BY);
             if (isAttr && !isStatic)
@@ -1499,7 +1514,7 @@ public class ASTTypesVisitor
         variableNode.setProperty("name", variableTree.getName().toString());
 
         Type type = ((JCVariableDecl) variableTree).type;
-        GraphUtils.attachType(variableNode, type, ast);
+        NodeWrapper varTypeNode = GraphUtils.attachType(variableNode, type, ast);
         ModifiersTree modifiers = variableTree.getModifiers();
         if (!isEnum) {
             addClassAndDep(type);
@@ -1521,13 +1536,13 @@ public class ASTTypesVisitor
 
         } else
             GraphUtils.connectWithParent(variableNode, t);
-        createVarInit(variableTree, variableNode, isAttr, varSymbol.isStatic());
+        createVarInit(variableTree, variableNode, isAttr, varSymbol.isStatic(), varTypeNode);
         if (!(isMethodParam || isAttr)) {
             methodState.putCfgNodeInCache(variableTree, variableNode);
             addInvocationInStatement(variableNode);
         }
         pdgUtils.putDecInCache(varSymbol, variableNode);
-        scan(variableTree.getType(), Pair.createPair(variableNode, ASTRelationTypes.HAS_VAR_DEC_TYPE));
+        scan(variableTree.getType(), Pair.createPair(variableNode, ASTRelationTypes.VAR_DEC_TYPE));
         if (isAttr) {
             methodState = previousState;
         }

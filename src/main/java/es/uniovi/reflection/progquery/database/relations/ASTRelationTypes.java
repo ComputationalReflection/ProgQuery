@@ -60,7 +60,7 @@ public enum ASTRelationTypes implements RelationTypesInterface {
 	WHILE_CONDITION,
 
 	/*Variable declaration to AST Type*/
-	HAS_VAR_DEC_TYPE,
+	VAR_DEC_TYPE,
 
 	/*Lambda Expression to Statement U Parameter*/
 	LAMBDA_BODY, LAMBDA_PARAM,

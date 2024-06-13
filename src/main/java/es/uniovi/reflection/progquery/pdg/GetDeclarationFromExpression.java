@@ -128,7 +128,7 @@ public class GetDeclarationFromExpression {
 		Map<Integer, List<PDGMutatedDecInfoInMethod>> varDecsInArguments = new HashMap<>();
 		Pair<List<PDGMutatedDecInfoInMethod>, Boolean> thisArgRet;
 		NodeWrapper calleeMethodNode =
-				methodInvocation.getSingleRelationship(Direction.OUTGOING, CGRelationTypes.HAS_DEF).getEndNode();
+				methodInvocation.getSingleRelationship(Direction.OUTGOING, CGRelationTypes.CALLEE).getEndNode();
 		boolean isDeclared = (Boolean) calleeMethodNode.getProperty(ASTTypesVisitor.IS_USER_CODE_PROP);
 		thisArgRet = calleeMethodNode.hasLabel(NodeTypes.CONSTRUCTOR_DEC) ||
 				(isDeclared && !(Boolean) calleeMethodNode.getProperty("isStatic")) ? scan(methodInvocation

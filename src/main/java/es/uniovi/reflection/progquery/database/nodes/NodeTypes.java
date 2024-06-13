@@ -15,7 +15,6 @@ public enum NodeTypes implements Label {
     ERROR_TYPE(NodeCategory.TYPE_NODE),
     CALLABLE_TYPE(NodeCategory.TYPE_NODE),
     NULL_TYPE(NodeCategory.TYPE_NODE),
-    PACKAGE_TYPE(NodeCategory.TYPE_NODE),
     TYPE_VARIABLE(NodeCategory.TYPE_NODE),
     UNKNOWN_TYPE(NodeCategory.TYPE_NODE),
     VOID_TYPE(NodeCategory.TYPE_NODE),

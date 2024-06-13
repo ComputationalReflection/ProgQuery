@@ -662,14 +662,17 @@ public class ASTTypesVisitor
         if (idKind == ElementKind.PACKAGE)
             identifierNode =
                     DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(identifierTree, NodeTypes.PACKAGE_IDENTIFIER);
-        else if (idKind == ElementKind.CLASS || idKind == ElementKind.ENUM || idKind == ElementKind.INTERFACE ||
-                idKind == ElementKind.ANNOTATION_TYPE || idKind == ElementKind.TYPE_PARAMETER)
-            identifierNode =
-                    DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(identifierTree, NodeTypes.TYPE_IDENTIFIER);
-        else
-            identifierNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(identifierTree, NodeTypes.VARIABLE);
+        else {
+            if (idKind == ElementKind.CLASS || idKind == ElementKind.ENUM || idKind == ElementKind.INTERFACE ||
+                    idKind == ElementKind.ANNOTATION_TYPE || idKind == ElementKind.TYPE_PARAMETER)
+                identifierNode =
+                        DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(identifierTree, NodeTypes.TYPE_IDENTIFIER);
+            else
+                identifierNode =
+                        DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(identifierTree, NodeTypes.VARIABLE);
+            attachTypeDirect(identifierNode, identifierTree);
+        }
         identifierNode.setProperty("name", identifierTree.getName().toString());
-        attachTypeDirect(identifierNode, identifierTree);
         GraphUtils.connectWithParent(identifierNode, t);
         if (outsideAnnotation)
             return new VisitorResultImpl(

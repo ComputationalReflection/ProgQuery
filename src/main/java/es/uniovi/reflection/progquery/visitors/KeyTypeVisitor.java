@@ -2,6 +2,7 @@ package es.uniovi.reflection.progquery.visitors;
 
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.TypeVar;
+import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
 import es.uniovi.reflection.progquery.utils.types.TypeKey;
 import es.uniovi.reflection.progquery.utils.types.keys.*;
@@ -57,8 +58,8 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
                 .collect(Collectors.toList()),
                 t.getTypeVariables().stream().map(typeVar -> typeVar.accept(this, null)).collect(Collectors.toList()),
                 t.getReturnType().accept(this, null),
-                t.getReceiverType() == null ? null : t.getReceiverType().accept(this, null),
-                ((Type) t).tsym.isConstructor());
+                t.getReceiverType() == null || t.getReceiverType().getKind() == TypeKind.NONE ? null :
+                        t.getReceiverType().accept(this, null), ((Type) t).tsym.isConstructor());
     }
 
     @Override
@@ -73,12 +74,17 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
             return VoidTypeKey.VOID_TYPE_KEY;
 
         if (t.getKind() == TypeKind.PACKAGE)
-            return new PackageTypeKey(t);
+            throw new IllegalStateException(
+                    "Type %s is package type which is not longer supported. A package type key should never be " +
+                            "visited " +
+                            "here.".formatted(t));
 
         if (t.getKind() == TypeKind.NONE)
             return NoneTypeKey.NONE_TYPE_KEY;
 
-        throw new IllegalStateException(t.getClass().toString());
+        throw new IllegalStateException(
+                "NoType %s with kind %s different than PACKAGE or VOID".formatted(t, t.getKind()));
+
     }
 
     @Override
@@ -114,7 +120,7 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
     public TypeKey visitWildcard(WildcardType t, Object param) {
         return new WildcardKey(
                 (t.getSuperBound() == null ? JavacInfo.getSymtab().botType : t.getSuperBound()).accept(this, null),
-                (t.getExtendsBound() == null ? JavacInfo.getSymtab().objectType : t.getExtendsBound())
-                        .accept(this, null));
+                (t.getExtendsBound() == null ? JavacInfo.getSymtab().objectType : t.getExtendsBound()).accept(this,
+                        null));
     }
 }

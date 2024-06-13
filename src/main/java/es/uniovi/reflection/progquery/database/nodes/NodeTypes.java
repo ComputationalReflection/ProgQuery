@@ -38,6 +38,7 @@ public enum NodeTypes implements Label {
     CFG_FINALLY_END(NodeCategory.CFG_NODE),
 
     /*Polymorphic Declarations/Definitions AST Nodes or not */
+    ANNOTATION_DEC(NodeCategory.TYPE_DEC),
     ATTR_DEC(NodeCategory.VARIABLE_DEC),
     CLASS_DEC(NodeCategory.TYPE_DEC),
     CONSTRUCTOR_DEC(NodeCategory.CALLABLE_DEC),

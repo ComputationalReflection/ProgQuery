@@ -129,7 +129,7 @@ public class ASTTypesVisitor
     }
 
     private static NodeWrapper createNonDeclaredCallable(boolean isConstructor) {
-        NodeWrapper methodDecNode = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(
+        NodeWrapper methodDecNode = DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(
                 isConstructor ? NodeTypes.CONSTRUCTOR_DEC : NodeTypes.METHOD_DEC);
         methodDecNode.setProperty(IS_USER_CODE_PROP, false);
         return methodDecNode;
@@ -140,7 +140,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitAnnotatedType(AnnotatedTypeTree annotatedTypeTree,
                                                Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper annotatedTypeNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(annotatedTypeTree, NodeTypes.ANNOTATED_TYPE);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(annotatedTypeTree, NodeTypes.ANNOTATED_TYPE);
         attachTypeDirect(annotatedTypeNode, annotatedTypeTree);
         GraphUtils.connectWithParent(annotatedTypeNode, t);
         scan(annotatedTypeTree.getAnnotations(), Pair.createPair(annotatedTypeNode, ASTRelationTypes.HAS_ANNOTATION));
@@ -153,12 +153,12 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitAnnotation(AnnotationTree annotationTree,
                                             Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper annotationNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(annotationTree, NodeTypes.ANNOTATION);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(annotationTree, NodeTypes.ANNOTATION);
         GraphUtils.connectWithParent(annotationNode, t, ASTRelationTypes.HAS_ANNOTATION);
         boolean prevInsideAnn = outsideAnnotation;
         outsideAnnotation = false;
         scan(annotationTree.getAnnotationType(),
-                Pair.createPair(annotationNode, ASTRelationTypes.ANNOTATION_DECLARES_TYPE));
+                Pair.createPair(annotationNode, ASTRelationTypes.ANNOTATION_NAME));
         visitListWithPropertyIndex(annotationTree.getArguments(), annotationNode, ASTRelationTypes.ANNOTATION_ARG,
                 "argumentIndex");
         outsideAnnotation = prevInsideAnn;
@@ -169,7 +169,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitArrayAccess(ArrayAccessTree arrayAccessTree,
                                              Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper arrayAccessNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(arrayAccessTree, NodeTypes.ARRAY_ACCESS);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(arrayAccessTree, NodeTypes.ARRAY_ACCESS);
         attachTypeDirect(arrayAccessNode, arrayAccessTree);
         GraphUtils.connectWithParent(arrayAccessNode, t);
         ASTVisitorResult res = scan(arrayAccessTree.getExpression(),
@@ -183,7 +183,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitArrayType(ArrayTypeTree arrayTypeTree,
                                            Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper arrayTypeNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNodeExplicitCats(arrayTypeTree, NodeTypes.ARRAY_TYPE,
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNodeExplicitCats(arrayTypeTree, NodeTypes.ARRAY_TYPE,
                         NodeCategory.AST_TYPE, NodeCategory.AST_NODE);
         GraphUtils.connectWithParent(arrayTypeNode, t);
         String fullyName = ((JCArrayTypeTree) arrayTypeTree).type.toString();
@@ -201,7 +201,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitAssert(AssertTree assertTree,
                                         Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper assertNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(assertTree, NodeTypes.ASSERT_STATEMENT);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(assertTree, NodeTypes.ASSERT_STATEMENT);
         GraphUtils.connectWithParent(assertNode, t);
         scan(assertTree.getCondition(), Pair.createPair(assertNode, ASTRelationTypes.ASSERT_CONDITION));
         addInvocationInStatement(assertNode);
@@ -226,7 +226,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitAssignment(AssignmentTree assignmentTree,
                                             Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper assignmentNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(assignmentTree, NodeTypes.ASSIGNMENT);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(assignmentTree, NodeTypes.ASSIGNMENT);
 
         GraphUtils.connectWithParent(assignmentNode, t);
         attachTypeDirect(assignmentNode, assignmentTree);
@@ -251,7 +251,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitBinary(BinaryTree binaryTree,
                                         Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper binaryNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(binaryTree, NodeTypes.BINARY_OPERATION);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(binaryTree, NodeTypes.BINARY_OPERATION);
         binaryNode.setProperty("operator", binaryTree.getKind().toString());
         attachTypeDirect(binaryNode, binaryTree);
         GraphUtils.connectWithParent(binaryNode, t);
@@ -269,7 +269,7 @@ public class ASTTypesVisitor
 
     @Override
     public ASTVisitorResult visitBlock(BlockTree blockTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        NodeWrapper blockNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(blockTree, NodeTypes.BLOCK);
+        NodeWrapper blockNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(blockTree, NodeTypes.BLOCK);
         lastBlockVisited = blockNode;
         blockNode.setProperty(IS_STATIC_PROP, blockTree.isStatic());
         boolean isStaticInit = t.getFirst().getRelationType() == ASTRelationTypes.TYPE_STATIC_INIT;
@@ -297,7 +297,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitBreak(BreakTree breakTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         anyBreak = false;
         NodeWrapper breakNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(breakTree, NodeTypes.BREAK_STATEMENT);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(breakTree, NodeTypes.BREAK_STATEMENT);
         methodState.putCfgNodeInCache(breakTree, breakNode);
         must = false;
         if (breakTree.getLabel() != null) {
@@ -316,7 +316,7 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitCase(CaseTree caseTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
 
-        NodeWrapper caseNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(caseTree, NodeTypes.CASE_SECTION);
+        NodeWrapper caseNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(caseTree, NodeTypes.CASE_SECTION);
         GraphUtils.connectWithParent(caseNode, t);
         prevMust = must;
         boolean isAUnconditionalDefault = caseTree.getExpressions().isEmpty() && !anyBreak;
@@ -334,7 +334,7 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitCatch(CatchTree catchTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
 
-        NodeWrapper catchNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(catchTree, NodeTypes.CATCH_BLOCK);
+        NodeWrapper catchNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(catchTree, NodeTypes.CATCH_BLOCK);
         methodState.putCfgNodeInCache(catchTree, catchNode);
         GraphUtils.connectWithParent(catchNode, t);
 
@@ -381,18 +381,10 @@ public class ASTTypesVisitor
 
         ClassSymbol previousClassSymbol = currentTypeDecSymbol;
         currentTypeDecSymbol = ((JCClassDecl) classTree).sym;
-        String simpleName = classTree.getSimpleName().toString();
-
-        String fullyQualifiedType = currentTypeDecSymbol.toString();
-        if (simpleName.equals("")) {
-            String[] split = fullyQualifiedType.split(fullyQualifiedType.contains(".") ? "\\." : " ");
-            simpleName = split[split.length - 1];
-            simpleName = simpleName.substring(0, simpleName.length() - 1);
-        }
 
         NodeWrapper typeNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createTypeDecNode(classTree, simpleName, fullyQualifiedType);
-        typeNode.addLabel(NodeCategory.AST_NODE);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createUserTypeDecNode(classTree, currentTypeDecSymbol);
+
 
         ast.typeDecNodes.add(typeNode);
 
@@ -479,7 +471,7 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitCompoundAssignment(CompoundAssignmentTree compoundAssignmentTree,
                                                     Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        NodeWrapper assignmentNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(compoundAssignmentTree,
+        NodeWrapper assignmentNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(compoundAssignmentTree,
                 NodeTypes.COMPOUND_ASSIGNMENT);
         assignmentNode.setProperty("operator", compoundAssignmentTree.getKind().toString());
 
@@ -501,7 +493,7 @@ public class ASTTypesVisitor
                                                        Pair<PartialRelation<RelationTypesInterface>, Object> t) {
 
         NodeWrapper conditionalExprNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(conditionalTree, NodeTypes.CONDITIONAL_EXPRESSION);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(conditionalTree, NodeTypes.CONDITIONAL_EXPRESSION);
         attachTypeDirect(conditionalExprNode, conditionalTree);
         GraphUtils.connectWithParent(conditionalExprNode, t);
 
@@ -525,7 +517,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitContinue(ContinueTree continueTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper continueNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(continueTree, NodeTypes.CONTINUE_STATEMENT);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(continueTree, NodeTypes.CONTINUE_STATEMENT);
         methodState.putCfgNodeInCache(continueTree, continueNode);
         if (continueTree.getLabel() != null) {
             continueNode.setProperty("label", continueTree.getLabel().toString());
@@ -545,7 +537,7 @@ public class ASTTypesVisitor
                                              Pair<PartialRelation<RelationTypesInterface>, Object> t) {
 
         NodeWrapper doWhileLoopNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(doWhileLoopTree, NodeTypes.DO_WHILE_LOOP);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(doWhileLoopTree, NodeTypes.DO_WHILE_LOOP);
         GraphUtils.connectWithParent(doWhileLoopNode, t);
         boolean prevInWh = inADoWhile, prevMust = must;
         inADoWhile = true;
@@ -569,7 +561,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitEmptyStatement(EmptyStatementTree emptyStatementTree,
                                                 Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper emptyStatementNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(emptyStatementTree, NodeTypes.EMPTY_STATEMENT);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(emptyStatementTree, NodeTypes.EMPTY_STATEMENT);
         methodState.putCfgNodeInCache(emptyStatementTree, emptyStatementNode);
         GraphUtils.connectWithParent(emptyStatementNode, t);
         return null;
@@ -579,7 +571,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitEnhancedForLoop(EnhancedForLoopTree enhancedForLoopTree,
                                                  Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper enhancedForLoopNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(enhancedForLoopTree, NodeTypes.FOR_EACH_LOOP);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(enhancedForLoopTree, NodeTypes.FOR_EACH_LOOP);
         GraphUtils.connectWithParent(enhancedForLoopNode, t);
         scan(enhancedForLoopTree.getVariable(), Pair.createPair(enhancedForLoopNode, ASTRelationTypes.FOREACH_VAR));
         scan(enhancedForLoopTree.getExpression(), Pair.createPair(enhancedForLoopNode, ASTRelationTypes.FOREACH_EXPR));
@@ -599,7 +591,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitErroneous(ErroneousTree erroneousTree,
                                            Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper erroneousNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(erroneousTree, NodeTypes.ERRONEOUS_NODE);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(erroneousTree, NodeTypes.ERRONEOUS_NODE);
         attachTypeDirect(erroneousNode, erroneousTree);
         GraphUtils.connectWithParent(erroneousNode, t);
         scan(erroneousTree.getErrorTrees(), Pair.createPair(erroneousNode, ASTRelationTypes.ERRONEOUS_CAUSED_BY));
@@ -610,7 +602,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitExpressionStatement(ExpressionStatementTree expressionStatementTree,
                                                      Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper expressionStatementNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(expressionStatementTree,
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(expressionStatementTree,
                         NodeTypes.EXPRESSION_STATEMENT);
         GraphUtils.connectWithParent(expressionStatementNode, t);
 
@@ -625,7 +617,7 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitForLoop(ForLoopTree forLoopTree,
                                          Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        NodeWrapper forLoopNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(forLoopTree, NodeTypes.FOR_LOOP);
+        NodeWrapper forLoopNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(forLoopTree, NodeTypes.FOR_LOOP);
         GraphUtils.connectWithParent(forLoopNode, t);
 
         scan(forLoopTree.getInitializer(), Pair.createPair(forLoopNode, ASTRelationTypes.FOR_LOOP_INIT));
@@ -651,7 +643,7 @@ public class ASTTypesVisitor
         NodeWrapper identifierNode;
         if (((JCIdent) identifierTree).sym == null) {
             identifierNode =
-                    DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(identifierTree, NodeTypes.UNKNOWN_IDENTIFIER);
+                    DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(identifierTree, NodeTypes.UNKNOWN_IDENTIFIER);
             identifierNode.setProperty("name", identifierTree.getName().toString());
             GraphUtils.connectWithParent(identifierNode, t);
             System.err.println("Warning: Creating an IDENTIFIER with name %s without symbol (%s).".formatted(
@@ -661,15 +653,15 @@ public class ASTTypesVisitor
         ElementKind idKind = ((JCIdent) identifierTree).sym.getKind();
         if (idKind == ElementKind.PACKAGE)
             identifierNode =
-                    DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(identifierTree, NodeTypes.PACKAGE_IDENTIFIER);
+                    DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(identifierTree, NodeTypes.PACKAGE_IDENTIFIER);
         else {
             if (idKind == ElementKind.CLASS || idKind == ElementKind.ENUM || idKind == ElementKind.INTERFACE ||
                     idKind == ElementKind.ANNOTATION_TYPE || idKind == ElementKind.TYPE_PARAMETER)
                 identifierNode =
-                        DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(identifierTree, NodeTypes.TYPE_IDENTIFIER);
+                        DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(identifierTree, NodeTypes.TYPE_IDENTIFIER);
             else
                 identifierNode =
-                        DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(identifierTree, NodeTypes.VARIABLE);
+                        DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(identifierTree, NodeTypes.VARIABLE);
             attachTypeDirect(identifierNode, identifierTree);
         }
         identifierNode.setProperty("name", identifierTree.getName().toString());
@@ -684,7 +676,7 @@ public class ASTTypesVisitor
 
     @Override
     public ASTVisitorResult visitIf(IfTree ifTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        NodeWrapper ifNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(ifTree, NodeTypes.IF_STATEMENT);
+        NodeWrapper ifNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(ifTree, NodeTypes.IF_STATEMENT);
         GraphUtils.connectWithParent(ifNode, t);
         scan(ifTree.getCondition(), Pair.createPair(ifNode, ASTRelationTypes.IF_CONDITION));
         addInvocationInStatement(ifNode);
@@ -708,7 +700,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitImport(ImportTree importTree,
                                         Pair<PartialRelation<RelationTypesInterface>, Object> t) {
 
-        NodeWrapper importNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(importTree, NodeTypes.IMPORT);
+        NodeWrapper importNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(importTree, NodeTypes.IMPORT);
         importNode.setProperty("qualifiedIdentifier", importTree.getQualifiedIdentifier().toString());
         importNode.setProperty(IS_STATIC_PROP, importTree.isStatic());
 
@@ -720,7 +712,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitInstanceOf(InstanceOfTree instanceOfTree,
                                             Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper instanceOfNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(instanceOfTree, NodeTypes.INSTANCE_OF);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(instanceOfTree, NodeTypes.INSTANCE_OF);
         GraphUtils.attachTypeDirect(instanceOfNode, instanceOfTree, "boolean", "BOOLEAN", ast);
         GraphUtils.connectWithParent(instanceOfNode, t);
         if (instanceOfTree.getType() instanceof IdentifierTree)
@@ -736,7 +728,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitIntersectionType(IntersectionTypeTree intersectionTypeTree,
                                                   Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper intersectionTypeNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNodeExplicitCats(intersectionTypeTree,
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNodeExplicitCats(intersectionTypeTree,
                         NodeTypes.INTERSECTION_TYPE, NodeCategory.AST_TYPE, NodeCategory.AST_NODE);
 
         GraphUtils.connectWithParent(intersectionTypeNode, t);
@@ -752,7 +744,7 @@ public class ASTTypesVisitor
                                                   Pair<PartialRelation<RelationTypesInterface>, Object> t) {
 
         NodeWrapper labeledStatementNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(labeledStatementTree, NodeTypes.LABELED_STATEMENT);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(labeledStatementTree, NodeTypes.LABELED_STATEMENT);
         labeledStatementNode.setProperty("name", labeledStatementTree.getLabel().toString());
         GraphUtils.connectWithParent(labeledStatementNode, t);
         methodState.putCfgNodeInCache(labeledStatementTree, labeledStatementNode);
@@ -767,7 +759,7 @@ public class ASTTypesVisitor
                                                   Pair<PartialRelation<RelationTypesInterface>, Object> t) {
 
         NodeWrapper lambdaExpressionNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(lambdaExpressionTree, NodeTypes.LAMBDA_EXPRESSION);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(lambdaExpressionTree, NodeTypes.LAMBDA_EXPRESSION);
         lambdaExpressionNode.setProperty("bodyKind", lambdaExpressionTree.getBodyKind().toString());
         GraphUtils.connectWithParent(lambdaExpressionNode, t);
         attachTypeDirect(lambdaExpressionNode, lambdaExpressionTree);
@@ -799,7 +791,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitLiteral(LiteralTree literalTree,
                                          Pair<PartialRelation<RelationTypesInterface>, Object> t) {
 
-        NodeWrapper literalNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(literalTree, NodeTypes.LITERAL);
+        NodeWrapper literalNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(literalTree, NodeTypes.LITERAL);
         literalNode.setProperty("typetag", literalTree.getKind().toString());
         if (literalTree.getValue() != null)
             literalNode.setProperty("value", literalTree.getValue().toString());
@@ -815,7 +807,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitMemberReference(MemberReferenceTree memberReferenceTree,
                                                  Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper memberReferenceNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(memberReferenceTree, NodeTypes.CALLABLE_REFERENCE);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(memberReferenceTree, NodeTypes.CALLABLE_REFERENCE);
         memberReferenceNode.setProperty("mode", memberReferenceTree.getMode().name());
         memberReferenceNode.setProperty("name", memberReferenceTree.getName().toString());
         GraphUtils.connectWithParent(memberReferenceNode, t);
@@ -848,13 +840,13 @@ public class ASTTypesVisitor
         boolean fieldOrEnum = false;
         if (idKind == ElementKind.PACKAGE)
             memberSelectNode =
-                    DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(memberSelectTree, NodeTypes.PACKAGE_SELECTION);
+                    DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(memberSelectTree, NodeTypes.PACKAGE_SELECTION);
         else if (isTypeDec(idKind) || idKind == ElementKind.ANNOTATION_TYPE || idKind == ElementKind.TYPE_PARAMETER)
             memberSelectNode =
-                    DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(memberSelectTree, NodeTypes.TYPE_SELECTION);
+                    DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(memberSelectTree, NodeTypes.TYPE_SELECTION);
         else {
             memberSelectNode =
-                    DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(memberSelectTree, NodeTypes.MEMBER_SELECTION);
+                    DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(memberSelectTree, NodeTypes.MEMBER_SELECTION);
             fieldOrEnum = idKind == ElementKind.FIELD || idKind == ElementKind.ENUM_CONSTANT;
         }
         memberSelectNode.setProperty("identifierName", memberSelectTree.getIdentifier().toString());
@@ -979,14 +971,14 @@ public class ASTTypesVisitor
         if (isConstructor) {
             prev = insideConstructor;
             insideConstructor = true;
-            methodNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNodeExplicitCats(methodTree,
+            methodNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNodeExplicitCats(methodTree,
                     NodeTypes.CONSTRUCTOR_DEC, NodeCategory.AST_NODE);
 
             ((Pair<Pair, List<NodeWrapper>>) t.getSecond()).getSecond().add(methodNode);
             rel = ASTRelationTypes.DECLARES_CONSTRUCTOR;
         } else {
             methodNode =
-                    DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNodeExplicitCats(methodTree, NodeTypes.METHOD_DEC,
+                    DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNodeExplicitCats(methodTree, NodeTypes.METHOD_DEC,
                             NodeCategory.AST_NODE);
             rel = ASTRelationTypes.DECLARES_METHOD;
         }
@@ -1064,7 +1056,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitMethodInvocation(MethodInvocationTree methodInvocationTree,
                                                   Pair<PartialRelation<RelationTypesInterface>, Object> pair) {
         NodeWrapper methodInvocationNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(methodInvocationTree, NodeTypes.METHOD_INVOCATION);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(methodInvocationTree, NodeTypes.METHOD_INVOCATION);
         attachTypeDirect(methodInvocationNode, methodInvocationTree);
         GraphUtils.connectWithParent(methodInvocationNode, pair);
 
@@ -1180,7 +1172,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitNewArray(NewArrayTree newArrayTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper newArrayNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(newArrayTree, NodeTypes.NEW_ARRAY);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(newArrayTree, NodeTypes.NEW_ARRAY);
         attachTypeDirect(newArrayNode, newArrayTree);
         GraphUtils.connectWithParent(newArrayNode, t);
 
@@ -1194,7 +1186,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitNewClass(NewClassTree newClassTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> pair) {
         NodeWrapper newClassNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(newClassTree, NodeTypes.NEW_INSTANCE);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(newClassTree, NodeTypes.NEW_INSTANCE);
         scan(newClassTree.getClassBody(), Pair.createPair(newClassNode, ASTRelationTypes.NEW_INSTANCE_BODY));
 
         Type type = JavacInfo.getTypeDirect(newClassTree.getIdentifier());
@@ -1272,7 +1264,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitParameterizedType(ParameterizedTypeTree parameterizedTypeTree,
                                                    Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper parameterizedNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNodeExplicitCats(parameterizedTypeTree,
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNodeExplicitCats(parameterizedTypeTree,
                         NodeTypes.PARAMETERIZED_TYPE, NodeCategory.AST_TYPE, NodeCategory.AST_NODE);
         GraphUtils.connectWithParent(parameterizedNode, t);
         scan(parameterizedTypeTree.getType(),
@@ -1300,7 +1292,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitPrimitiveType(PrimitiveTypeTree primitiveTypeTree,
                                                Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper primitiveTypeNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNodeExplicitCats(primitiveTypeTree,
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNodeExplicitCats(primitiveTypeTree,
                         NodeTypes.PRIMITIVE_TYPE, NodeCategory.AST_TYPE, NodeCategory.AST_NODE);
 
         primitiveTypeNode.setProperty("fullyQualifiedName", primitiveTypeTree.toString());
@@ -1314,7 +1306,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitReturn(ReturnTree returnTree,
                                         Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper returnNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(returnTree, NodeTypes.RETURN_STATEMENT);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(returnTree, NodeTypes.RETURN_STATEMENT);
         methodState.putCfgNodeInCache(returnTree, returnNode);
         GraphUtils.connectWithParent(returnNode, t);
         int hash = returnTree.hashCode();
@@ -1330,7 +1322,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitSwitch(SwitchTree switchTree,
                                         Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper switchNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(switchTree, NodeTypes.SWITCH_STATEMENT);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(switchTree, NodeTypes.SWITCH_STATEMENT);
         GraphUtils.connectWithParent(switchNode, t);
         scan(switchTree.getExpression(), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_EXPR));
         addInvocationInStatement(switchNode);
@@ -1360,7 +1352,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitSynchronized(SynchronizedTree synchronizedTree,
                                               Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper synchronizedNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(synchronizedTree, NodeTypes.SYNCHRONIZED_BLOCK);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(synchronizedTree, NodeTypes.SYNCHRONIZED_BLOCK);
         GraphUtils.connectWithParent(synchronizedNode, t);
         methodState.putCfgNodeInCache(synchronizedTree, synchronizedNode);
         scan(synchronizedTree.getExpression(), Pair.createPair(synchronizedNode, ASTRelationTypes.SYNCHRONIZED_EXPR));
@@ -1372,7 +1364,7 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitThrow(ThrowTree throwTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper throwNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(throwTree, NodeTypes.THROW_STATEMENT);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(throwTree, NodeTypes.THROW_STATEMENT);
         methodState.putCfgNodeInCache(throwTree, throwNode);
         GraphUtils.connectWithParent(throwNode, t);
 
@@ -1383,7 +1375,7 @@ public class ASTTypesVisitor
 
     @Override
     public ASTVisitorResult visitTry(TryTree tryTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        NodeWrapper tryNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(tryTree, NodeTypes.TRY_STATEMENT);
+        NodeWrapper tryNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(tryTree, NodeTypes.TRY_STATEMENT);
         GraphUtils.connectWithParent(tryNode, t);
         boolean hasCatchingComponent = tryTree.getCatches().size() > 0 || tryTree.getFinallyBlock() != null;
         if (hasCatchingComponent)
@@ -1404,7 +1396,7 @@ public class ASTTypesVisitor
             finallyNode.addLabel(NodeTypes.FINALLY_BLOCK);
 
             NodeWrapper lastStmtInFinally =
-                    DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.CFG_FINALLY_END);
+                    DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.CFG_FINALLY_END);
             methodState.putFinallyInCache(tryTree.getFinallyBlock(), finallyNode, lastStmtInFinally);
             //finallyNode.createRelationshipTo(lastStmtInFinally, CFGRelationTypes.CFG_FINALLY_TO_LAST_STMT);
         }
@@ -1415,7 +1407,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitTypeCast(TypeCastTree typeCastTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper typeCastNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(typeCastTree, NodeTypes.TYPE_CAST);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(typeCastTree, NodeTypes.TYPE_CAST);
         attachTypeDirect(typeCastNode, typeCastTree);
         GraphUtils.connectWithParent(typeCastNode, t);
         scan(typeCastTree.getType(), Pair.createPair(typeCastNode, ASTRelationTypes.CAST_TYPE));
@@ -1429,7 +1421,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitTypeParameter(TypeParameterTree typeParameterTree,
                                                Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper typeParameterNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(typeParameterTree, NodeTypes.TYPE_PARAM);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(typeParameterTree, NodeTypes.TYPE_PARAM);
         typeParameterNode.setProperty("name", typeParameterTree.getName().toString());
         GraphUtils.connectWithParent(typeParameterNode, t);
         scan(typeParameterTree.getAnnotations(), Pair.createPair(typeParameterNode, ASTRelationTypes.HAS_ANNOTATION));
@@ -1441,7 +1433,7 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitUnary(UnaryTree unaryTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper unaryNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(unaryTree, NodeTypes.UNARY_OPERATION);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(unaryTree, NodeTypes.UNARY_OPERATION);
         unaryNode.setProperty("operator", unaryTree.getKind().toString());
         boolean impliesModification =
                 unaryTree.getKind() == Kind.POSTFIX_INCREMENT || unaryTree.getKind() == Kind.POSTFIX_DECREMENT ||
@@ -1463,7 +1455,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitUnionType(UnionTypeTree unionTypeTree,
                                            Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper unionTypeNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNodeExplicitCats(unionTypeTree, NodeTypes.UNION_TYPE,
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNodeExplicitCats(unionTypeTree, NodeTypes.UNION_TYPE,
                         NodeCategory.AST_TYPE, NodeCategory.AST_NODE);
         GraphUtils.connectWithParent(unionTypeNode, t);
         scan(unionTypeTree.getTypeAlternatives(),
@@ -1473,7 +1465,7 @@ public class ASTTypesVisitor
 
     private void createVarInit(VariableTree varTree, NodeWrapper varDecNode, boolean isAttr, boolean isStatic) {
         if (varTree.getInitializer() != null) {
-            NodeWrapper initNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(varTree.getInitializer(),
+            NodeWrapper initNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(varTree.getInitializer(),
                     NodeTypes.INITIALIZATION);
             varDecNode.createRelationshipTo(initNode, ASTRelationTypes.VAR_DEC_INIT);
             RelationshipWrapper r = varDecNode.createRelationshipTo(initNode, PDGRelationTypes.MODIFIED_BY);
@@ -1494,11 +1486,11 @@ public class ASTTypesVisitor
         NodeWrapper variableNode;
         Symbol varSymbol = ((JCVariableDecl) variableTree).sym;
         if (isAttr)
-            variableNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNodeExplicitCats(variableTree,
+            variableNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNodeExplicitCats(variableTree,
                     (isEnum = varSymbol.getKind() == ElementKind.ENUM_CONSTANT) ? NodeTypes.ENUM_ELEMENT :
                             NodeTypes.ATTR_DEC, NodeCategory.AST_NODE);
         else
-            variableNode = DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(variableTree,
+            variableNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(variableTree,
                     isMethodParam ? NodeTypes.PARAMETER_DEC : NodeTypes.LOCAL_VAR_DEC);
         variableNode.setProperty("name", variableTree.getName().toString());
 
@@ -1542,7 +1534,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitWhileLoop(WhileLoopTree whileLoopTree,
                                            Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper whileLoopNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(whileLoopTree, NodeTypes.WHILE_LOOP);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(whileLoopTree, NodeTypes.WHILE_LOOP);
         GraphUtils.connectWithParent(whileLoopNode, t);
         scan(whileLoopTree.getCondition(), Pair.createPair(whileLoopNode, ASTRelationTypes.WHILE_CONDITION));
         addInvocationInStatement(whileLoopNode);
@@ -1560,7 +1552,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitWildcard(WildcardTree wildcardTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper wildcardNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNodeExplicitCats(wildcardTree, NodeTypes.WILDCARD_TYPE,
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNodeExplicitCats(wildcardTree, NodeTypes.WILDCARD_TYPE,
                         NodeCategory.AST_TYPE, NodeCategory.AST_NODE);
         wildcardNode.setProperty("typeBoundKind", wildcardTree.getKind().toString());
         GraphUtils.connectWithParent(wildcardNode, t);

@@ -71,7 +71,7 @@ public class GetStructuresAfterAnalyze implements TaskListener {
                                 //This stands for a ";" in the Compilation Unit parsed as type declaration
                                 if (cuTree.getTypeDecls().get(i) instanceof JCTree.JCSkip) {
                                     if (firstClass) {
-                                        GraphUtils.connectWithParent(DatabaseFacade.CURRENT_DB_FACHADE
+                                        GraphUtils.connectWithParent(DatabaseFacade.CURRENT_DB_FACADE.get()
                                                         .createSkeletonNode(cuTree.getTypeDecls().get(i),
                                                                 NodeTypes.CU_SKIPPED_DEC),
                                                 argument.getFirst().getStartingNode(), ASTRelationTypes.CU_ENCLOSES);
@@ -111,7 +111,7 @@ public class GetStructuresAfterAnalyze implements TaskListener {
         JavacInfo.currentJavacInfo.get().setCurrCompilationUnit(cu);
         String fileName = cu.getSourceFile().toUri().toString();
         NodeWrapper compilationUnitNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(cu, NodeTypes.COMPILATION_UNIT);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(cu, NodeTypes.COMPILATION_UNIT);
         addPackageInfo(((JCCompilationUnit) cu).packge, compilationUnitNode);
         compilationUnitNode.setProperty("fileName", fileName);
         argument = Pair.createPair(compilationUnitNode, null);
@@ -128,7 +128,7 @@ public class GetStructuresAfterAnalyze implements TaskListener {
         JavacInfo.currentJavacInfo.get().setCurrCompilationUnit(cu);
         String fileName = cu.getSourceFile().getName();
         NodeWrapper compilationUnitNode =
-                DatabaseFacade.CURRENT_DB_FACHADE.createSkeletonNode(cu, NodeTypes.COMPILATION_UNIT);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(cu, NodeTypes.COMPILATION_UNIT);
         addPackageInfo(((JCCompilationUnit) cu).packge, compilationUnitNode);
         compilationUnitNode.setProperty("fileName", fileName);
         argument = Pair.createPair(compilationUnitNode, null);

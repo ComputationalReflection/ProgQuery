@@ -10,7 +10,6 @@ import es.uniovi.reflection.progquery.cache.DefinitionCache;
 import es.uniovi.reflection.progquery.cache.NotDuplicatingArcsDefCache;
 import es.uniovi.reflection.progquery.database.DatabaseFacade;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
-import es.uniovi.reflection.progquery.database.relations.CDGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.PGRelationTypes;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
@@ -20,7 +19,7 @@ public class PackageInfo {
 	public static NodeWrapper currentProgram;
 
 	public static void createCurrentProgram(String programID, String userID) {
-		currentProgram = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.PROGRAM);
+		currentProgram = DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.PROGRAM);
 		currentProgram.setProperty("ID", programID);
 		currentProgram.setProperty("USER_ID", userID);
 		currentProgram.setProperty("timestamp", ZonedDateTime.now().toString());
@@ -43,7 +42,7 @@ public class PackageInfo {
 		return packageCache.get(packageSymbol.toString());
 	}
 	private NodeWrapper addPackage(Symbol s, boolean isDeclared) {
-		NodeWrapper packageNode = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.PACKAGE);
+		NodeWrapper packageNode = DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.PACKAGE);
 		if (isDeclared) {
 			packageCache.putDefinition(s.toString(), packageNode);
 			currentProgram.createRelationshipTo(packageNode, PGRelationTypes.PROGRAM_DECLARES_PACKAGE);

@@ -2,7 +2,6 @@ package es.uniovi.reflection.progquery.database;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.Tree;
-import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.tree.JCTree;
@@ -13,15 +12,17 @@ import es.uniovi.reflection.progquery.node_wrappers.WrapperUtils;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
 import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 
+import javax.lang.model.element.ElementKind;
+
 public class DatabaseFacade {
     private final InsertionStrategy insertionStrategy;
     public static InsertionStrategy CURRENT_INSERTION_STRATEGY;
 
-    public static DatabaseFacade CURRENT_DB_FACHADE;
+    public static ThreadLocal<DatabaseFacade> CURRENT_DB_FACADE = new ThreadLocal<>();
 
     public static void init(InsertionStrategy current) {
         CURRENT_INSERTION_STRATEGY = current;
-        CURRENT_DB_FACHADE = new DatabaseFacade(current);
+        CURRENT_DB_FACADE.set(new DatabaseFacade(current));
     }
 
     public DatabaseFacade(InsertionStrategy insertionStrategy) {
@@ -84,33 +85,39 @@ public class DatabaseFacade {
                 new Object[]{"simpleName", WrapperUtils.stringToNeo4jQueryString(simpleName)});
     }
 
-    public static Object[] getTypeDecProperties(String simpleName, String fullyQualifiedType, boolean declared) {
-        return join(getTypeDecProperties(simpleName, fullyQualifiedType), new Object[]{ASTTypesVisitor.IS_USER_CODE_PROP, declared});
+    public static Object[] getTypeDecProperties(String simpleName, String fullyQualifiedType, boolean isUserCode) {
+        return join(getTypeDecProperties(simpleName, fullyQualifiedType),
+                new Object[]{ASTTypesVisitor.IS_USER_CODE_PROP, isUserCode});
     }
 
 
-    private static Object[] getTypeDecProperties(ClassSymbol symbol, boolean isDeclared) {
+    private static Object[] getTypeDecProperties(ClassSymbol symbol, boolean isUserCode) {
         return getTypeDecProperties(symbol.getSimpleName().toString(), symbol.getQualifiedName().toString(),
-                isDeclared);
+                isUserCode);
 
     }
 
-    public NodeWrapper createTypeDecNode(ClassTree classTree, String simpleName, String fullyQualifiedType) {
-        NodeWrapper typeDef = createNode(classTree.getKind() == Kind.CLASS ? NodeTypes.CLASS_DEC :
-                        classTree.getKind() == Kind.INTERFACE ? NodeTypes.INTERFACE_DEC : NodeTypes.ENUM_DEC,
-                getTypeDecProperties(simpleName, fullyQualifiedType, true));
+    public NodeWrapper createTypeDecNode(ClassSymbol symbol, boolean isUserCode) {
+        NodeWrapper typeDef = createNode(symbol.getKind() == ElementKind.CLASS ? NodeTypes.CLASS_DEC :
+                        symbol.getKind() == ElementKind.INTERFACE ? NodeTypes.INTERFACE_DEC :
+                                symbol.getKind() == ElementKind.ENUM ? NodeTypes.ENUM_DEC : NodeTypes.ANNOTATION_DEC,
+                getTypeDecProperties(symbol, isUserCode));
+        return typeDef;
+    }
+
+    public NodeWrapper createUserTypeDecNode(ClassTree classTree, ClassSymbol symbol){
+        NodeWrapper typeDef = createTypeDecNode(symbol, true);
         typeDef.addLabel(NodeCategory.AST_NODE);
         typeDef.setProperties(getPosition(classTree));
         return typeDef;
     }
-
-    public NodeWrapper createNonDeclaredTypeDecNode(ClassType c, NodeTypes type) {
-        return createNonDeclaredTypeDecNode((ClassSymbol) c.tsym, type);
+     public NodeWrapper createExternalTypeDecNode(ClassType c) {
+        return createExternalTypeDecNode((ClassSymbol) c.tsym);
 
     }
 
-    public NodeWrapper createNonDeclaredTypeDecNode(ClassSymbol symbol, NodeTypes type) {
-        NodeWrapper typeDecNode = createNode(type, getTypeDecProperties(symbol, false));
+    public NodeWrapper createExternalTypeDecNode(ClassSymbol symbol) {
+        NodeWrapper typeDecNode = createTypeDecNode(symbol, false);
         ASTTypesVisitor.typeSymbolPropsAndNestingLabels(symbol, symbol.getModifiers(), typeDecNode);
         return typeDecNode;
     }

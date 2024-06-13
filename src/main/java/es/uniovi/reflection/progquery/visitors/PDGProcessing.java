@@ -319,7 +319,7 @@ public class PDGProcessing {
         if (r != null)
             return r;
         return classDecNode.createRelationshipTo(
-                DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.THIS_REF),
+                DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.THIS_REF),
                 PDGRelationTypes.HAS_THIS_REFERENCE);
 
     }
@@ -339,7 +339,7 @@ public class PDGProcessing {
 
     private NodeWrapper createNotDeclaredFieldOrEnum(VarSymbol s, ASTAuxiliarStorage ast, NodeTypes nodeType,
                                                      ASTRelationTypes relationWithParent) {
-        NodeWrapper decNode = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(nodeType);
+        NodeWrapper decNode = DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(nodeType);
         decNode.setProperty(ASTTypesVisitor.IS_USER_CODE_PROP, false);
         decNode.setProperty("name", s.name.toString());
         GraphUtils.attachType(decNode, s.type, ast);

@@ -44,7 +44,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
     }
 
     private static NodeWrapper createWithProps(NodeTypes nodeType, Object[] props) {
-        return DatabaseFacade.CURRENT_DB_FACHADE.createNode(nodeType, props);
+        return DatabaseFacade.CURRENT_DB_FACADE.get().createNode(nodeType, props);
     }
 
     private static NodeWrapper createWithSingleName(TypeMirror type, NodeTypes nodeType) {
@@ -70,9 +70,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
         if (DefinitionCache.TYPE_CACHE.get().containsKey(typeDefKey))
             return DefinitionCache.TYPE_CACHE.get().get(typeDefKey);
 
-        NodeWrapper generatedTypeDec = DatabaseFacade.CURRENT_DB_FACHADE.createNonDeclaredTypeDecNode(classSymbol,
-                classSymbol.isInterface() ? NodeTypes.INTERFACE_DEC :
-                        classSymbol.isEnum() ? NodeTypes.ENUM_DEC : NodeTypes.CLASS_DEC);
+        NodeWrapper generatedTypeDec = DatabaseFacade.CURRENT_DB_FACADE.get().createExternalTypeDecNode(classSymbol);
         putInCache(typeDefKey, generatedTypeDec);
         ast.typeDecNodes.add(generatedTypeDec);
         return generatedTypeDec;
@@ -102,9 +100,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
             typeArgKeys = t.getTypeArguments().stream()
                     .map(typeParam -> new TypeVariableKey((TypeVariable) typeParam, declaredTypeKey))
                     .collect(Collectors.toList());
-            declaredType = DatabaseFacade.CURRENT_DB_FACHADE.createNonDeclaredTypeDecNode(((ClassType) t),
-                    type.isInterface() ? NodeTypes.INTERFACE_DEC :
-                            type.tsym.isEnum() ? NodeTypes.ENUM_DEC : NodeTypes.CLASS_DEC);
+            declaredType = DatabaseFacade.CURRENT_DB_FACADE.get().createExternalTypeDecNode((ClassType) t);
 
             if (t.getTypeArguments().size() > 0)
                 declaredType.addLabel(NodeTypes.GENERIC_TYPE);
@@ -188,12 +184,12 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
         if (t.getKind() == TypeKind.PACKAGE)
             throw new IllegalStateException(
                     ("Type %s is package type which is not longer supported. A package type should never be visited " +
-                            "here.").formatted(
-                            t));
+                            "here.").formatted(t));
         if (t.getKind() == TypeKind.VOID)
             return putInCache(key, createWithSingleName(t, NodeTypes.VOID_TYPE));
 
-        throw new IllegalStateException("NoType %s with kind %s different than PACKAGE or VOID".formatted(t, t.getKind()));
+        throw new IllegalStateException(
+                "NoType %s with kind %s different than PACKAGE or VOID".formatted(t, t.getKind()));
     }
 
     @Override

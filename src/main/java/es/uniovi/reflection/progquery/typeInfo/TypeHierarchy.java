@@ -14,12 +14,12 @@ import javax.lang.model.type.TypeKind;
 public class TypeHierarchy {
     public static void addTypeHierarchy(ClassSymbol symbol, NodeWrapper classNode, ASTTypesVisitor astVisitor,
                                         ASTAuxiliarStorage ast) {
-        scanBaseClassSymbol(symbol.getSuperclass(), classNode, TypeRelations.IS_SUBTYPE_EXTENDS, astVisitor, symbol, ast);
+        scanSuperTypeSymbol(symbol.getSuperclass(), classNode, TypeRelations.IS_SUBTYPE_EXTENDS, astVisitor, symbol, ast);
         for (Type interfaceType : symbol.getInterfaces())
-            scanBaseClassSymbol(interfaceType, classNode, TypeRelations.IS_SUBTYPE_IMPLEMENTS, astVisitor, symbol, ast);
+            scanSuperTypeSymbol(interfaceType, classNode, TypeRelations.IS_SUBTYPE_IMPLEMENTS, astVisitor, symbol, ast);
     }
 
-    private static void scanBaseClassSymbol(Type baseType, NodeWrapper classNode, TypeRelations rel,
+    private static void scanSuperTypeSymbol(Type baseType, NodeWrapper classNode, TypeRelations rel,
                                             ASTTypesVisitor astVisitor, ClassSymbol classSymbol,
                                             ASTAuxiliarStorage ast) {
         if (baseType.getKind() != TypeKind.NONE) {

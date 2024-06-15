@@ -3,8 +3,9 @@ package es.uniovi.reflection.progquery.database.relations;
 public enum TypeRelations implements RelationTypesInterface {
     INHERITS_FIELD, INHERITS_METHOD,
     IS_SUBTYPE_EXTENDS, IS_SUBTYPE_IMPLEMENTS,
-    ITS_TYPE_IS,
     OVERRIDES,
+
+    INFERRED_TYPE, ITS_TYPE_IS, REFERS_TO_TYPE,
 
     ARRAY_ELEMENT_TYPE,
     GENERIC_TYPE_PARAM, PARAMETERIZES_TYPE, TYPE_ARGUMENT,

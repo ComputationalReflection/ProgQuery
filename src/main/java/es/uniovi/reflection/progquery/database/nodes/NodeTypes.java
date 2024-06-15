@@ -64,6 +64,7 @@ public enum NodeTypes implements Label {
     TYPE_IDENTIFIER(NodeCategory.IDENTIFIER, NodeCategory.AST_TYPE),
     TYPE_SELECTION(NodeCategory.IDENTIFIER_SELECTION, NodeCategory.AST_TYPE),
     TYPE_PARAM(NodeCategory.AST_TYPE),
+    VAR_TYPE(NodeCategory.AST_TYPE),
 
 
     /*AST Statements OR CF Entries*/

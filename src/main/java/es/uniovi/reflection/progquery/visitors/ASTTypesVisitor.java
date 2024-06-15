@@ -141,7 +141,6 @@ public class ASTTypesVisitor
                                                Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper annotatedTypeNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(annotatedTypeTree, NodeTypes.ANNOTATED_TYPE);
-        attachTypeDirect(annotatedTypeNode, annotatedTypeTree);
         GraphUtils.connectWithParent(annotatedTypeNode, t);
         scan(annotatedTypeTree.getAnnotations(), Pair.createPair(annotatedTypeNode, ASTRelationTypes.HAS_ANNOTATION));
         scan(annotatedTypeTree.getUnderlyingType(),
@@ -191,8 +190,6 @@ public class ASTTypesVisitor
         arrayTypeNode.setProperty("simpleName",
                 splittedName.length == 0 ? fullyName : splittedName[splittedName.length - 1]);
         scan(arrayTypeTree.getType(), Pair.createPair(arrayTypeNode, ASTRelationTypes.AST_ARRAY_ELEMENT_TYPE));
-        if (arrayTypeTree.getType() instanceof IdentifierTree)
-            addClassAndDep(((JCIdent) arrayTypeTree.getType()).type);
         return null;
     }
 
@@ -655,7 +652,8 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitIdentifier(IdentifierTree identifierTree,
                                             Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper identifierNode;
-        if (((JCIdent) identifierTree).sym == null) {
+        Symbol idSymbol = ((JCIdent) identifierTree).sym;
+        if (idSymbol == null) {
             identifierNode = DatabaseFacade.CURRENT_DB_FACADE.get()
                     .createSkeletonNode(identifierTree, NodeTypes.UNKNOWN_IDENTIFIER);
             identifierNode.setProperty("name", identifierTree.getName().toString());
@@ -664,18 +662,20 @@ public class ASTTypesVisitor
                     identifierTree.getName().toString(), identifierTree.toString()));
             return null;
         }
-        ElementKind idKind = ((JCIdent) identifierTree).sym.getKind();
+        ElementKind idKind = idSymbol.getKind();
         if (idKind == ElementKind.PACKAGE)
             identifierNode = DatabaseFacade.CURRENT_DB_FACADE.get()
                     .createSkeletonNode(identifierTree, NodeTypes.PACKAGE_IDENTIFIER);
         else {
-            if (isASTType(idKind))
+            if (isASTType(idKind)) {
                 identifierNode = DatabaseFacade.CURRENT_DB_FACADE.get()
                         .createSkeletonNode(identifierTree, NodeTypes.TYPE_IDENTIFIER);
-            else
+                astTypeRefersTo(identifierNode, idSymbol);
+            } else {
                 identifierNode =
                         DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(identifierTree, NodeTypes.VARIABLE);
-            attachTypeDirect(identifierNode, identifierTree);
+                attachTypeDirect(identifierNode, identifierTree);
+            }
         }
         identifierNode.setProperty("name", identifierTree.getName().toString());
         GraphUtils.connectWithParent(identifierNode, t);
@@ -729,8 +729,6 @@ public class ASTTypesVisitor
                 DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(instanceOfTree, NodeTypes.INSTANCE_OF);
         GraphUtils.attachTypeDirect(instanceOfNode, instanceOfTree, "boolean", "BOOLEAN", ast);
         GraphUtils.connectWithParent(instanceOfNode, t);
-        if (instanceOfTree.getType() instanceof IdentifierTree)
-            addClassAndDep(((JCIdent) instanceOfTree.getType()).type);
 
         scan(instanceOfTree.getExpression(), Pair.createPair(instanceOfNode, ASTRelationTypes.INSTANCE_OF_EXPR));
         scan(instanceOfTree.getType(), Pair.createPair(instanceOfNode, ASTRelationTypes.INSTANCE_OF_TYPE));
@@ -846,6 +844,11 @@ public class ASTTypesVisitor
                 kind == ElementKind.RECORD || kind == ElementKind.TYPE_PARAMETER || kind == ElementKind.ANNOTATION_TYPE;
     }
 
+    private void astTypeRefersTo(NodeWrapper astType, Symbol symbol) {
+        astType.createRelationshipTo(DefinitionCache.getOrCreateType(symbol.type, ast), TypeRelations.REFERS_TO_TYPE);
+        addClassAndDep(symbol);
+    }
+
     @Override
     public ASTVisitorResult visitMemberSelect(MemberSelectTree memberSelectTree,
                                               Pair<PartialRelation<RelationTypesInterface>, Object> t) {
@@ -856,22 +859,19 @@ public class ASTTypesVisitor
         if (idKind == ElementKind.PACKAGE)
             memberSelectNode = DatabaseFacade.CURRENT_DB_FACADE.get()
                     .createSkeletonNode(memberSelectTree, NodeTypes.PACKAGE_SELECTION);
-        else {
-            if (isASTType(idKind))
-                memberSelectNode = DatabaseFacade.CURRENT_DB_FACADE.get()
-                        .createSkeletonNode(memberSelectTree, NodeTypes.TYPE_SELECTION);
-            else {
-                memberSelectNode = DatabaseFacade.CURRENT_DB_FACADE.get()
-                        .createSkeletonNode(memberSelectTree, NodeTypes.MEMBER_SELECTION);
-                fieldOrEnum = idKind == ElementKind.FIELD || idKind == ElementKind.ENUM_CONSTANT;
-            }
+        else if (isASTType(idKind)) {
+            memberSelectNode = DatabaseFacade.CURRENT_DB_FACADE.get()
+                    .createSkeletonNode(memberSelectTree, NodeTypes.TYPE_SELECTION);
+            astTypeRefersTo(memberSelectNode, memberSymbol);
+        } else {
+            memberSelectNode = DatabaseFacade.CURRENT_DB_FACADE.get()
+                    .createSkeletonNode(memberSelectTree, NodeTypes.MEMBER_SELECTION);
+            fieldOrEnum = idKind == ElementKind.FIELD || idKind == ElementKind.ENUM_CONSTANT;
             attachTypeDirect(memberSelectNode, memberSelectTree);
         }
+
         memberSelectNode.setProperty("identifierName", memberSelectTree.getIdentifier().toString());
         GraphUtils.connectWithParent(memberSelectNode, t);
-
-        if (isASTType(idKind))
-            addClassAndDep(memberSymbol);
 
         ASTVisitorResult memberSelResult = scan(memberSelectTree.getExpression(),
                 Pair.createPair(memberSelectNode, ASTRelationTypes.IDENT_SELECTION_FROM,
@@ -951,10 +951,6 @@ public class ASTTypesVisitor
         setCallableCommonProps(callableNode, methodSymbol, modifiers, nameInfo, methodSymbol.isDefault());
     }
 
-    private void addClassAndDep(TypeMirror typeMirror) {
-        if (typeMirror instanceof ClassType)
-            addClassAndDep(((ClassType) typeMirror).tsym);
-    }
 
     private void addClassAndDep(Symbol symbol) {
         NodeWrapper newTypeDec = DefinitionCache.getOrCreateType(symbol.type, ast);
@@ -1023,19 +1019,13 @@ public class ASTTypesVisitor
         scan(methodTree.getReturnType(), Pair.createPair(methodNode, ASTRelationTypes.METHOD_RETURN_TYPE));
         GraphUtils.attachType(methodNode, ((JCMethodDecl) methodTree).type, ast);
 
-        if (!isConstructor)
-            addClassAndDep(((JCTree) methodTree.getReturnType()).type);
-
         visitListWithPropertyIndex(methodTree.getTypeParameters(), methodNode, ASTRelationTypes.CALLABLE_TYPE_PARAM,
                 "paramIndex");
         visitListWithPropertyIndex(methodTree.getParameters(), methodNode, ASTRelationTypes.CALLABLE_PARAM,
                 "paramIndex");
 
-        methodTree.getThrows().forEach((throwsTree) -> {
-            TypeMirror type = ((JCExpression) throwsTree).type;
-            addClassAndDep(type);
-            scan(throwsTree, Pair.createPair(methodNode, ASTRelationTypes.CALLABLE_THROWS));
-        });
+        methodTree.getThrows().forEach(
+                (throwsTree) -> scan(throwsTree, Pair.createPair(methodNode, ASTRelationTypes.CALLABLE_THROWS)));
 
         scan(methodTree.getBody(), Pair.createPair(methodNode, ASTRelationTypes.CALLABLE_BODY));
         scan(methodTree.getDefaultValue(), Pair.createPair(methodNode, ASTRelationTypes.DEFAULT_VALUE));
@@ -1077,7 +1067,7 @@ public class ASTTypesVisitor
         GraphUtils.connectWithParent(methodInvocationNode, pair);
 
         Symbol symbol = JavacInfo.getSymbolFromTree(methodInvocationTree.getMethodSelect());
-        NodeWrapper decNode = null;
+        NodeWrapper decNode;
 
         if (isDynamicallyGenerated(symbol, methodInvocationTree)) {
             String methodName = (methodInvocationTree.getMethodSelect() instanceof JCIdent ?
@@ -1103,9 +1093,6 @@ public class ASTTypesVisitor
                 return null;
             }
             MethodSymbol methodSymbol = (MethodSymbol) symbol;
-
-            if (methodInvocationTree.getMethodSelect() instanceof IdentifierTree)
-                addClassAndDep(methodSymbol.owner);
 
             if (methodSymbol.getThrownTypes().size() > 0)
                 currentMethodInvocations.add(methodSymbol);
@@ -1218,7 +1205,6 @@ public class ASTTypesVisitor
                 System.err.println("Invocation " + newClassTree + " with no symbol, at" + currentTypeDecSymbol);
                 return null;
             }
-            addClassAndDep(type);
             MethodSymbol consSymbol = (MethodSymbol) newClassConstructor;
             constructorDef = getCallableDecFromCall(consSymbol);
             if (consSymbol.getThrownTypes().size() > 0)
@@ -1285,14 +1271,8 @@ public class ASTTypesVisitor
         GraphUtils.connectWithParent(parameterizedNode, t);
         scan(parameterizedTypeTree.getType(),
                 Pair.createPair(parameterizedNode, ASTRelationTypes.PARAMETERIZES_AST_TYPE));
-        addClassAndDep(((JCTree) parameterizedTypeTree.getType()).type);
-        for (int i = 0; i < parameterizedTypeTree.getTypeArguments().size(); i++) {
-            Tree typeArg = parameterizedTypeTree.getTypeArguments().get(i);
-            addClassAndDep(((JCTree) typeArg).type);
-            scan(typeArg, Pair.createPair(
-                    new PartialRelationWithProperties<>(parameterizedNode, ASTRelationTypes.AST_TYPE_ARG,
-                            "argumentIndex", i + 1)));
-        }
+        visitListWithPropertyIndex(parameterizedTypeTree.getTypeArguments(), parameterizedNode,
+                ASTRelationTypes.AST_TYPE_ARG, "argumentIndex");
         parameterizedNode.setProperty("actualType",
                 ((JCTypeApply) parameterizedTypeTree).type.tsym.getQualifiedName() + "<>");
         return null;
@@ -1429,8 +1409,6 @@ public class ASTTypesVisitor
         GraphUtils.connectWithParent(typeCastNode, t);
         scan(typeCastTree.getType(), Pair.createPair(typeCastNode, ASTRelationTypes.CAST_TYPE));
         scan(typeCastTree.getExpression(), Pair.createPair(typeCastNode, ASTRelationTypes.CAST_EXPR));
-        if (typeCastTree.getType() instanceof IdentifierTree)
-            addClassAndDep(((JCIdent) typeCastTree.getType()).type);
         return null;
     }
 
@@ -1496,17 +1474,39 @@ public class ASTTypesVisitor
         }
         return null;
     }
+    private void addClassAndDep(TypeMirror typeMirror) {
+        if (typeMirror instanceof ClassType)
+            addClassAndDep(((ClassType) typeMirror).tsym);
+    }
+
+    private NodeWrapper processVarType(VariableTree variableTree, NodeWrapper varDecNode) {
+        JCVariableDecl varDec = (JCVariableDecl) variableTree;
+        Type type = varDec.vartype.type;
+        NodeWrapper varTypeNode = GraphUtils.attachType(varDecNode, type, ast);
+        if (varDec.declaredUsingVar()) {
+            addClassAndDep(type);
+            NodeWrapper ASTVarType =
+                    DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(variableTree, NodeTypes.VAR_TYPE);
+            ASTVarType.createRelationshipTo(varTypeNode, TypeRelations.INFERRED_TYPE);
+            varDecNode.createRelationshipTo(ASTVarType, ASTRelationTypes.VAR_DEC_TYPE);
+            final String VAR_NAME = "var";
+            ASTVarType.setProperty("simpleName", VAR_NAME);
+            ASTVarType.setProperty("fullyQualifiedName", VAR_NAME);
+        } else
+            scan(variableTree.getType(), Pair.createPair(varDecNode, ASTRelationTypes.VAR_DEC_TYPE));
+        return varTypeNode;
+    }
 
     @Override
     public ASTVisitorResult visitVariable(VariableTree variableTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        boolean isAttr = t.getFirst().getRelationType().equals(ASTRelationTypes.TYPE_STATIC_INIT);
+        boolean isAttrOrEnum = t.getFirst().getRelationType().equals(ASTRelationTypes.TYPE_STATIC_INIT);
         boolean isMethodParam = t.getFirst().getRelationType().equals(ASTRelationTypes.CALLABLE_PARAM) ||
                 t.getFirst().getRelationType().equals(ASTRelationTypes.LAMBDA_PARAM);
         boolean isEnum = false;
         NodeWrapper variableNode;
         Symbol varSymbol = ((JCVariableDecl) variableTree).sym;
-        if (isAttr)
+        if (isAttrOrEnum)
             variableNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNodeExplicitCats(variableTree,
                     (isEnum = varSymbol.getKind() == ElementKind.ENUM_CONSTANT) ? NodeTypes.ENUM_ELEMENT :
                             NodeTypes.ATTR_DEC, NodeCategory.AST_NODE);
@@ -1515,19 +1515,17 @@ public class ASTTypesVisitor
                     isMethodParam ? NodeTypes.PARAMETER_DEC : NodeTypes.LOCAL_VAR_DEC);
         variableNode.setProperty("name", variableTree.getName().toString());
 
-        Type type = ((JCVariableDecl) variableTree).type;
-        NodeWrapper varTypeNode = GraphUtils.attachType(variableNode, type, ast);
+        NodeWrapper varTypeNode = processVarType(variableTree, variableNode);
+
         ModifiersTree modifiers = variableTree.getModifiers();
-        if (!isEnum) {
-            addClassAndDep(type);
-            if (isAttr)
-                setAttrDecModifiers(varSymbol, modifiers.getFlags(), variableNode);
-            else
-                checkFinalMod(varSymbol, variableNode);
-        }
+        if (isAttrOrEnum)
+            setAttrDecModifiers(varSymbol, modifiers.getFlags(), variableNode);
+        else
+            checkFinalMod(varSymbol, variableNode);
+
         scan(modifiers.getAnnotations(), Pair.createPair(variableNode, null));
         MethodState previousState = methodState;
-        if (isAttr) {
+        if (isAttrOrEnum) {
             variableNode.setProperty(IS_USER_CODE_PROP, true);
             GraphUtils.connectWithParent(variableNode, t,
                     isEnum ? ASTRelationTypes.ENUM_DECLARES_ELEMENT : ASTRelationTypes.DECLARES_FIELD);
@@ -1539,16 +1537,16 @@ public class ASTTypesVisitor
         } else
             GraphUtils.connectWithParent(variableNode, t);
 
-        NodeWrapper initNode = createVarInit(variableTree, variableNode, isAttr, varSymbol.isStatic(), varTypeNode);
+        NodeWrapper initNode =
+                createVarInit(variableTree, variableNode, isAttrOrEnum, varSymbol.isStatic(), varTypeNode);
         if (isEnum && !varSymbol.owner.isFinal())
             processEnumElementMembers(variableNode, initNode);
-        if (!(isMethodParam || isAttr)) {
+        if (!(isMethodParam || isAttrOrEnum)) {
             methodState.putCfgNodeInCache(variableTree, variableNode);
             addInvocationInStatement(variableNode);
         }
         pdgUtils.putDecInCache(varSymbol, variableNode);
-        scan(variableTree.getType(), Pair.createPair(variableNode, ASTRelationTypes.VAR_DEC_TYPE));
-        if (isAttr) {
+        if (isAttrOrEnum) {
             methodState = previousState;
         }
         return null;

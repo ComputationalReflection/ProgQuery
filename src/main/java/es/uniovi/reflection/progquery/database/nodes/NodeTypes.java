@@ -43,7 +43,7 @@ public enum NodeTypes implements Label {
     CLASS_DEC(NodeCategory.TYPE_DEC),
     CONSTRUCTOR_DEC(NodeCategory.CALLABLE_DEC),
     ENUM_DEC(NodeCategory.TYPE_DEC),
-    ENUM_ELEMENT(NodeCategory.DECLARATION),
+    ENUM_ELEMENT(NodeCategory.VARIABLE_DEC),
     INTERFACE_DEC(NodeCategory.TYPE_DEC),
     METHOD_DEC(NodeCategory.CALLABLE_DEC),
 

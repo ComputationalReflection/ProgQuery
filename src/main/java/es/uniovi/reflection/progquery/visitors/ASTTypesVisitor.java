@@ -1480,8 +1480,8 @@ public class ASTTypesVisitor
         return null;
     }
 
-    private void createVarInit(VariableTree varTree, NodeWrapper varDecNode, boolean isAttr, boolean isStatic,
-                               NodeWrapper varTypeNode) {
+    private NodeWrapper createVarInit(VariableTree varTree, NodeWrapper varDecNode, boolean isAttr, boolean isStatic,
+                                      NodeWrapper varTypeNode) {
         if (varTree.getInitializer() != null) {
             NodeWrapper initNode = DatabaseFacade.CURRENT_DB_FACADE.get()
                     .createSkeletonNode(varTree.getInitializer(), NodeTypes.INITIALIZATION);
@@ -1492,7 +1492,9 @@ public class ASTTypesVisitor
                 r.setProperty("isOwnAccess", true);
             scan(varTree.getInitializer(), Pair.createPair(initNode, ASTRelationTypes.INITIALIZATION_EXPR));
             PDGProcessing.createVarDecInitRel(classState.currentClassDec, initNode, isAttr, isStatic);
+            return initNode;
         }
+        return null;
     }
 
     @Override
@@ -1536,7 +1538,10 @@ public class ASTTypesVisitor
 
         } else
             GraphUtils.connectWithParent(variableNode, t);
-        createVarInit(variableTree, variableNode, isAttr, varSymbol.isStatic(), varTypeNode);
+
+        NodeWrapper initNode = createVarInit(variableTree, variableNode, isAttr, varSymbol.isStatic(), varTypeNode);
+        if (isEnum && !varSymbol.owner.isFinal())
+            processEnumElementMembers(variableNode, initNode);
         if (!(isMethodParam || isAttr)) {
             methodState.putCfgNodeInCache(variableTree, variableNode);
             addInvocationInStatement(variableNode);
@@ -1547,6 +1552,16 @@ public class ASTTypesVisitor
             methodState = previousState;
         }
         return null;
+    }
+
+    private void processEnumElementMembers(NodeWrapper enumElement, NodeWrapper initNode) {
+        RelationshipWrapper anonymousClassRel =
+                initNode.getSingleRelationship(Direction.OUTGOING, ASTRelationTypes.INITIALIZATION_EXPR).getEndNode()
+                        .getSingleRelationship(Direction.OUTGOING, ASTRelationTypes.NEW_INSTANCE_BODY);
+        if (anonymousClassRel != null)
+            anonymousClassRel.getEndNode().getRelationships(Direction.OUTGOING, ASTRelationTypes.DECLARES_TYPE,
+                    ASTRelationTypes.DECLARES_METHOD, ASTRelationTypes.DECLARES_FIELD).forEach(
+                    (memberRel) -> enumElement.createRelationshipTo(memberRel.getEndNode(), memberRel.getType()));
     }
 
     @Override

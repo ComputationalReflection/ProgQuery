@@ -19,7 +19,9 @@ import java.util.Set;
 
 public class DefinitionCache<TKEY> {
     public static ThreadLocal<DefinitionCache<TypeKey>> TYPE_CACHE  = new ThreadLocal<>();
-    public static ThreadLocal<DefinitionCache<String>> CALLABLE_DEF_CACHE = new ThreadLocal<>();
+    public static ThreadLocal<DefinitionCache<String>> CALLABLE_DEC_CACHE = new ThreadLocal<>();
+    public static ThreadLocal<DefinitionCache<Symbol.RecordComponent>> COMPONENT_CACHE = new ThreadLocal<>();
+
 
     private final Map<TKEY, NodeWrapper> auxNodeCache = new HashMap<>();
     protected final Map<TKEY, NodeWrapper> definitionNodeCache = new HashMap<>();
@@ -60,13 +62,15 @@ public class DefinitionCache<TKEY> {
 
     private void putDefinition(TKEY k, NodeWrapper v, NodeWrapper previousNode) {
         if (previousNode != null) {
-            for (RelationshipWrapper r : previousNode.getRelationships(Direction.INCOMING)) {
-                r.getStartNode().createRelationshipTo(v, r.getType());
-                r.delete();
+            for (RelationshipWrapper oldRel : previousNode.getRelationships(Direction.INCOMING)) {
+                RelationshipWrapper newRel = oldRel.getStartNode().createRelationshipTo(v, oldRel.getType());
+                oldRel.getAllProperties().forEach(prop -> newRel.setProperty(prop.getKey(), prop.getValue()));
+                oldRel.delete();
             }
-            for (RelationshipWrapper r : previousNode.getRelationships(Direction.OUTGOING)) {
-                v.createRelationshipTo(r.getEndNode(), r.getType());
-                r.delete();
+            for (RelationshipWrapper oldRel : previousNode.getRelationships(Direction.OUTGOING)) {
+                RelationshipWrapper newRel = v.createRelationshipTo(oldRel.getEndNode(), oldRel.getType());
+                oldRel.getAllProperties().forEach(prop -> newRel.setProperty(prop.getKey(), prop.getValue()));
+                oldRel.delete();
             }
             auxNodeCache.remove(k);
             previousNode.delete();

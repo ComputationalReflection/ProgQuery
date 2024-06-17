@@ -5,6 +5,8 @@ public enum ASTRelationTypes implements RelationTypesInterface {
 	CU_ENCLOSES, CU_IMPORTS,
 
 	/*Type Definition to Definition U Block*/
+	COMPONENT_ACCESSOR, COMPONENT_FIELD,
+	DECLARES_COMPONENT,
 	DECLARES_FIELD, DECLARES_METHOD, DECLARES_CONSTRUCTOR,
 	DECLARES_TYPE, //Also for CUs
 	ENUM_DECLARES_ELEMENT, TYPE_STATIC_INIT,
@@ -60,7 +62,9 @@ public enum ASTRelationTypes implements RelationTypesInterface {
 	WHILE_CONDITION,
 
 	/*Variable declaration to AST Type*/
+	COMPONENT_TYPE,
 	VAR_DEC_TYPE,
+
 
 	/*Lambda Expression to Statement U Parameter*/
 	LAMBDA_BODY, LAMBDA_PARAM,

@@ -106,13 +106,15 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
                 declaredType.addLabel(NodeTypes.GENERIC_TYPE);
             putInCache(declaredTypeKey, declaredType);
             ast.typeDecNodes.add(declaredType);
-
-            TypeHierarchy.addTypeHierarchy((ClassSymbol) ((Type.ClassType) t).tsym, declaredType, null, ast);
+            ClassSymbol classSymbol = (ClassSymbol) ((Type.ClassType) t).tsym;
+            TypeHierarchy.addTypeHierarchy(classSymbol, declaredType, null, ast);
+            if (classSymbol.isRecord())
+                ASTTypesVisitor.setNonDeclaredRecordMembers(classSymbol, declaredType, ast);
             (type.tsym).getEnclosedElements().forEach(elementSymbol -> {
                 if (elementSymbol.getKind() != ElementKind.FIELD) {
                     try {
                         if (elementSymbol.getKind() != ElementKind.METHOD &&
-                                elementSymbol.getKind() != ElementKind.CONSTRUCTOR)
+                                elementSymbol.getKind() != ElementKind.CONSTRUCTOR || !elementSymbol.isPublic())
                             return;
 
                         ASTTypesVisitor.getCallableDuringTypeCreation((MethodSymbol) elementSymbol, ast, declaredType);

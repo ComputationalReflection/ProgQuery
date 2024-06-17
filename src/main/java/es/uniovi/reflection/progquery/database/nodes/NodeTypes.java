@@ -46,6 +46,8 @@ public enum NodeTypes implements Label {
     ENUM_ELEMENT(NodeCategory.VARIABLE_DEC),
     INTERFACE_DEC(NodeCategory.TYPE_DEC),
     METHOD_DEC(NodeCategory.CALLABLE_DEC),
+    RECORD_COMPONENT(NodeCategory.DECLARATION),
+    RECORD_DEC(NodeCategory.TYPE_DEC),
 
     /*AST nodes*/
     ANNOTATION(NodeCategory.AST_NODE),

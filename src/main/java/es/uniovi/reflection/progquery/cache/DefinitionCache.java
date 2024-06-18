@@ -18,13 +18,14 @@ import java.util.Map;
 import java.util.Set;
 
 public class DefinitionCache<TKEY> {
-    public static ThreadLocal<DefinitionCache<TypeKey>> TYPE_CACHE  = new ThreadLocal<>();
+    public static ThreadLocal<DefinitionCache<TypeKey>> TYPE_CACHE = new ThreadLocal<>();
     public static ThreadLocal<DefinitionCache<String>> CALLABLE_DEC_CACHE = new ThreadLocal<>();
     public static ThreadLocal<DefinitionCache<Symbol.RecordComponent>> COMPONENT_CACHE = new ThreadLocal<>();
 
 
     private final Map<TKEY, NodeWrapper> auxNodeCache = new HashMap<>();
     protected final Map<TKEY, NodeWrapper> definitionNodeCache = new HashMap<>();
+
     public void put(TKEY k, NodeWrapper v) {
         if (auxNodeCache.containsKey(k))
             throw new IllegalArgumentException("Key " + k + " twice ");
@@ -36,8 +37,9 @@ public class DefinitionCache<TKEY> {
 
     public static void putClassDefinition(Symbol.ClassSymbol classSymbol, NodeWrapper classDec,
                                           Set<NodeWrapper> typeDecNodeList, Set<NodeWrapper> typeDecsUses) {
-        TYPE_CACHE.get().putClassDefinition(classSymbol.type.accept(new KeyTypeVisitor(), null), classDec, typeDecNodeList,
-                typeDecsUses);
+        TYPE_CACHE.get()
+                .putClassDefinition(classSymbol.type.accept(new KeyTypeVisitor(), null), classDec, typeDecNodeList,
+                        typeDecsUses);
     }
 
     public void putClassDefinition(TKEY classSymbol, NodeWrapper classDec, Set<NodeWrapper> typeDecNodeList,
@@ -50,8 +52,8 @@ public class DefinitionCache<TKEY> {
                     TypeRelations.IS_SUBTYPE_IMPLEMENTS))
                 r.delete();
             typeDecNodeList.remove(oldClassNode);
-            oldClassNode.getRelationships(Direction.OUTGOING, CDGRelationTypes.USES_TYPE_DEF).forEach(usesTypeDecRel ->
-            typeDecsUses.add(usesTypeDecRel.getEndNode()));
+            oldClassNode.getRelationships(Direction.OUTGOING, CDGRelationTypes.USES_TYPE_DEF)
+                    .forEach(usesTypeDecRel -> typeDecsUses.add(usesTypeDecRel.getEndNode()));
         }
         putDefinition(classSymbol, classDec, oldClassNode);
     }
@@ -104,15 +106,21 @@ public class DefinitionCache<TKEY> {
         return createTypeDec(type, key, ast);
     }
 
-    public static NodeWrapper getOrCreateType (TypeMirror type, ASTAuxiliarStorage ast){
+    public static NodeWrapper getOrCreateType(TypeMirror type, ASTAuxiliarStorage ast) {
         return getOrCreateType(type, type.accept(new KeyTypeVisitor(), null), ast);
     }
 
-    public static NodeWrapper createTypeDec (TypeMirror typeSymbol, ASTAuxiliarStorage ast){
+    public static NodeWrapper createTypeDec(TypeMirror typeSymbol, ASTAuxiliarStorage ast) {
         return createTypeDec(typeSymbol, typeSymbol.accept(new KeyTypeVisitor(), null), ast);
     }
 
-    private static NodeWrapper createTypeDec (TypeMirror type, TypeKey key, ASTAuxiliarStorage ast){
+    private static NodeWrapper createTypeDec(TypeMirror type, TypeKey key, ASTAuxiliarStorage ast) {
         return type.accept(new TypeVisitor(ast), key);
+    }
+
+    public void updateToDefinition(TKEY componentSymbol) {
+        NodeWrapper updatedNode = auxNodeCache.get(componentSymbol);
+        auxNodeCache.remove(componentSymbol);
+        definitionNodeCache.put(componentSymbol, updatedNode);
     }
 }

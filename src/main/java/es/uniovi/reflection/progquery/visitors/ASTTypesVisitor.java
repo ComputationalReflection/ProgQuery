@@ -395,8 +395,7 @@ public class ASTTypesVisitor
         componentNode.setProperties(new Object[]{"name", componentSymbol.getSimpleName().toString()});
         GraphUtils.attachType(componentNode, componentSymbol.type, ast);
 
-        componentNode.createRelationshipTo(
-                getCallableDuringTypeCreation(componentSymbol.accessor, ast, recordNode),
+        componentNode.createRelationshipTo(getCallableDuringTypeCreation(componentSymbol.accessor, ast, recordNode),
                 ASTRelationTypes.COMPONENT_ACCESSOR);
 
         return componentNode;
@@ -404,7 +403,9 @@ public class ASTTypesVisitor
 
     private void declaredRecordComponent(Symbol.RecordComponent componentSymbol, NodeWrapper recordNode,
                                          NodeWrapper fieldNode) {
-        NodeWrapper componentNode = recordComponent(componentSymbol, recordNode, ast);
+        NodeWrapper componentNode = DefinitionCache.COMPONENT_CACHE.get().containsKey(componentSymbol) ?
+                DefinitionCache.COMPONENT_CACHE.get().get(componentSymbol) :
+                recordComponent(componentSymbol, recordNode, ast);
         componentNode.setProperty(IS_USER_CODE_PROP, true);
         componentNode.addLabel(NodeCategory.AST_NODE);
         componentNode.setProperties(JavacInfo.getPosition(recordNode));
@@ -412,7 +413,7 @@ public class ASTTypesVisitor
         PartialWithEnd componentTypeRel = new PartialWithEnd<>(componentNode, ASTRelationTypes.COMPONENT_TYPE);
         componentSymbol.declarationFor().getType().accept(this, Pair.createPair(componentTypeRel));
         componentTypeRel.getEndNode().setProperties(JavacInfo.getPosition(recordNode));
-        DefinitionCache.COMPONENT_CACHE.get().putDefinition(componentSymbol, componentNode);
+        DefinitionCache.COMPONENT_CACHE.get().updateToDefinition(componentSymbol);
 
         componentNode.createRelationshipTo(fieldNode, ASTRelationTypes.COMPONENT_FIELD);
     }

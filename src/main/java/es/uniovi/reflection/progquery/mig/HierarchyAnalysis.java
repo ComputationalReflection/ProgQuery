@@ -33,8 +33,8 @@ public class HierarchyAnalysis {
         inheritedInfo = new InfoFromSubtypes();
 
         for (RelationshipWrapper subTypeRel : typeDec
-                .getRelationships(Direction.INCOMING, TypeRelations.IS_SUBTYPE_EXTENDS,
-                        TypeRelations.IS_SUBTYPE_IMPLEMENTS)) {
+                .getRelationships(Direction.INCOMING, TypeRelations.EXTENDS_CLASS,
+                        TypeRelations.IMPLEMENTS_INTERFACE)) {
             NodeWrapper subType = subTypeRel.getStartNode();
             InfoFromSubtypes infoFromSubtypes = dynamicMethodCallAnalysis(subType);
             inheritedInfo.subtypesToLastOverrider.putAll(infoFromSubtypes.subtypesToLastOverrider);

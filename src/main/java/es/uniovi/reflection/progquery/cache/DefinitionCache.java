@@ -48,8 +48,9 @@ public class DefinitionCache<TKEY> {
         if (auxNodeCache.containsKey(classSymbol)) {
             oldClassNode = auxNodeCache.get(classSymbol);
             for (RelationshipWrapper r : oldClassNode.getRelationships(Direction.OUTGOING,
-                    ASTRelationTypes.DECLARES_FIELD, TypeRelations.IS_SUBTYPE_EXTENDS,
-                    TypeRelations.IS_SUBTYPE_IMPLEMENTS))
+                    ASTRelationTypes.DECLARES_FIELD, TypeRelations.EXTENDS_CLASS,
+                    TypeRelations.IMPLEMENTS_INTERFACE, TypeRelations.EXTENDS_CLASS,
+                    TypeRelations.PERMITS_SUBTYPE))
                 r.delete();
             typeDecNodeList.remove(oldClassNode);
             oldClassNode.getRelationships(Direction.OUTGOING, CDGRelationTypes.USES_TYPE_DEF)

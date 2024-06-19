@@ -370,6 +370,7 @@ public class ASTTypesVisitor
                 typeDecNode.setProperty(ACCESS_LEVEL_PROP, PRIVATE_ACCESS);
             }
         }
+        typeDecNode.setProperty("isSealed", classSymbol.isSealed());
         checkStrictfpMod(modifiers, typeDecNode);
         typeDecNode.setProperty(IS_ABSTRACT_PROP, classSymbol.isAbstract());
         checkFinalMod(classSymbol, typeDecNode);
@@ -483,6 +484,7 @@ public class ASTTypesVisitor
 
         scan(classTree.getExtendsClause(), Pair.createPair(typeNode, ASTRelationTypes.EXTENDS_CLAUSE));
         scan(classTree.getImplementsClause(), Pair.createPair(typeNode, ASTRelationTypes.IMPLEMENTS_CLAUSE));
+        scan(classTree.getPermitsClause(), Pair.createPair(typeNode, ASTRelationTypes.PERMITS_CLAUSE));
 
         List<NodeWrapper> attrs = new ArrayList<>(), staticAttrs = new ArrayList<NodeWrapper>(), constructors =
                 new ArrayList<>();

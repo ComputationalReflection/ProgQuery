@@ -69,11 +69,12 @@ public enum NodeTypes implements Label {
     VAR_TYPE(NodeCategory.AST_TYPE),
 
 
-    /*AST Statements OR CF Entries*/
+    /*AST Statements OR Statement Sections*/
     ASSERT_STATEMENT(NodeCategory.STATEMENT),
     BLOCK(NodeCategory.STATEMENT),
     BREAK_STATEMENT(NodeCategory.STATEMENT),
-    CASE_SECTION(NodeCategory.AST_NODE),
+    CASE_COLON(NodeCategory.CASE_SECTION),
+    CASE_ARROW(NodeCategory.CASE_SECTION),
     CATCH_BLOCK(NodeCategory.AST_NODE),
     CONTINUE_STATEMENT(NodeCategory.STATEMENT),
     DO_WHILE_LOOP(NodeCategory.LOOP),
@@ -86,11 +87,12 @@ public enum NodeTypes implements Label {
     LABELED_STATEMENT(NodeCategory.STATEMENT),
     LOCAL_VAR_DEC(NodeCategory.LOCAL_DEC, NodeCategory.STATEMENT),
     RETURN_STATEMENT(NodeCategory.STATEMENT),
-    SWITCH_STATEMENT(NodeCategory.STATEMENT),
+    SWITCH_STATEMENT(NodeCategory.STATEMENT, NodeCategory.SWITCH),
     SYNCHRONIZED_BLOCK(NodeCategory.STATEMENT),
     THROW_STATEMENT(NodeCategory.STATEMENT),
     TRY_STATEMENT(NodeCategory.STATEMENT),
     WHILE_LOOP(NodeCategory.LOOP),
+    YIELD_STATEMENT(NodeCategory.STATEMENT),
 
     /*AST Expressions*/
     ARRAY_ACCESS(NodeCategory.LVALUE),
@@ -106,6 +108,7 @@ public enum NodeTypes implements Label {
     METHOD_INVOCATION(NodeCategory.CALL),
     NEW_ARRAY(NodeCategory.EXPRESSION),
     NEW_INSTANCE(NodeCategory.CALL),
+    SWITCH_EXPRESSION(NodeCategory.EXPRESSION, NodeCategory.SWITCH),
     TYPE_CAST(NodeCategory.EXPRESSION),
     UNARY_OPERATION(NodeCategory.EXPRESSION),
     VARIABLE(NodeCategory.IDENTIFIER, NodeCategory.LVALUE);

@@ -311,8 +311,8 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitCase(CaseTree caseTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
 
-        NodeWrapper caseNode =
-                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(caseTree, NodeTypes.CASE_SECTION);
+        NodeWrapper caseNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(caseTree,
+                caseTree.getCaseKind() == CaseTree.CaseKind.RULE ? NodeTypes.CASE_ARROW : NodeTypes.CASE_COLON);
         GraphUtils.connectWithParent(caseNode, t);
         prevMust = must;
         boolean isAUnconditionalDefault = caseTree.getExpressions().isEmpty() && !anyBreak;
@@ -943,7 +943,6 @@ public class ASTTypesVisitor
                                                      NodeWrapper methodNode, CallableNameInfo nameInfo) {
         scan(modifiers.getAnnotations(), Pair.createPair(methodNode, ASTRelationTypes.HAS_ANNOTATION));
         setCallableMethodSymbolProps(methodSymbol, modifiers.getFlags(), methodNode, nameInfo);
-        methodNode.setProperty(IS_USER_CODE_PROP, true);
         String accessLevel = methodNode.getProperty(ACCESS_LEVEL_PROP).toString();
         if (!methodSymbol.isConstructor() && isInAccessibleContext && (accessLevel.contentEquals(PUBLIC_ACCESS) ||
                 accessLevel.contentEquals(PROTECTED_ACCESS) &&
@@ -1033,6 +1032,7 @@ public class ASTTypesVisitor
         boolean prev = false;
         ASTRelationTypes rel;
         boolean isConstructor = methodSymbol.isConstructor();
+        boolean isUserCode = true;
         if (isConstructor) {
             prev = insideConstructor;
             insideConstructor = true;
@@ -1046,6 +1046,8 @@ public class ASTTypesVisitor
                     .createSkeletonNodeExplicitCats(methodTree, NodeTypes.METHOD_DEC, NodeCategory.AST_NODE);
             rel = ASTRelationTypes.DECLARES_METHOD;
         }
+
+        methodNode.setProperty(IS_USER_CODE_PROP, isUserCode);
 
         if (DefinitionCache.CALLABLE_DEC_CACHE.get().containsKey(nameInfo.getFullyQualifiedName())) {
             ast.deleteAccessibleMethod(methodSymbol);
@@ -1366,33 +1368,50 @@ public class ASTTypesVisitor
         return null;
     }
 
+    private void visitCases(List<? extends CaseTree> cases, NodeWrapper switchNode) {
+
+        switchNode.setProperty("isArrow", cases.get(0).getCaseKind() == CaseTree.CaseKind.RULE);
+        ASTVisitorResult caseResult =
+                visitCase(cases.get(0), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_CASE));
+        Set<NodeWrapper> paramsModifiedInAllCases =
+                caseResult == null ? new HashSet<>() : caseResult.paramsPreviouslyModifiedForSwitch();
+        boolean unconditionalFound = caseResult == null;
+        for (int i = 1; i < cases.size(); i++) {
+            caseResult = scan(cases.get(i), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_CASE));
+            if (caseResult != null)
+                paramsModifiedInAllCases.retainAll(caseResult.paramsPreviouslyModifiedForSwitch());
+            else
+                unconditionalFound = true;
+        }
+        if (!unconditionalFound && cases.get(cases.size() - 1).getExpression() == null)
+            pdgUtils.unionWithCurrent(paramsModifiedInAllCases);
+
+    }
+
     @Override
     public ASTVisitorResult visitSwitch(SwitchTree switchTree,
                                         Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper switchNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(switchTree, NodeTypes.SWITCH_STATEMENT);
         GraphUtils.connectWithParent(switchNode, t);
-        scan(switchTree.getExpression(), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_EXPR));
+        scan(switchTree.getExpression(), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_SELECTOR));
         addInvocationInStatement(switchNode);
         methodState.putCfgNodeInCache(switchTree, switchNode);
-        if (switchTree.getCases().size() > 0) {
-            ASTVisitorResult caseResult =
-                    visitCase(switchTree.getCases().get(0), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_CASE));
-            Set<NodeWrapper> paramsModifiedInAllCases =
-                    caseResult == null ? new HashSet<NodeWrapper>() : caseResult.paramsPreviouslyModifiedForSwitch();
-            boolean unconditionalFound = caseResult == null;
-            for (int i = 1; i < switchTree.getCases().size(); i++) {
-                caseResult =
-                        scan(switchTree.getCases().get(i), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_CASE));
-                if (caseResult != null)
-                    paramsModifiedInAllCases.retainAll(caseResult.paramsPreviouslyModifiedForSwitch());
-                else
-                    unconditionalFound = true;
-            }
-            if (!unconditionalFound &&
-                    switchTree.getCases().get(switchTree.getCases().size() - 1).getExpression() == null)
-                pdgUtils.unionWithCurrent(paramsModifiedInAllCases);
-        }
+        if (switchTree.getCases().size() > 0)
+            visitCases(switchTree.getCases(), switchNode);
+        return null;
+    }
+
+
+    @Override
+    public ASTVisitorResult visitSwitchExpression(SwitchExpressionTree switchExpressionTree,
+                                                  Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        NodeWrapper switchNode = DatabaseFacade.CURRENT_DB_FACADE.get()
+                .createSkeletonNode(switchExpressionTree, NodeTypes.SWITCH_EXPRESSION);
+        attachTypeDirect(switchNode, switchExpressionTree);
+        GraphUtils.connectWithParent(switchNode, t);
+        scan(switchExpressionTree.getExpression(), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_SELECTOR));
+        visitCases(switchExpressionTree.getCases(), switchNode);
         return null;
     }
 
@@ -1647,6 +1666,18 @@ public class ASTTypesVisitor
         wildcardNode.setProperty("typeBoundKind", wildcardTree.getKind().toString());
         GraphUtils.connectWithParent(wildcardNode, t);
         scan(wildcardTree.getBound(), Pair.createPair(wildcardNode, ASTRelationTypes.WILDCARD_BOUND));
+        return null;
+    }
+
+
+    @Override
+    public ASTVisitorResult visitYield(YieldTree yieldTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        NodeWrapper yieldNode =
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(yieldTree, NodeTypes.YIELD_STATEMENT);
+        GraphUtils.connectWithParent(yieldNode, t);
+//        methodState.putCfgNodeInCache(yieldTree, yieldNode);
+        scan(yieldTree.getValue(), Pair.createPair(yieldNode, ASTRelationTypes.YIELD_EXPR));
+//        addInvocationInStatement(yieldNode);
         return null;
     }
 }

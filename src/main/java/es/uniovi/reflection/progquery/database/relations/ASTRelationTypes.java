@@ -35,7 +35,7 @@ public enum ASTRelationTypes implements RelationTypesInterface {
 
 	/*Statement(Part?) to Statement*/
 	BLOCK_ENCLOSES,
-	CASE_STATEMENT,
+	CASE_BODY, CASE_STATEMENT,
 	CATCH_BLOCK, CATCH_VARIABLE,
 	DO_WHILE_STATEMENT,
 	FOREACH_STATEMENT, FOREACH_VAR,

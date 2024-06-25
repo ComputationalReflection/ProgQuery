@@ -321,6 +321,7 @@ public class ASTTypesVisitor
             pdgUtils.enteringNewBranch();
         scan(caseTree.getExpressions(), Pair.createPair(caseNode, ASTRelationTypes.CASE_EXPR));
         scan(caseTree.getStatements(), Pair.createPair(caseNode, ASTRelationTypes.CASE_STATEMENT));
+        scan(caseTree.getBody(), Pair.createPair(caseNode, ASTRelationTypes.CASE_BODY));
 
         must = prevMust;
         return isAUnconditionalDefault ? null : new VisitorResultImpl(pdgUtils.exitingCurrentBranch());

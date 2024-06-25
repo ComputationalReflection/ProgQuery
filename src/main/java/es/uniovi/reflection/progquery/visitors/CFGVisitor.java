@@ -299,15 +299,18 @@ public class CFGVisitor extends
         NodeWrapper breakNode = CFGCache.get(breakTree);
         linkLasts(lasts.getSecond(), breakNode);
         linkBreaksToFinallies(breakNode, breakTree.getLabel(), true);
-        return new ArrayList<PartialRelation<CFGRelationTypes>>();
+        return new ArrayList<>();
     }
 
     @Override
     public List<PartialRelation<CFGRelationTypes>> visitCase(CaseTree caseTree,
                                                              Pair<Name, List<PartialRelation<CFGRelationTypes>>> lasts) {
         List<PartialRelation<CFGRelationTypes>> newLasts = lasts.getSecond();
-        for (StatementTree st : caseTree.getStatements())
-            newLasts = scan(st, getNoNamePair(newLasts));
+        if (caseTree.getStatements() != null)
+            for (StatementTree st : caseTree.getStatements())
+                newLasts = scan(st, getNoNamePair(newLasts));
+        else
+            newLasts = scan(caseTree.getBody(), getNoNamePair(newLasts));
         return newLasts;
     }
 
@@ -520,7 +523,7 @@ public class CFGVisitor extends
                                                                Pair<Name, List<PartialRelation<CFGRelationTypes>>> arg) {
         PartialRelation<CFGRelationTypes> retPair = nextStatement(tree, arg.getSecond()).get(0);
         retPair.createRelationship(lastStatementNode);
-        return new ArrayList<PartialRelation<CFGRelationTypes>>();
+        return new ArrayList<>();
     }
 
     private void flowForArrowSwitch(SwitchTree switchTree, NodeWrapper switchNode,
@@ -531,8 +534,9 @@ public class CFGVisitor extends
         for (; i < switchTree.getCases().size() && switchTree.getCases().get(i).getExpression() != null; i++) {
             CaseTree caseTree = switchTree.getCases().get(i);
             switchToCase.add(new PartialRelationWithProperties<>(switchNode, CFGRelationTypes.CFG_SWITCH_MATCHES_CASE,
-                    Pair.create("value", WrapperUtils.stringToNeo4jQueryString(caseTree.toString())),
-                    Pair.create("caseIndex", i)));
+                    Pair.create("value",
+                            WrapperUtils.stringToNeo4jQueryString(caseTree.toString()).split("->")[0].substring(4)
+                                    .strip()), Pair.create("caseIndex", i)));
             newLasts.addAll(scan(caseTree, getNoNamePair(switchToCase)));
             switchToCase.clear();
         }
@@ -553,7 +557,8 @@ public class CFGVisitor extends
         for (; i < switchTree.getCases().size() && switchTree.getCases().get(i).getExpression() != null; i++) {
             CaseTree caseTree = switchTree.getCases().get(i);
             newLasts.add(new PartialRelationWithProperties<>(switchNode, CFGRelationTypes.CFG_SWITCH_MATCHES_CASE,
-                    Pair.create("value", WrapperUtils.stringToNeo4jQueryString(caseTree.toString())),
+                    Pair.create("value", WrapperUtils.stringToNeo4jQueryString(caseTree.toString()).split(":")[0].substring(4)
+                            .strip()),
                     Pair.create("caseIndex", i)));
             newLasts = scan(caseTree, getNoNamePair(newLasts));
         }

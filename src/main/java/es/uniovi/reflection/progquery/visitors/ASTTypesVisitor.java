@@ -156,7 +156,7 @@ public class ASTTypesVisitor
         boolean prevInsideAnn = outsideAnnotation;
         outsideAnnotation = false;
         scan(annotationTree.getAnnotationType(), Pair.createPair(annotationNode, ASTRelationTypes.ANNOTATION_NAME));
-        visitListWithPropertyIndex(annotationTree.getArguments(), annotationNode, ASTRelationTypes.ANNOTATION_ARG,
+        scanListWithPropertyIndex(annotationTree.getArguments(), annotationNode, ASTRelationTypes.ANNOTATION_ARG,
                 "argumentIndex");
         outsideAnnotation = prevInsideAnn;
         return null;
@@ -322,7 +322,6 @@ public class ASTTypesVisitor
         scan(caseTree.getExpressions(), Pair.createPair(caseNode, ASTRelationTypes.CASE_EXPR));
         scan(caseTree.getStatements(), Pair.createPair(caseNode, ASTRelationTypes.CASE_STATEMENT));
         scan(caseTree.getBody(), Pair.createPair(caseNode, ASTRelationTypes.CASE_BODY));
-
         must = prevMust;
         return isAUnconditionalDefault ? null : new VisitorResultImpl(pdgUtils.exitingCurrentBranch());
 
@@ -478,7 +477,7 @@ public class ASTTypesVisitor
                     typeNode.getProperty(ACCESS_LEVEL_PROP).toString().contentEquals(PUBLIC_ACCESS);
 
 
-        visitListWithPropertyIndex(classTree.getTypeParameters(), typeNode, ASTRelationTypes.TYPE_HAS_TYPE_PARAM,
+        scanListWithPropertyIndex(classTree.getTypeParameters(), typeNode, ASTRelationTypes.TYPE_HAS_TYPE_PARAM,
                 "paramIndex");
         if (classTree.getTypeParameters().size() > 0)
             typeNode.addLabel(NodeTypes.GENERIC_TYPE);
@@ -594,6 +593,34 @@ public class ASTTypesVisitor
         must = false;
         GraphUtils.connectWithParent(continueNode, t);
         return null;
+    }
+
+    @Override
+    public ASTVisitorResult visitDeconstructionPattern(DeconstructionPatternTree recordPatternTree,
+                                                       Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        NodeWrapper recordPatternNode =
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(recordPatternTree, NodeTypes.RECORD_PATTERN);
+        GraphUtils.connectWithParent(recordPatternNode, t);
+        scan(recordPatternTree.getDeconstructor(),
+                Pair.createPair(recordPatternNode, ASTRelationTypes.RECORD_PATTERN_TYPE));
+        scanListWithPropertyIndex(recordPatternTree.getNestedPatterns(), recordPatternNode,
+                ASTRelationTypes.COMPONENT_PATTERN, "patternIndex");
+        return null;
+    }
+
+    @Override
+    public ASTVisitorResult visitAnyPattern(AnyPatternTree anyPatternTree,
+                                            Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        NodeWrapper anyPatternNode =
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(anyPatternTree, NodeTypes.UNNAMED_PATTERN);
+        GraphUtils.connectWithParent(anyPatternNode, t);
+        return null;
+    }
+
+    @Override
+    public ASTVisitorResult visitBindingPattern(BindingPatternTree bindingPatternTree,
+                                                Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        return visitVariable(bindingPatternTree.getVariable(), t);
     }
 
     @Override
@@ -784,6 +811,7 @@ public class ASTTypesVisitor
         GraphUtils.connectWithParent(instanceOfNode, t);
 
         scan(instanceOfTree.getExpression(), Pair.createPair(instanceOfNode, ASTRelationTypes.INSTANCE_OF_EXPR));
+        scan(instanceOfTree.getPattern(), Pair.createPair(instanceOfNode, ASTRelationTypes.INSTANCE_OF_PATTERN));
         scan(instanceOfTree.getType(), Pair.createPair(instanceOfNode, ASTRelationTypes.INSTANCE_OF_TYPE));
 
         return null;
@@ -840,7 +868,7 @@ public class ASTTypesVisitor
         isInAccessibleContext = false;
         inALambda = true;
         scan(lambdaExpressionTree.getBody(), Pair.createPair(lambdaExpressionNode, ASTRelationTypes.LAMBDA_BODY));
-        visitListWithPropertyIndex(lambdaExpressionTree.getParameters(), lambdaExpressionNode,
+        scanListWithPropertyIndex(lambdaExpressionTree.getParameters(), lambdaExpressionNode,
                 ASTRelationTypes.LAMBDA_PARAM, "paramIndex");
         inALambda = false;
         insideConstructor = prevInside;
@@ -883,7 +911,7 @@ public class ASTTypesVisitor
                 Pair.createPair(memberReferenceNode, ASTRelationTypes.CALLABLE_REFERENCE_QUALIFIER));
 
         if (memberReferenceTree.getTypeArguments() != null)
-            visitListWithPropertyIndex(memberReferenceTree.getTypeArguments(), memberReferenceNode,
+            scanListWithPropertyIndex(memberReferenceTree.getTypeArguments(), memberReferenceNode,
                     ASTRelationTypes.CALLABLE_REFERENCE_TYPE_ARG, "argumentIndex");
         return null;
     }
@@ -1074,9 +1102,9 @@ public class ASTTypesVisitor
         scan(methodTree.getReturnType(), Pair.createPair(methodNode, ASTRelationTypes.METHOD_RETURN_TYPE));
         GraphUtils.attachType(methodNode, ((JCMethodDecl) methodTree).type, ast);
 
-        visitListWithPropertyIndex(methodTree.getTypeParameters(), methodNode, ASTRelationTypes.CALLABLE_TYPE_PARAM,
+        scanListWithPropertyIndex(methodTree.getTypeParameters(), methodNode, ASTRelationTypes.CALLABLE_TYPE_PARAM,
                 "paramIndex");
-        visitListWithPropertyIndex(methodTree.getParameters(), methodNode, ASTRelationTypes.CALLABLE_PARAM,
+        scanListWithPropertyIndex(methodTree.getParameters(), methodNode, ASTRelationTypes.CALLABLE_PARAM,
                 "paramIndex");
 
         methodTree.getThrows().forEach(
@@ -1170,9 +1198,9 @@ public class ASTTypesVisitor
         scan(methodInvocationTree.getMethodSelect(),
                 Pair.createPair(methodInvocationNode, ASTRelationTypes.INVOCATION_METHOD_SELECTION));
 
-        visitListWithPropertyIndex(methodInvocationTree.getTypeArguments(), methodInvocationNode,
+        scanListWithPropertyIndex(methodInvocationTree.getTypeArguments(), methodInvocationNode,
                 ASTRelationTypes.INVOCATION_TYPE_ARG, "argumentIndex");
-        visitListWithPropertyIndex(methodInvocationTree.getArguments(), methodInvocationNode,
+        scanListWithPropertyIndex(methodInvocationTree.getArguments(), methodInvocationNode,
                 ASTRelationTypes.INVOCATION_ARG, "argumentIndex");
         return null;
     }
@@ -1271,10 +1299,10 @@ public class ASTTypesVisitor
         scan(newClassTree.getEnclosingExpression(),
                 Pair.createPair(newClassNode, ASTRelationTypes.NEW_INSTANCE_ENCLOSING_EXPR));
         scan(newClassTree.getIdentifier(), Pair.createPair(newClassNode, ASTRelationTypes.NEW_INSTANCE_NAME));
-        visitListWithPropertyIndex(newClassTree.getTypeArguments(), newClassNode,
-                ASTRelationTypes.NEW_INSTANCE_TYPE_ARG, "argumentIndex");
+        scanListWithPropertyIndex(newClassTree.getTypeArguments(), newClassNode, ASTRelationTypes.NEW_INSTANCE_TYPE_ARG,
+                "argumentIndex");
 
-        visitListWithPropertyIndex(newClassTree.getArguments(), newClassNode, ASTRelationTypes.NEW_INSTANCE_ARG,
+        scanListWithPropertyIndex(newClassTree.getArguments(), newClassNode, ASTRelationTypes.NEW_INSTANCE_ARG,
                 "argumentIndex");
         newClassNode.createRelationshipTo(constructorDef, CGRelationTypes.CALLEE);
         newClassNode.createRelationshipTo(constructorDef, CGRelationTypes.REFERS_TO);
@@ -1304,8 +1332,8 @@ public class ASTTypesVisitor
         return constructorDef;
     }
 
-    private void visitListWithPropertyIndex(List<? extends Tree> childList, NodeWrapper parentNode,
-                                            ASTRelationTypes relationType, String propertyName) {
+    private void scanListWithPropertyIndex(List<? extends Tree> childList, NodeWrapper parentNode,
+                                           ASTRelationTypes relationType, String propertyName) {
         for (int i = 0; i < childList.size(); i++)
             scan(childList.get(i), Pair.createPair(
                     new PartialRelationWithProperties<>(parentNode, relationType, propertyName, i + 1)));
@@ -1326,7 +1354,7 @@ public class ASTTypesVisitor
         GraphUtils.connectWithParent(parameterizedNode, t);
         scan(parameterizedTypeTree.getType(),
                 Pair.createPair(parameterizedNode, ASTRelationTypes.PARAMETERIZES_AST_TYPE));
-        visitListWithPropertyIndex(parameterizedTypeTree.getTypeArguments(), parameterizedNode,
+        scanListWithPropertyIndex(parameterizedTypeTree.getTypeArguments(), parameterizedNode,
                 ASTRelationTypes.AST_TYPE_ARG, "argumentIndex");
         parameterizedNode.setProperty("actualType",
                 ((JCTypeApply) parameterizedTypeTree).type.tsym.getQualifiedName() + "<>");
@@ -1574,8 +1602,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitVariable(VariableTree variableTree,
                                           Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         boolean isAttrOrEnum = t.getFirst().getRelationType().equals(ASTRelationTypes.TYPE_STATIC_INIT);
-        boolean isMethodParam = t.getFirst().getRelationType().equals(ASTRelationTypes.CALLABLE_PARAM) ||
-                t.getFirst().getRelationType().equals(ASTRelationTypes.LAMBDA_PARAM);
+        boolean isLocalVarStmt = false;
         boolean isEnum = false;
         NodeWrapper variableNode;
         Symbol varSymbol = ((JCVariableDecl) variableTree).sym;
@@ -1588,9 +1615,15 @@ public class ASTTypesVisitor
             if (isImplicitField = owner.isRecord() && !varSymbol.isStatic())
                 declaredRecordComponent(owner.getRecordComponent((Symbol.VarSymbol) varSymbol),
                         classState.currentClassDec, variableNode);
-        } else
+        } else if (varSymbol.getKind() == ElementKind.BINDING_VARIABLE)
+            variableNode = DatabaseFacade.CURRENT_DB_FACADE.get()
+                    .createSkeletonNodeExplicitCats(variableTree, NodeTypes.TYPE_PATTERN);
+        else
             variableNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(variableTree,
-                    isMethodParam ? NodeTypes.PARAMETER_DEC : NodeTypes.LOCAL_VAR_DEC);
+                    (isLocalVarStmt = varSymbol.getKind() != ElementKind.PARAMETER) ? NodeTypes.LOCAL_VAR_DEC :
+                            NodeTypes.PARAMETER_DEC);
+
+
         variableNode.setProperty("name", variableTree.getName().toString());
 
         NodeWrapper varTypeNode = processVarType(variableTree, variableNode);
@@ -1619,7 +1652,7 @@ public class ASTTypesVisitor
                 createVarInit(variableTree, variableNode, isAttrOrEnum, varSymbol.isStatic(), varTypeNode);
         if (isEnum && !varSymbol.owner.isFinal())
             processEnumElementMembers(variableNode, initNode);
-        if (!(isMethodParam || isAttrOrEnum)) {
+        if (isLocalVarStmt) {
             methodState.putCfgNodeInCache(variableTree, variableNode);
             addInvocationInStatement(variableNode);
         }
@@ -1676,9 +1709,9 @@ public class ASTTypesVisitor
         NodeWrapper yieldNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(yieldTree, NodeTypes.YIELD_STATEMENT);
         GraphUtils.connectWithParent(yieldNode, t);
-//        methodState.putCfgNodeInCache(yieldTree, yieldNode);
+        //        methodState.putCfgNodeInCache(yieldTree, yieldNode);
         scan(yieldTree.getValue(), Pair.createPair(yieldNode, ASTRelationTypes.YIELD_EXPR));
-//        addInvocationInStatement(yieldNode);
+        //        addInvocationInStatement(yieldNode);
         return null;
     }
 }

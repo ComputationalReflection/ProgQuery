@@ -68,6 +68,10 @@ public enum NodeTypes implements Label {
     TYPE_PARAM(NodeCategory.AST_TYPE),
     VAR_TYPE(NodeCategory.AST_TYPE),
 
+    /* AST Patterns */
+    TYPE_PATTERN(NodeCategory.PATTERN, NodeCategory.LOCAL_DEC),
+    UNNAMED_PATTERN(NodeCategory.PATTERN),
+    RECORD_PATTERN(NodeCategory.PATTERN),
 
     /*AST Statements OR Statement Sections*/
     ASSERT_STATEMENT(NodeCategory.STATEMENT),

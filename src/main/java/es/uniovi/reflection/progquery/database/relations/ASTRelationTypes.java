@@ -48,6 +48,10 @@ public enum ASTRelationTypes implements RelationTypesInterface {
 	VAR_DEC_INIT,
 	WHILE_STATEMENT,
 
+	/*Pattern to AST Node*/
+	RECORD_PATTERN_TYPE, COMPONENT_PATTERN,
+	INSTANCE_OF_PATTERN,
+
 	/*Statement(Part?) to Expression*/
 	ASSERT_CONDITION, ASSERT_DETAIL,
 	CASE_EXPR,

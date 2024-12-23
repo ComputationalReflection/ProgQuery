@@ -319,7 +319,8 @@ public class ASTTypesVisitor
         must = prevMust && isAUnconditionalDefault;
         if (!isAUnconditionalDefault)
             pdgUtils.enteringNewBranch();
-        scan(caseTree.getExpressions(), Pair.createPair(caseNode, ASTRelationTypes.CASE_EXPR));
+        scan(caseTree.getLabels(), Pair.createPair(caseNode, ASTRelationTypes.CASE_EXPR));
+        scan(caseTree.getGuard(), Pair.createPair(caseNode, ASTRelationTypes.CASE_GUARD));
         scan(caseTree.getStatements(), Pair.createPair(caseNode, ASTRelationTypes.CASE_STATEMENT));
         scan(caseTree.getBody(), Pair.createPair(caseNode, ASTRelationTypes.CASE_BODY));
         must = prevMust;

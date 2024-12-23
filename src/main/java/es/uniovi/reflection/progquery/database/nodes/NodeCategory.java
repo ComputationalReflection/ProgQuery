@@ -25,7 +25,7 @@ public enum NodeCategory implements Label {
 	STATEMENT(AST_NODE),
 	LOOP(STATEMENT),
 
-	CASE_SECTION(AST_NODE),
+	CASE(AST_NODE),
 
 	PATTERN(AST_NODE),
 

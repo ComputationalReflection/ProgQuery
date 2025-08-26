@@ -14,6 +14,7 @@ import es.uniovi.reflection.progquery.cache.DefinitionCache;
 import es.uniovi.reflection.progquery.database.DatabaseFacade;
 import es.uniovi.reflection.progquery.database.nodes.NestingTypes;
 import es.uniovi.reflection.progquery.database.nodes.NodeCategory;
+import es.uniovi.reflection.progquery.database.nodes.NodeProperties;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.*;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
@@ -307,6 +308,27 @@ public class ASTTypesVisitor
 
         return null;
     }
+    @Override
+    public ASTVisitorResult visitConstantCaseLabel(ConstantCaseLabelTree constantCaseLabelTree,
+                                                  Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        scan(constantCaseLabelTree.getConstantExpression(),
+                Pair.createPair(t.getFirst().getStartingNode(), ASTRelationTypes.CASE_CONSTANT_LABEL));
+        return null;
+    }
+    @Override
+    public ASTVisitorResult visitPatternCaseLabel(PatternCaseLabelTree patternCaseLabelTree,
+                                                  Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        scan(patternCaseLabelTree.getPattern(),
+                Pair.createPair(t.getFirst().getStartingNode(), ASTRelationTypes.CASE_PATTERN_LABEL));
+        return null;
+    }
+
+    @Override
+    public ASTVisitorResult visitDefaultCaseLabel(DefaultCaseLabelTree patternCaseLabelTree,
+                                                  Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+        t.getFirst().getStartingNode().setProperty(NodeProperties.HAS_DEFAULT_LABEL, true);
+        return null;
+    }
 
     @Override
     public ASTVisitorResult visitCase(CaseTree caseTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
@@ -314,12 +336,22 @@ public class ASTTypesVisitor
         NodeWrapper caseNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(caseTree,
                 caseTree.getCaseKind() == CaseTree.CaseKind.RULE ? NodeTypes.CASE_ARROW : NodeTypes.CASE_COLON);
         GraphUtils.connectWithParent(caseNode, t);
+        caseNode.setProperty(NodeProperties.HAS_DEFAULT_LABEL, false);
+        scan(caseTree.getLabels(), Pair.createPair(caseNode, null));
         prevMust = must;
-        boolean isAUnconditionalDefault = caseTree.getExpressions().isEmpty() && !anyBreak;
+        int numberOfCases = (Integer) t.getSecond();
+        boolean hasDefault = (Boolean) caseNode.getProperty(NodeProperties.HAS_DEFAULT_LABEL);
+        //Unconditional case if
+        // Switch with colons, default case and no previous breaks
+        // Any switch with one case with default label
+        // Switch expression with one case
+        boolean isAUnconditionalDefault = numberOfCases == 1 &&
+                (t.getFirst().getStartingNode().hasLabel(NodeTypes.SWITCH_EXPRESSION)  ||
+                        hasDefault) ||
+                    caseTree.getCaseKind() == CaseTree.CaseKind.STATEMENT && hasDefault && !anyBreak;
         must = prevMust && isAUnconditionalDefault;
         if (!isAUnconditionalDefault)
             pdgUtils.enteringNewBranch();
-        scan(caseTree.getLabels(), Pair.createPair(caseNode, ASTRelationTypes.CASE_EXPR));
         scan(caseTree.getGuard(), Pair.createPair(caseNode, ASTRelationTypes.CASE_GUARD));
         scan(caseTree.getStatements(), Pair.createPair(caseNode, ASTRelationTypes.CASE_STATEMENT));
         scan(caseTree.getBody(), Pair.createPair(caseNode, ASTRelationTypes.CASE_BODY));
@@ -1399,21 +1431,29 @@ public class ASTTypesVisitor
     }
 
     private void visitCases(List<? extends CaseTree> cases, NodeWrapper switchNode) {
-
-        switchNode.setProperty("isArrow", cases.get(0).getCaseKind() == CaseTree.CaseKind.RULE);
-        ASTVisitorResult caseResult =
-                visitCase(cases.get(0), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_CASE));
+        switchNode.setProperty(NodeProperties.IS_ARROW_SWITCH, cases.get(0).getCaseKind() == CaseTree.CaseKind.RULE);
+        Pair<PartialRelation<RelationTypesInterface>, Object> switchInfo =
+                Pair.createPair(switchNode, ASTRelationTypes.SWITCH_CASE, cases.size());
+        ASTVisitorResult caseResult = visitCase(cases.get(0), switchInfo);
         Set<NodeWrapper> paramsModifiedInAllCases =
                 caseResult == null ? new HashSet<>() : caseResult.paramsPreviouslyModifiedForSwitch();
         boolean unconditionalFound = caseResult == null;
         for (int i = 1; i < cases.size(); i++) {
-            caseResult = scan(cases.get(i), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_CASE));
+            caseResult = scan(cases.get(i), switchInfo);
             if (caseResult != null)
                 paramsModifiedInAllCases.retainAll(caseResult.paramsPreviouslyModifiedForSwitch());
             else
                 unconditionalFound = true;
         }
-        if (!unconditionalFound && cases.get(cases.size() - 1).getExpression() == null)
+        //If at least one case is mandatory, and no unconditional case found (since this one would dominate de params
+        // modified with no branches created)
+        //When at least one case is mandatory??
+            // Any switch with a default case
+            //Any switch expression
+        //Then, the common params modified in all cases are added to the params must be modified SET
+        if (!unconditionalFound &&
+                (switchNode.hasLabel(NodeTypes.SWITCH_EXPRESSION) ||
+                cases.getLast().getLabels().getLast().getKind() == Tree.Kind.DEFAULT_CASE_LABEL))
             pdgUtils.unionWithCurrent(paramsModifiedInAllCases);
 
     }

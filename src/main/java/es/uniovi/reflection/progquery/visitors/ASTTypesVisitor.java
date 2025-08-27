@@ -332,9 +332,9 @@ public class ASTTypesVisitor
 
     @Override
     public ASTVisitorResult visitCase(CaseTree caseTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-
+        boolean isArrow = caseTree.getCaseKind() == CaseTree.CaseKind.RULE;
         NodeWrapper caseNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(caseTree,
-                caseTree.getCaseKind() == CaseTree.CaseKind.RULE ? NodeTypes.CASE_ARROW : NodeTypes.CASE_COLON);
+                isArrow ? NodeTypes.CASE_ARROW : NodeTypes.CASE_COLON);
         GraphUtils.connectWithParent(caseNode, t);
         caseNode.setProperty(NodeProperties.HAS_DEFAULT_LABEL, false);
         scan(caseTree.getLabels(), Pair.createPair(caseNode, null));
@@ -344,9 +344,9 @@ public class ASTTypesVisitor
         //Unconditional case if
         // Switch with colons, default case and no previous breaks
         // Any switch with one case with default label
-        // Switch expression with one case
+        // Switch arrow with one case
         boolean isAUnconditionalDefault = numberOfCases == 1 &&
-                (t.getFirst().getStartingNode().hasLabel(NodeTypes.SWITCH_EXPRESSION)  ||
+                (isArrow ||
                         hasDefault) ||
                     caseTree.getCaseKind() == CaseTree.CaseKind.STATEMENT && hasDefault && !anyBreak;
         must = prevMust && isAUnconditionalDefault;
@@ -1449,10 +1449,10 @@ public class ASTTypesVisitor
         // modified with no branches created)
         //When at least one case is mandatory??
             // Any switch with a default case
-            //Any switch expression
+            //Any switch arrow
         //Then, the common params modified in all cases are added to the params must be modified SET
         if (!unconditionalFound &&
-                (switchNode.hasLabel(NodeTypes.SWITCH_EXPRESSION) ||
+                (switchNode.hasProperty(NodeProperties.IS_ARROW_SWITCH) ||
                 cases.getLast().getLabels().getLast().getKind() == Tree.Kind.DEFAULT_CASE_LABEL))
             pdgUtils.unionWithCurrent(paramsModifiedInAllCases);
 

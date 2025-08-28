@@ -158,7 +158,7 @@ public class ASTTypesVisitor
         outsideAnnotation = false;
         scan(annotationTree.getAnnotationType(), Pair.createPair(annotationNode, ASTRelationTypes.ANNOTATION_NAME));
         scanListWithPropertyIndex(annotationTree.getArguments(), annotationNode, ASTRelationTypes.ANNOTATION_ARG,
-                "argumentIndex");
+                RelationProperties.ARGUMENT_INDEX);
         outsideAnnotation = prevInsideAnn;
         return null;
     }
@@ -308,13 +308,15 @@ public class ASTTypesVisitor
 
         return null;
     }
+
     @Override
     public ASTVisitorResult visitConstantCaseLabel(ConstantCaseLabelTree constantCaseLabelTree,
-                                                  Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+                                                   Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         scan(constantCaseLabelTree.getConstantExpression(),
                 Pair.createPair(t.getFirst().getStartingNode(), ASTRelationTypes.CASE_CONSTANT_LABEL));
         return null;
     }
+
     @Override
     public ASTVisitorResult visitPatternCaseLabel(PatternCaseLabelTree patternCaseLabelTree,
                                                   Pair<PartialRelation<RelationTypesInterface>, Object> t) {
@@ -333,8 +335,8 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitCase(CaseTree caseTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         boolean isArrow = caseTree.getCaseKind() == CaseTree.CaseKind.RULE;
-        NodeWrapper caseNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(caseTree,
-                isArrow ? NodeTypes.CASE_ARROW : NodeTypes.CASE_COLON);
+        NodeWrapper caseNode = DatabaseFacade.CURRENT_DB_FACADE.get()
+                .createSkeletonNode(caseTree, isArrow ? NodeTypes.CASE_ARROW : NodeTypes.CASE_COLON);
         GraphUtils.connectWithParent(caseNode, t);
         caseNode.setProperty(NodeProperties.HAS_DEFAULT_LABEL, false);
         scan(caseTree.getLabels(), Pair.createPair(caseNode, null));
@@ -344,11 +346,10 @@ public class ASTTypesVisitor
         //Unconditional case if
         // Switch with colons, default case and no previous breaks
         // Any switch with one case with default label
-        // Switch arrow with one case
+        // Switch that requires full coverage with one case
         boolean isAUnconditionalDefault = numberOfCases == 1 &&
-                (isArrow ||
-                        hasDefault) ||
-                    caseTree.getCaseKind() == CaseTree.CaseKind.STATEMENT && hasDefault && !anyBreak;
+                ((Boolean) t.getFirst().getStartingNode().getProperty(NodeProperties.REQUIRES_FULL_COVERAGE) || hasDefault) ||
+                caseTree.getCaseKind() == CaseTree.CaseKind.STATEMENT && hasDefault && !anyBreak;
         must = prevMust && isAUnconditionalDefault;
         if (!isAUnconditionalDefault)
             pdgUtils.enteringNewBranch();
@@ -945,7 +946,7 @@ public class ASTTypesVisitor
 
         if (memberReferenceTree.getTypeArguments() != null)
             scanListWithPropertyIndex(memberReferenceTree.getTypeArguments(), memberReferenceNode,
-                    ASTRelationTypes.CALLABLE_REFERENCE_TYPE_ARG, "argumentIndex");
+                    ASTRelationTypes.CALLABLE_REFERENCE_TYPE_ARG, RelationProperties.ARGUMENT_INDEX);
         return null;
     }
 
@@ -1232,9 +1233,9 @@ public class ASTTypesVisitor
                 Pair.createPair(methodInvocationNode, ASTRelationTypes.INVOCATION_METHOD_SELECTION));
 
         scanListWithPropertyIndex(methodInvocationTree.getTypeArguments(), methodInvocationNode,
-                ASTRelationTypes.INVOCATION_TYPE_ARG, "argumentIndex");
+                ASTRelationTypes.INVOCATION_TYPE_ARG, RelationProperties.ARGUMENT_INDEX);
         scanListWithPropertyIndex(methodInvocationTree.getArguments(), methodInvocationNode,
-                ASTRelationTypes.INVOCATION_ARG, "argumentIndex");
+                ASTRelationTypes.INVOCATION_ARG, RelationProperties.ARGUMENT_INDEX);
         return null;
     }
 
@@ -1333,10 +1334,10 @@ public class ASTTypesVisitor
                 Pair.createPair(newClassNode, ASTRelationTypes.NEW_INSTANCE_ENCLOSING_EXPR));
         scan(newClassTree.getIdentifier(), Pair.createPair(newClassNode, ASTRelationTypes.NEW_INSTANCE_NAME));
         scanListWithPropertyIndex(newClassTree.getTypeArguments(), newClassNode, ASTRelationTypes.NEW_INSTANCE_TYPE_ARG,
-                "argumentIndex");
+                RelationProperties.ARGUMENT_INDEX);
 
         scanListWithPropertyIndex(newClassTree.getArguments(), newClassNode, ASTRelationTypes.NEW_INSTANCE_ARG,
-                "argumentIndex");
+                RelationProperties.ARGUMENT_INDEX);
         newClassNode.createRelationshipTo(constructorDef, CGRelationTypes.CALLEE);
         newClassNode.createRelationshipTo(constructorDef, CGRelationTypes.REFERS_TO);
 
@@ -1388,7 +1389,7 @@ public class ASTTypesVisitor
         scan(parameterizedTypeTree.getType(),
                 Pair.createPair(parameterizedNode, ASTRelationTypes.PARAMETERIZES_AST_TYPE));
         scanListWithPropertyIndex(parameterizedTypeTree.getTypeArguments(), parameterizedNode,
-                ASTRelationTypes.AST_TYPE_ARG, "argumentIndex");
+                ASTRelationTypes.AST_TYPE_ARG, RelationProperties.ARGUMENT_INDEX);
         parameterizedNode.setProperty("actualType",
                 ((JCTypeApply) parameterizedTypeTree).type.tsym.getQualifiedName() + "<>");
         return null;
@@ -1430,16 +1431,21 @@ public class ASTTypesVisitor
         return null;
     }
 
-    private void visitCases(List<? extends CaseTree> cases, NodeWrapper switchNode) {
+    private void visitCases(List<? extends CaseTree> cases, NodeWrapper switchNode, boolean requiresFullCoverage) {
+
+        switchNode.setProperty(NodeProperties.REQUIRES_FULL_COVERAGE, requiresFullCoverage);
         switchNode.setProperty(NodeProperties.IS_ARROW_SWITCH, cases.get(0).getCaseKind() == CaseTree.CaseKind.RULE);
-        Pair<PartialRelation<RelationTypesInterface>, Object> switchInfo =
-                Pair.createPair(switchNode, ASTRelationTypes.SWITCH_CASE, cases.size());
-        ASTVisitorResult caseResult = visitCase(cases.get(0), switchInfo);
+
+        ASTVisitorResult caseResult = visitCase(cases.get(0), Pair.create(
+                new PartialRelationWithProperties<>(switchNode, ASTRelationTypes.SWITCH_CASE,
+                        RelationProperties.CASE_INDEX, 1), cases.size()));
         Set<NodeWrapper> paramsModifiedInAllCases =
                 caseResult == null ? new HashSet<>() : caseResult.paramsPreviouslyModifiedForSwitch();
         boolean unconditionalFound = caseResult == null;
         for (int i = 1; i < cases.size(); i++) {
-            caseResult = scan(cases.get(i), switchInfo);
+            caseResult = scan(cases.get(i), Pair.create(
+                    new PartialRelationWithProperties<>(switchNode, ASTRelationTypes.SWITCH_CASE,
+                            RelationProperties.CASE_INDEX, i + 1), cases.size()));
             if (caseResult != null)
                 paramsModifiedInAllCases.retainAll(caseResult.paramsPreviouslyModifiedForSwitch());
             else
@@ -1448,11 +1454,10 @@ public class ASTTypesVisitor
         //If at least one case is mandatory, and no unconditional case found (since this one would dominate de params
         // modified with no branches created)
         //When at least one case is mandatory??
-            // Any switch with a default case
-            //Any switch arrow
+        // Any switch with a default case
+        //Any switch that requires full coverage
         //Then, the common params modified in all cases are added to the params must be modified SET
-        if (!unconditionalFound &&
-                (switchNode.hasProperty(NodeProperties.IS_ARROW_SWITCH) ||
+        if (!unconditionalFound && (requiresFullCoverage ||
                 cases.getLast().getLabels().getLast().getKind() == Tree.Kind.DEFAULT_CASE_LABEL))
             pdgUtils.unionWithCurrent(paramsModifiedInAllCases);
 
@@ -1461,14 +1466,21 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitSwitch(SwitchTree switchTree,
                                         Pair<PartialRelation<RelationTypesInterface>, Object> t) {
+
         NodeWrapper switchNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(switchTree, NodeTypes.SWITCH_STATEMENT);
         GraphUtils.connectWithParent(switchNode, t);
         scan(switchTree.getExpression(), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_SELECTOR));
         addInvocationInStatement(switchNode);
         methodState.putCfgNodeInCache(switchTree, switchNode);
-        if (switchTree.getCases().size() > 0)
-            visitCases(switchTree.getCases(), switchNode);
+        if (switchTree.getCases().size() == 0)
+            switchNode.setProperty(NodeProperties.REQUIRES_FULL_COVERAGE, false);
+        else {
+            visitCases(switchTree.getCases(), switchNode, switchTree.getCases().stream().anyMatch(
+                    c -> c.getLabels().stream().anyMatch(l -> l.getKind() == Kind.PATTERN_CASE_LABEL ||
+                            l.getKind() == Kind.CONSTANT_CASE_LABEL && (l instanceof ConstantCaseLabelTree clabel &&
+                                    clabel.getConstantExpression().getKind() == Kind.NULL_LITERAL))));
+        }
         return null;
     }
 
@@ -1481,7 +1493,7 @@ public class ASTTypesVisitor
         attachTypeDirect(switchNode, switchExpressionTree);
         GraphUtils.connectWithParent(switchNode, t);
         scan(switchExpressionTree.getExpression(), Pair.createPair(switchNode, ASTRelationTypes.SWITCH_SELECTOR));
-        visitCases(switchExpressionTree.getCases(), switchNode);
+        visitCases(switchExpressionTree.getCases(), switchNode, true);
         return null;
     }
 

@@ -5,6 +5,7 @@ import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.code.Type;
 import es.uniovi.reflection.progquery.cache.SimpleTreeNodeCache;
 import es.uniovi.reflection.progquery.database.DatabaseFacade;
+import es.uniovi.reflection.progquery.database.nodes.NodeProperties;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.CFGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.PartialRelation;
@@ -72,8 +73,8 @@ public class CFGVisitor extends
     }
 
     private static List<PartialRelation<CFGRelationTypes>> getPairList(NodeWrapper n, CFGRelationTypes rel) {
-        List<PartialRelation<CFGRelationTypes>> l = new ArrayList<PartialRelation<CFGRelationTypes>>();
-        l.add(new SimplePartialRelation<CFGRelationTypes>(n, rel));
+        List<PartialRelation<CFGRelationTypes>> l = new ArrayList<>();
+        l.add(new SimplePartialRelation<>(n, rel));
         return l;
     }
 
@@ -250,10 +251,7 @@ public class CFGVisitor extends
 
     private List<PartialRelation<CFGRelationTypes>> nextStatement(StatementTree t,
                                                                   List<PartialRelation<CFGRelationTypes>> lasts) {
-        NodeWrapper n = CFGCache.get(t);
-        linkLasts(lasts, n);
-
-        return getPairList(n, CFGRelationTypes.CFG_NEXT);
+        return nextStatement(CFGCache.get(t), lasts);
     }
 
     private List<PartialRelation<CFGRelationTypes>> nextStatement(NodeWrapper n,
@@ -527,50 +525,49 @@ public class CFGVisitor extends
     }
 
     private void flowForArrowSwitch(SwitchTree switchTree, NodeWrapper switchNode,
-                                    List<PartialRelation<CFGRelationTypes>> lasts) {
+                                    List<PartialRelation<CFGRelationTypes>> outSwitchRels, boolean lastCaseAlwaysMatches){
         int i = 0;
-        List<PartialRelation<CFGRelationTypes>> newLasts = new ArrayList<>();
-        List<PartialRelation<CFGRelationTypes>> switchToCase = new ArrayList<>();
-        for (; i < switchTree.getCases().size() && switchTree.getCases().get(i).getExpression() != null; i++) {
+        List<PartialRelation<CFGRelationTypes>> lastForCase =
+                getPairList(switchNode, CFGRelationTypes.CFG_NEXT);
+        for (; i < switchTree.getCases().size() - (lastCaseAlwaysMatches ? 1 : 0); i++) {
             CaseTree caseTree = switchTree.getCases().get(i);
-            switchToCase.add(new PartialRelationWithProperties<>(switchNode, CFGRelationTypes.CFG_SWITCH_MATCHES_CASE,
-                    Pair.create("value",
-                            WrapperUtils.stringToNeo4jQueryString(caseTree.toString()).split("->")[0].substring(4)
-                                    .strip()), Pair.create("caseIndex", i)));
-            newLasts.addAll(scan(caseTree, getNoNamePair(switchToCase)));
-            switchToCase.clear();
+            NodeWrapper caseNode = CFGCache.get(caseTree);
+            linkLasts(lastForCase, caseNode);
+            outSwitchRels.addAll(scan(caseTree, getNoNamePair(switchNode, CFGRelationTypes.CFG_CASE_MATCHES)));
+            lastForCase = getPairList(caseNode, CFGRelationTypes.CFG_CASE_NO_MATCH);
         }
-        if (i < switchTree.getCases().size()) {
-            switchToCase.add(new PartialRelationWithProperties<>(switchNode, CFGRelationTypes.CFG_SWITCH_NO_MATCH,
-                    Pair.create("caseIndex", i)));
-            newLasts.addAll(scan(switchTree.getCases().get(i), getNoNamePair(switchToCase)));
+        if (lastCaseAlwaysMatches) {
+            NodeWrapper caseNode = CFGCache.get(switchTree.getCases().get(i));
+            linkLasts(lastForCase, caseNode);
+            outSwitchRels.addAll(scan(switchTree.getCases().get(i), getNoNamePair(caseNode, CFGRelationTypes.CFG_NEXT)));
         } else {
-            newLasts.add(new SimplePartialRelation<>(switchNode, CFGRelationTypes.CFG_SWITCH_NO_MATCH));
-            lasts.addAll(newLasts);
+            outSwitchRels.add(lastForCase.getFirst());
         }
     }
 
     private void flowForColonSwitch(SwitchTree switchTree, NodeWrapper switchNode,
-                                    List<PartialRelation<CFGRelationTypes>> lasts) {
+                                    List<PartialRelation<CFGRelationTypes>> outSwitchRels,
+                                    boolean lastCaseAlwaysMatches){
         int i = 0;
-        List<PartialRelation<CFGRelationTypes>> newLasts = new ArrayList<>();
-        for (; i < switchTree.getCases().size() && switchTree.getCases().get(i).getExpression() != null; i++) {
+        List<PartialRelation<CFGRelationTypes>> newLasts = new ArrayList<>(), lastForCase =
+                getPairList(switchNode, CFGRelationTypes.CFG_NEXT);
+        for (; i < switchTree.getCases().size() - (lastCaseAlwaysMatches ? 1 : 0); i++) {
             CaseTree caseTree = switchTree.getCases().get(i);
-            newLasts.add(new PartialRelationWithProperties<>(switchNode, CFGRelationTypes.CFG_SWITCH_MATCHES_CASE,
-                    Pair.create("value", WrapperUtils.stringToNeo4jQueryString(caseTree.toString()).split(":")[0].substring(4)
-                            .strip()),
-                    Pair.create("caseIndex", i)));
+            NodeWrapper caseNode = CFGCache.get(caseTree);
+            linkLasts(lastForCase, caseNode);
+            newLasts.add(new SimplePartialRelation<>(caseNode, CFGRelationTypes.CFG_CASE_MATCHES));
             newLasts = scan(caseTree, getNoNamePair(newLasts));
+            lastForCase = getPairList(caseNode, CFGRelationTypes.CFG_CASE_NO_MATCH);
         }
 
-        if (i < switchTree.getCases().size()) {
-            newLasts.add(new PartialRelationWithProperties<>(switchNode, CFGRelationTypes.CFG_SWITCH_NO_MATCH,
-                    Pair.create("caseIndex", i)));
-            lasts.addAll(scan(switchTree.getCases().get(i), getNoNamePair(newLasts)));
+        if (lastCaseAlwaysMatches) { //Last case with default label
+            NodeWrapper caseNode = CFGCache.get(switchTree.getCases().get(i));
+            linkLasts(lastForCase, caseNode);
+            newLasts = getPairList(caseNode, CFGRelationTypes.CFG_NEXT);
+            outSwitchRels.addAll(scan(switchTree.getCases().get(i), getNoNamePair(newLasts)));
         } else {
-            newLasts.clear();
-            newLasts.add(new SimplePartialRelation<>(switchNode, CFGRelationTypes.CFG_SWITCH_NO_MATCH));
-            lasts.addAll(newLasts);
+            outSwitchRels.addAll(newLasts);
+            outSwitchRels.addAll(lastForCase);
         }
     }
 
@@ -589,10 +586,13 @@ public class CFGVisitor extends
             loopLastsMap.put(lasts.getFirst(), lasts.getSecond());
             loopTryIndexes.put(lasts.getFirst(), currentLoopTryIndex);
         }
-        if (switchNode.hasProperty("isArrow") && (Boolean) switchNode.getProperty("isArrow"))
-            flowForArrowSwitch(switchTree, switchNode, lasts.getSecond());
+
+        boolean lastCaseAlwaysMatches = (Boolean) switchNode.getProperty(NodeProperties.REQUIRES_FULL_COVERAGE) ||
+                switchTree.getCases().size() > 0 && switchTree.getCases().getLast().getLabels().getLast().getKind() == Tree.Kind.DEFAULT_CASE_LABEL;
+        if (switchNode.hasProperty(NodeProperties.IS_ARROW_SWITCH) && (Boolean) switchNode.getProperty(NodeProperties.IS_ARROW_SWITCH))
+            flowForArrowSwitch(switchTree, switchNode, lasts.getSecond(), lastCaseAlwaysMatches);
         else
-            flowForColonSwitch(switchTree, switchNode, lasts.getSecond());
+            flowForColonSwitch(switchTree, switchNode, lasts.getSecond(), lastCaseAlwaysMatches);
 
         currentLoopLasts = previousLasts;
         currentLoopTryIndex = previousTryIndex;

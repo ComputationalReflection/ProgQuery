@@ -337,6 +337,7 @@ public class ASTTypesVisitor
         boolean isArrow = caseTree.getCaseKind() == CaseTree.CaseKind.RULE;
         NodeWrapper caseNode = DatabaseFacade.CURRENT_DB_FACADE.get()
                 .createSkeletonNode(caseTree, isArrow ? NodeTypes.CASE_ARROW : NodeTypes.CASE_COLON);
+        methodState.putCfgNodeInCache(caseTree, caseNode);
         GraphUtils.connectWithParent(caseNode, t);
         caseNode.setProperty(NodeProperties.HAS_DEFAULT_LABEL, false);
         scan(caseTree.getLabels(), Pair.createPair(caseNode, null));

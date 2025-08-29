@@ -533,7 +533,7 @@ public class CFGVisitor extends
             CaseTree caseTree = switchTree.getCases().get(i);
             NodeWrapper caseNode = CFGCache.get(caseTree);
             linkLasts(lastForCase, caseNode);
-            outSwitchRels.addAll(scan(caseTree, getNoNamePair(switchNode, CFGRelationTypes.CFG_CASE_MATCHES)));
+            outSwitchRels.addAll(scan(caseTree, getNoNamePair(caseNode, CFGRelationTypes.CFG_CASE_MATCHES)));
             lastForCase = getPairList(caseNode, CFGRelationTypes.CFG_CASE_NO_MATCH);
         }
         if (lastCaseAlwaysMatches) {
@@ -563,7 +563,7 @@ public class CFGVisitor extends
         if (lastCaseAlwaysMatches) { //Last case with default label
             NodeWrapper caseNode = CFGCache.get(switchTree.getCases().get(i));
             linkLasts(lastForCase, caseNode);
-            newLasts = getPairList(caseNode, CFGRelationTypes.CFG_NEXT);
+            newLasts.add(new SimplePartialRelation<>(caseNode, CFGRelationTypes.CFG_NEXT));
             outSwitchRels.addAll(scan(switchTree.getCases().get(i), getNoNamePair(newLasts)));
         } else {
             outSwitchRels.addAll(newLasts);

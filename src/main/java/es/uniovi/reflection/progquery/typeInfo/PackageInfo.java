@@ -15,16 +15,16 @@ import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 
 public class PackageInfo {
-	public static NodeWrapper currentProgram;
+	private NodeWrapper currentProgram;
 
 	public static void createCurrentProgram(String programID, String userID) {
-		currentProgram = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.PROGRAM);
-		currentProgram.setProperty("ID", programID);
-		currentProgram.setProperty("USER_ID", userID);
-		currentProgram.setProperty("timestamp", ZonedDateTime.now().toString());
+		PACKAGE_INFO.get().currentProgram = DatabaseFacade.CURRENT_DB_FACHADE.createNodeWithoutExplicitTree(NodeTypes.PROGRAM);
+		PACKAGE_INFO.get().currentProgram.setProperty("ID", programID);
+		PACKAGE_INFO.get().currentProgram.setProperty("USER_ID", userID);
+		PACKAGE_INFO.get().currentProgram.setProperty("timestamp", ZonedDateTime.now().toString());
 	}
 	public static void setCurrentProgram(NodeWrapper currentProgram){
-		PackageInfo.currentProgram=currentProgram;
+		PACKAGE_INFO.get().currentProgram=currentProgram;
 	}
 
 	public static ThreadLocal<PackageInfo> PACKAGE_INFO  = new ThreadLocal<>();

@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class GetDeclarationFromExpression {
-	static enum IsInstance {
+	enum IsInstance {
 		YES, MAYBE, NO
 
 	}

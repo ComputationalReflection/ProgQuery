@@ -21,7 +21,6 @@ public enum NodeTypes implements Label {
     NULL_TYPE(NodeCategory.TYPE_NODE),
     TYPE_VARIABLE(NodeCategory.TYPE_NODE),
     UNKNOWN_TYPE(NodeCategory.TYPE_NODE),
-    VOID_TYPE(NodeCategory.TYPE_NODE),
 
     /*Polymorphic AST Types OR Type Nodes*/
     ARRAY_TYPE,
@@ -30,6 +29,7 @@ public enum NodeTypes implements Label {
     PRIMITIVE_TYPE,
     UNION_TYPE,
     WILDCARD_TYPE,
+    VOID_TYPE,
 
     /* Program Dependency Graph Nodes*/
     THIS_REFERENCE(NodeCategory.PDG_NODE),
@@ -61,6 +61,8 @@ public enum NodeTypes implements Label {
     ERRONEOUS_NODE (NodeCategory.AST_NODE),
     IMPORT(NodeCategory.AST_NODE),
     INITIALIZATION(NodeCategory.ANY_ASSIGNMENT),
+    METHOD_IDENTIFIER(NodeCategory.IDENTIFIER),
+    METHOD_SELECTION(NodeCategory.IDENTIFIER_SELECTION),
     PACKAGE_IDENTIFIER(NodeCategory.IDENTIFIER),
     PACKAGE_SELECTION(NodeCategory.IDENTIFIER_SELECTION),
     PARAMETER_DEC(NodeCategory.LOCAL_DEC),
@@ -70,7 +72,7 @@ public enum NodeTypes implements Label {
     ANNOTATED_TYPE(NodeCategory.AST_TYPE),
     TYPE_IDENTIFIER(NodeCategory.IDENTIFIER, NodeCategory.AST_TYPE),
     TYPE_SELECTION(NodeCategory.IDENTIFIER_SELECTION, NodeCategory.AST_TYPE),
-    TYPE_PARAM(NodeCategory.AST_TYPE),
+    TYPE_PARAM(NodeCategory.DECLARATION),
     VAR_TYPE(NodeCategory.AST_TYPE),
 
     /* AST Patterns */
@@ -106,6 +108,7 @@ public enum NodeTypes implements Label {
     /*AST Expressions*/
     ARRAY_ACCESS(NodeCategory.LVALUE),
     ASSIGNMENT(NodeCategory.ANY_ASSIGNMENT, NodeCategory.EXPRESSION),
+    ATTR_SELECTION(NodeCategory.IDENTIFIER_SELECTION, NodeCategory.LVALUE),
     BINARY_OPERATION(NodeCategory.EXPRESSION),
     CALLABLE_REFERENCE(NodeCategory.EXPRESSION),
     COMPOUND_ASSIGNMENT(NodeCategory.ANY_ASSIGNMENT, NodeCategory.EXPRESSION),
@@ -113,14 +116,17 @@ public enum NodeTypes implements Label {
     INSTANCE_OF(NodeCategory.EXPRESSION),
     LAMBDA_EXPRESSION(NodeCategory.EXPRESSION),
     LITERAL(NodeCategory.EXPRESSION),
-    MEMBER_SELECTION(NodeCategory.IDENTIFIER_SELECTION, NodeCategory.LVALUE),
     METHOD_INVOCATION(NodeCategory.CALL),
+    RESERVED_INVOCATION(NodeCategory.CALL),
     NEW_ARRAY(NodeCategory.EXPRESSION),
     NEW_INSTANCE(NodeCategory.CALL),
+    RESERVED_IDENTIFIER(NodeCategory.IDENTIFIER, NodeCategory.EXPRESSION),
+    RESERVED_SELECTION(NodeCategory.IDENTIFIER_SELECTION, NodeCategory.EXPRESSION),
     SWITCH_EXPRESSION(NodeCategory.EXPRESSION, NodeCategory.SWITCH),
     TYPE_CAST(NodeCategory.EXPRESSION),
     UNARY_OPERATION(NodeCategory.EXPRESSION),
-    VARIABLE(NodeCategory.IDENTIFIER, NodeCategory.LVALUE);
+    VARIABLE(NodeCategory.IDENTIFIER, NodeCategory.LVALUE),
+    ;
 
 
     NodeTypes(NodeCategory... hypernyms) {

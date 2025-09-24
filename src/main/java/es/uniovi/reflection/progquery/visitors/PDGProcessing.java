@@ -133,17 +133,17 @@ public class PDGProcessing {
 
     public boolean relationOnIdentifier(IdentifierTree identifierTree, NodeWrapper identifierNode,
                                         Pair<PartialRelation<RelationTypesInterface>, Object> t,
-                                        NodeWrapper currentClassDec, MethodState methodState) {
+                                        NodeWrapper currentClassDec, MethodState methodState, boolean isThis) {
         Symbol identSymbol = ((JCIdent) identifierTree).sym;
         ElementKind symbolKind = identSymbol.getKind();
-        if (symbolKind == ElementKind.METHOD || symbolKind == ElementKind.CONSTRUCTOR ||
-                symbolKind == ElementKind.TYPE_PARAMETER)
+        if (symbolKind ==
+                ElementKind.CONSTRUCTOR) // symbolKind == ElementKind.METHOD* || symbolKind == ElementKind
+            // .TYPE_PARAMETER* checked in the ASTVisitor
             return false;
-        if (symbolKind == ElementKind.CLASS || symbolKind == ElementKind.INTERFACE || symbolKind == ElementKind.ENUM ||
-                symbolKind == ElementKind.PACKAGE || symbolKind == ElementKind.ANNOTATION_TYPE ||
-                symbolKind == ElementKind.RECORD)
-            return true;
-        boolean isThis = identSymbol.name.contentEquals("this") || identSymbol.name.contentEquals("super");
+        /*if (symbolKind == ElementKind.CLASS * || symbolKind == ElementKind.INTERFACE * ||
+                symbolKind == ElementKind.ENUM * || symbolKind == ElementKind.PACKAGE * ||
+                symbolKind == ElementKind.ANNOTATION_TYPE * || symbolKind == ElementKind.RECORD *)
+            return true; */ // Checked in the ASTVisitor
         ElementKey varKey = null;
         boolean isAttr = false;
         if (isThis) {
@@ -156,8 +156,7 @@ public class PDGProcessing {
                 varKey = new LocalScopeVarKey(identSymbol);
         }
         NodeWrapper decNode = definitionTable.get(varKey);
-        boolean isInstance =
-                (isAttr || isThis) && !identSymbol.isStatic();
+        boolean isInstance = (isAttr || isThis) && !identSymbol.isStatic();
         addRels(identSymbol, identifierNode, t.getSecond(), currentClassDec, true, methodState, decNode, isThis,
                 isInstance);
         return isInstance;
@@ -176,12 +175,10 @@ public class PDGProcessing {
         toDo.clear();
     }
 
-    public void relationOnFieldAccess(MemberSelectTree memberSelectTree, NodeWrapper memberSelectNode,
+    public void relationOnFieldAccess(boolean isThis, MemberSelectTree memberSelectTree, NodeWrapper memberSelectNode,
                                       Pair<PartialRelation<RelationTypesInterface>, Object> t, MethodState methodState,
                                       NodeWrapper currentClassDec, boolean isInstance) {
         Symbol symbol = ((JCFieldAccess) memberSelectTree).sym;
-        boolean isThis = memberSelectTree.getIdentifier().contentEquals("this") ||
-                memberSelectTree.getIdentifier().contentEquals("super");
         VarKey varKey = isThis ? new ThisKey(symbol.owner) : new FieldKey(symbol);
         NodeWrapper decNode = definitionTable.get(varKey);
         addRels(symbol, memberSelectNode, t.getSecond(), currentClassDec, false, methodState, decNode, isThis,

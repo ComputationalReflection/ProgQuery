@@ -149,6 +149,6 @@ public class Neo4jEmbeddedWrapperNode implements NodeWrapper {
 
 	@Override
 	public String toString() {
-		return NodeUtils.reducedClassMethodToString(this);
+		return NodeUtils.nodeToString(this);
 	}
 }

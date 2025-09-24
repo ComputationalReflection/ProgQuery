@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import es.uniovi.reflection.progquery.typeInfo.PackageInfo;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 import org.neo4j.graphdb.Label;
 

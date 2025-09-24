@@ -22,4 +22,8 @@ public interface NodeWrapper extends Propertiable{
 	void addLabel(Label label);
 	void delete();
 	void setId(long id);
+	default void addLabels(Label... labels) {
+		for (Label label : labels)
+			addLabel(label);
+	}
 }

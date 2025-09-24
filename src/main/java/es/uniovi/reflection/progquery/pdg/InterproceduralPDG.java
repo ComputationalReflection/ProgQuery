@@ -3,7 +3,7 @@ package es.uniovi.reflection.progquery.pdg;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.CGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.PDGRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.RelationTypes;
+import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import es.uniovi.reflection.progquery.pdg.GetDeclarationFromExpression.IsInstance;
@@ -56,10 +56,10 @@ public class InterproceduralPDG {
                                 calledMethodInfo.paramsToPDGRelations
                                 .entrySet()
                         ) {
-                            int paramIndex = paramMutatedInCalledMethodDec.getKey().hasLabel(NodeTypes.THIS_REF) ? 0 :
+                            int paramIndex = paramMutatedInCalledMethodDec.getKey().hasLabel(NodeTypes.THIS_REFERENCE) ? 0 :
                                     (Integer) paramMutatedInCalledMethodDec.getKey()
-                                            .getRelationships(Direction.INCOMING, RelationTypes.CALLABLE_HAS_PARAMETER,
-                                                    RelationTypes.LAMBDA_EXPRESSION_PARAMETERS).get(0)
+                                            .getRelationships(Direction.INCOMING, ASTRelationTypes.CALLABLE_PARAM,
+                                                    ASTRelationTypes.LAMBDA_PARAM).get(0)
                                             .getProperty("paramIndex");
                             MutatedParamInCallInfo mutatedParamIndexAndMust = new MutatedParamInCallInfo(paramIndex,
                                     paramMutatedInCalledMethodDec.getValue() == PDGRelationTypes.STATE_MODIFIED_BY,
@@ -90,9 +90,9 @@ public class InterproceduralPDG {
                 RelationshipWrapper rel = decToInvPDGRel.getKey().getFirst()
                         .createRelationshipTo(decToInvPDGRel.getKey().getSecond().getFirst(),
                                 decToInvPDGRel.getValue());
-                if (decToInvPDGRel.getKey().getFirst().hasLabel(NodeTypes.ATTR_DEF)) {
+                if (decToInvPDGRel.getKey().getFirst().hasLabel(NodeTypes.ATTR_DEC)) {
                     rel.setProperty("isOwnAccess", decToInvPDGRel.getKey().getSecond().getSecond());
-                } else if (decToInvPDGRel.getKey().getFirst().hasLabel(NodeTypes.THIS_REF))
+                } else if (decToInvPDGRel.getKey().getFirst().hasLabel(NodeTypes.THIS_REFERENCE))
                     rel.setProperty("isOwnAccess", true);
             }
     }
@@ -123,14 +123,14 @@ public class InterproceduralPDG {
         for (PDGMutatedDecInfoInMethod varMayOrMustBeModified : invocationModifyThisVarInfo) {
             boolean isMay = varMayOrMustBeModified.isMay || !must;
             addNewPDGRelFromAnyDecToInv(!isMay, varMayOrMustBeModified.dec, callRel.getEndNode(),
-                    varMayOrMustBeModified.dec.hasLabel(NodeTypes.THIS_REF) ||
+                    varMayOrMustBeModified.dec.hasLabel(NodeTypes.THIS_REFERENCE) ||
                             varMayOrMustBeModified.isOuterMostImplicitThisOrP != IsInstance.NO, methodInfo);
 
             Map<NodeWrapper, PDGRelationTypes> paramRelsOnMethod = methodInfo.paramsToPDGRelations;
             Set<NodeWrapper> paramsSet = methodInfo.callsToParamsPreviouslyModified.get(callRel.getEndNode());
-            if (varMayOrMustBeModified.dec.hasLabel(NodeTypes.PARAMETER_DEF) && varMayOrMustBeModified.dec
-                    .getRelationships(Direction.INCOMING, RelationTypes.CALLABLE_HAS_PARAMETER,
-                            RelationTypes.LAMBDA_EXPRESSION_PARAMETERS).get(0).getStartNode() ==
+            if (varMayOrMustBeModified.dec.hasLabel(NodeTypes.PARAMETER_DEC) && varMayOrMustBeModified.dec
+                    .getRelationships(Direction.INCOMING, ASTRelationTypes.CALLABLE_PARAM,
+                            ASTRelationTypes.LAMBDA_PARAM).get(0).getStartNode() ==
                     methodInfo.methodNode && (paramsSet == null || !paramsSet.contains(varMayOrMustBeModified.dec)))
 
                 addNewPDGRelFromParamToMethod(
@@ -138,7 +138,7 @@ public class InterproceduralPDG {
                                 null || !paramsSet.contains(varMayOrMustBeModified.dec)) && !isMay &&
                                 (Boolean) callRel.getProperty("mustBeExecuted"), paramRelsOnMethod,
                         varMayOrMustBeModified.dec);
-            else if (varMayOrMustBeModified.dec.hasLabel(NodeTypes.ATTR_DEF) &&
+            else if (varMayOrMustBeModified.dec.hasLabel(NodeTypes.ATTR_DEC) &&
                     varMayOrMustBeModified.isOuterMostImplicitThisOrP != IsInstance.NO &&
                     methodInfo.thisNodeIfNotStatic != null) {
                 addNewPDGRelFromParamToMethod(
@@ -148,7 +148,7 @@ public class InterproceduralPDG {
 
                 addNewPDGRelFromAnyDecToInv(!isMay, methodInfo.thisNodeIfNotStatic, callRel.getEndNode(), true,
                         methodInfo);
-            } else if (varMayOrMustBeModified.dec.hasLabel(NodeTypes.THIS_REF))
+            } else if (varMayOrMustBeModified.dec.hasLabel(NodeTypes.THIS_REFERENCE))
                 addNewPDGRelFromParamToMethod(!isMay && (Boolean) callRel.getProperty("mustBeExecuted"),
                         paramRelsOnMethod, methodInfo.thisNodeIfNotStatic);
         }

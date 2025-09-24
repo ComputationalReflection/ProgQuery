@@ -28,9 +28,9 @@ public class MethodState {
 		thisRelationsOnThisMethod = null;
 		identificationForLeftAssignExprs = new HashMap<>();
 		lastMethodDecVisited = methodDec;
-		invocationsInStatements = new HashMap<TryTree, List<Pair<NodeWrapper, List<MethodSymbol>>>>();
-		cfgNodeCache = new SimpleTreeNodeCache<Tree>();
-		finallyCache = new HashMap<Tree, Pair<NodeWrapper, NodeWrapper>>();
+		invocationsInStatements = new HashMap<>();
+		cfgNodeCache = new SimpleTreeNodeCache<>();
+		finallyCache = new HashMap<>();
 		paramsToPDGRelations = new HashMap<>();
 		callsToParamsPreviouslyModified = new HashMap<>();
 		callsToParamsMaybePreviouslyModified = new HashMap<>();

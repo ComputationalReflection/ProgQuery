@@ -1,7 +1,7 @@
 package es.uniovi.reflection.progquery.mig;
 
 import es.uniovi.reflection.progquery.database.relations.CGRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.RelationTypes;
+import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.TypeRelations;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
@@ -33,8 +33,8 @@ public class HierarchyAnalysis {
         inheritedInfo = new InfoFromSubtypes();
 
         for (RelationshipWrapper subTypeRel : typeDec
-                .getRelationships(Direction.INCOMING, TypeRelations.IS_SUBTYPE_EXTENDS,
-                        TypeRelations.IS_SUBTYPE_IMPLEMENTS)) {
+                .getRelationships(Direction.INCOMING, TypeRelations.EXTENDS_CLASS,
+                        TypeRelations.IMPLEMENTS_INTERFACE)) {
             NodeWrapper subType = subTypeRel.getStartNode();
             InfoFromSubtypes infoFromSubtypes = dynamicMethodCallAnalysis(subType);
             inheritedInfo.subtypesToLastOverrider.putAll(infoFromSubtypes.subtypesToLastOverrider);
@@ -47,8 +47,8 @@ public class HierarchyAnalysis {
             }
         }
         Iterable<RelationshipWrapper> declaredFields =
-                typeDec.getRelationships(Direction.OUTGOING, RelationTypes.DECLARES_FIELD), declaredMethods =
-                typeDec.getRelationships(Direction.OUTGOING, RelationTypes.DECLARES_METHOD);
+                typeDec.getRelationships(Direction.OUTGOING, ASTRelationTypes.DECLARES_FIELD), declaredMethods =
+                typeDec.getRelationships(Direction.OUTGOING, ASTRelationTypes.DECLARES_METHOD);
         for (Entry<NodeWrapper, Map<String, NodeWrapper>> subTypeInfo : inheritedInfo.subtypesToLastOverrider
                 .entrySet()) {
             fieldAnalysis(subTypeInfo.getKey(), declaredFields);

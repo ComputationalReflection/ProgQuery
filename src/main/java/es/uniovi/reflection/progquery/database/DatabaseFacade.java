@@ -2,29 +2,33 @@ package es.uniovi.reflection.progquery.database;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.Tree;
-import com.sun.source.tree.Tree.Kind;
-import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.tree.JCTree;
+import es.uniovi.reflection.progquery.ast.ASTAuxiliarStorage;
 import es.uniovi.reflection.progquery.database.nodes.NodeCategory;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
+import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
+import es.uniovi.reflection.progquery.database.relations.PartialWithEnd;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.WrapperUtils;
+import es.uniovi.reflection.progquery.utils.GraphUtils;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
+import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
+import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 
-import javax.lang.model.element.Modifier;
-import java.util.Set;
+import javax.lang.model.element.ElementKind;
 
 public class DatabaseFacade {
     private final InsertionStrategy insertionStrategy;
     public static InsertionStrategy CURRENT_INSERTION_STRATEGY;
 
-    public static DatabaseFacade CURRENT_DB_FACHADE;
+    public static ThreadLocal<DatabaseFacade> CURRENT_DB_FACADE = new ThreadLocal<>();
 
     public static void init(InsertionStrategy current) {
         CURRENT_INSERTION_STRATEGY = current;
-        CURRENT_DB_FACHADE = new DatabaseFacade(current);
+        CURRENT_DB_FACADE.set(new DatabaseFacade(current));
     }
 
     public DatabaseFacade(InsertionStrategy insertionStrategy) {
@@ -35,7 +39,7 @@ public class DatabaseFacade {
         return createNode(type, new Object[]{});
     }
 
-    private NodeWrapper createNode(NodeTypes type, Object[] properties) {
+    public NodeWrapper createNode(NodeTypes type, Object[] properties) {
         NodeWrapper node = insertionStrategy.createNode(type, properties);
         addMultiLabelHypernyms(node, type);
         return node;
@@ -64,7 +68,7 @@ public class DatabaseFacade {
         return node;
     }
 
-    private static Object[] getPosition(Tree tree) {
+    public static Object[] getPosition(Tree tree) {
         return JavacInfo.getPosition(tree);
     }
 
@@ -78,58 +82,75 @@ public class DatabaseFacade {
         return res;
     }
 
-    public static Object[] getTypeDecProperties(String fullyQualifiedType) {
+    public static Object[] getTypeProperties(String fullyQualifiedType) {
         return new Object[]{"fullyQualifiedName", WrapperUtils.stringToNeo4jQueryString(fullyQualifiedType)};
     }
 
-    public static Object[] getTypeDecProperties(String simpleName, String fullyQualifiedType) {
-        return join(getTypeDecProperties(fullyQualifiedType),
+    public static Object[] getTypeProperties(String simpleName, String fullyQualifiedType) {
+        return join(getTypeProperties(fullyQualifiedType),
                 new Object[]{"simpleName", WrapperUtils.stringToNeo4jQueryString(simpleName)});
     }
 
-    public static Object[] getTypeDecProperties(String simpleName, String fullyQualifiedType, boolean declared) {
-        return join(getTypeDecProperties(simpleName, fullyQualifiedType), new Object[]{"isDeclared", declared});
+    public static Object[] getTypeDecProperties(String simpleName, String fullyQualifiedType, boolean isUserCode) {
+        return join(getTypeProperties(simpleName, fullyQualifiedType),
+                new Object[]{ASTTypesVisitor.IS_USER_CODE_PROP, isUserCode});
     }
 
-
-    private static Object[] getTypeDecProperties(ClassSymbol symbol, boolean isDeclared) {
-        Set<Modifier> modifiers = Flags.asModifierSet(symbol.flags_field);
-        Object[] classProps =
-                symbol.isEnum() ? new Object[]{"isFinal", true, "isStatic", true, "accessLevel", "public"} :
-                        symbol.isInterface() ?
-                                new Object[]{"isAbstract", modifiers.contains(Modifier.ABSTRACT), "accessLevel",
-                                        modifiers.contains(Modifier.PUBLIC) ? "public" : "package"} :
-                                new Object[]{"isAbstract", modifiers.contains(Modifier.ABSTRACT), "isStatic",
-                                        modifiers.contains(Modifier.STATIC), "isFinal",
-                                        modifiers.contains(Modifier.FINAL), "accessLevel",
-                                        modifiers.contains(Modifier.PUBLIC) ? "public" :
-                                                modifiers.contains(Modifier.PRIVATE) ? "private" : "package"};
-
-        return join(getTypeDecProperties(symbol.getSimpleName().toString(), symbol.getQualifiedName().toString(),
-                isDeclared), classProps);
-
+    public NodeWrapper createTypeDecNode(ClassSymbol symbol, String simpleName, String fullyQualifiedName,
+                                         boolean isUserCode) {
+        NodeWrapper typeDef = createNode(symbol.getKind() == ElementKind.CLASS ? NodeTypes.CLASS_DEC :
+                        symbol.getKind() == ElementKind.INTERFACE ? NodeTypes.INTERFACE_DEC :
+                                symbol.getKind() == ElementKind.ENUM ? NodeTypes.ENUM_DEC :
+                                        symbol.getKind() == ElementKind.RECORD ? NodeTypes.RECORD_DEC :
+                                                NodeTypes.ANNOTATION_DEC,
+                getTypeDecProperties(simpleName, fullyQualifiedName, isUserCode));
+        return typeDef;
     }
 
-    public NodeWrapper createTypeDecNode(ClassTree classTree, String simpleName, String fullyQualifiedType) {
-        NodeWrapper typeDef = createNode(classTree.getKind() == Kind.CLASS ? NodeTypes.CLASS_DEF :
-                        classTree.getKind() == Kind.INTERFACE ? NodeTypes.INTERFACE_DEF : NodeTypes.ENUM_DEF,
-                getTypeDecProperties(simpleName, fullyQualifiedType, true));
+    private void setRecordMembers(ClassSymbol symbol, NodeWrapper typeDef, ClassTree classTree,
+                                  ASTTypesVisitor astVisitor, ASTAuxiliarStorage ast) {
+        symbol.getRecordComponents().forEach(recordComponent -> {
+            NodeWrapper recordComponentNode;
+            if (classTree != null) {
+                recordComponentNode =
+                        createSkeletonNodeExplicitCats(classTree, NodeTypes.RECORD_COMPONENT, NodeCategory.AST_NODE);
+                PartialWithEnd componentTypeRel =
+                        new PartialWithEnd<>(recordComponentNode, ASTRelationTypes.COMPONENT_TYPE);
+                recordComponent.declarationFor().accept(astVisitor, Pair.createPair(componentTypeRel));
+                componentTypeRel.getEndNode().setProperties(getPosition(classTree));
+            } else {
+                recordComponentNode = createNodeWithoutExplicitTree(NodeTypes.RECORD_COMPONENT);
+            }
+            recordComponentNode.setProperties(new Object[]{"name", recordComponent.getSimpleName().toString()});
+            GraphUtils.attachType(recordComponentNode, recordComponent.type, astVisitor.ast);
+        });
+        //ASTTypesVisitor.getCallableDuringTypeCreation((Symbol.MethodSymbol) elementSymbol, ast, declaredType);
+    }
+
+    public NodeWrapper createUserTypeDecNode(ClassTree classTree, ClassSymbol symbol) {
+        String simpleName = classTree.getSimpleName().toString();
+        String fullyQualifiedType = symbol.toString();
+        if (simpleName.equals("")) {
+            String[] split = fullyQualifiedType.split(fullyQualifiedType.contains(".") ? "\\." : " ");
+            simpleName = split[split.length - 1];
+            simpleName = simpleName.substring(0, simpleName.length() - 1);
+        }
+        NodeWrapper typeDef = createTypeDecNode(symbol, simpleName, fullyQualifiedType, true);
+        typeDef.addLabel(NodeCategory.AST_NODE);
         typeDef.setProperties(getPosition(classTree));
         return typeDef;
     }
 
-    public NodeWrapper createTypeDecNode(NodeTypes typeNode, Object[] props) {
-        return createNode(typeNode, props);
+    public NodeWrapper createExternalTypeDecNode(ClassType c) {
+        return createExternalTypeDecNode((ClassSymbol) c.tsym);
 
     }
 
-    public NodeWrapper createNonDeclaredCLASSTypeDecNode(ClassType c, NodeTypes type) {
-        return createNonDeclaredCLASSTypeDecNode((ClassSymbol) c.tsym, type);
-
-    }
-
-    public NodeWrapper createNonDeclaredCLASSTypeDecNode(ClassSymbol c, NodeTypes type) {
-        return createNode(type, getTypeDecProperties(c, false));
-
+    public NodeWrapper createExternalTypeDecNode(ClassSymbol symbol) {
+        NodeWrapper typeDecNode =
+                createTypeDecNode(symbol, symbol.getSimpleName().toString(), symbol.getQualifiedName().toString(),
+                        false);
+        ASTTypesVisitor.typeSymbolPropsAndNestingLabels(symbol, symbol.getModifiers(), typeDecNode);
+        return typeDecNode;
     }
 }

@@ -1,9 +1,10 @@
-package es.uniovi.reflection.progquery.utils.types.keys;
+package es.uniovi.reflection.progquery.typeInfo.keys.type;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
-import es.uniovi.reflection.progquery.utils.MethodNameInfo;
-import es.uniovi.reflection.progquery.utils.types.TypeKey;
+import es.uniovi.reflection.progquery.typeInfo.keys.CallableKey;
+import es.uniovi.reflection.progquery.typeInfo.keys.ElementKey;
+import es.uniovi.reflection.progquery.typeInfo.keys.TypeKey;
 
 import javax.lang.model.type.TypeVariable;
 import java.util.Objects;
@@ -12,13 +13,13 @@ import java.util.Objects;
 public class TypeVariableKey implements TypeKey {
 
     private String name;
-    private Object ownerKey;
+    private ElementKey ownerKey;
 
     public TypeVariableKey(TypeVariable typeVar) {
         name = typeVar.toString();
 
         ownerKey =
-                new MethodNameInfo((Symbol.MethodSymbol) ((Type.TypeVar) typeVar).tsym.owner).getFullyQualifiedName();
+                new CallableKey((Symbol.MethodSymbol) ((Type.TypeVar) typeVar).tsym.owner);
     }
 
     public TypeVariableKey(TypeVariable typeVar, TypeKey ownerKey) {
@@ -30,9 +31,8 @@ public class TypeVariableKey implements TypeKey {
     public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (o == null || getClass() != o.getClass())
+        if (!(o instanceof TypeVariableKey that))
             return false;
-        TypeVariableKey that = (TypeVariableKey) o;
         return Objects.equals(name, that.name) && Objects.equals(ownerKey, that.ownerKey);
     }
 

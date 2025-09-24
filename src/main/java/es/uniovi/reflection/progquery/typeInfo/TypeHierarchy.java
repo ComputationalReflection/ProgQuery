@@ -7,6 +7,7 @@ import es.uniovi.reflection.progquery.cache.DefinitionCache;
 import es.uniovi.reflection.progquery.database.relations.CDGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.TypeRelations;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
+import es.uniovi.reflection.progquery.pg.PackageManager;
 import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 
 import javax.lang.model.type.TypeKind;
@@ -29,7 +30,7 @@ public class TypeHierarchy {
             startNode.createRelationshipTo(superTypeClass, rel);
             if (astVisitor == null) {
                 startNode.createRelationshipTo(superTypeClass, CDGRelationTypes.USES_TYPE_DEF);
-                PackageInfo.PACKAGE_INFO.get().handleNewDependency(startSymbol.packge(), endType.tsym.packge());
+                PackageManager.PACKAGE_MANAGER.get().handleNewDependency(startSymbol.packge(), endType.tsym.packge());
             } else
                 astVisitor.addToTypeDependencies(superTypeClass, endType.tsym.packge());
         }

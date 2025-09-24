@@ -1,6 +1,6 @@
-package es.uniovi.reflection.progquery.utils.types.keys;
+package es.uniovi.reflection.progquery.typeInfo.keys.type;
 
-import es.uniovi.reflection.progquery.utils.types.TypeKey;
+import es.uniovi.reflection.progquery.typeInfo.keys.TypeKey;
 
 import javax.lang.model.type.PrimitiveType;
 import java.util.Objects;

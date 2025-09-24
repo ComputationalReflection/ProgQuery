@@ -56,7 +56,7 @@ public class InterproceduralPDG {
                                 calledMethodInfo.paramsToPDGRelations
                                 .entrySet()
                         ) {
-                            int paramIndex = paramMutatedInCalledMethodDec.getKey().hasLabel(NodeTypes.THIS_REF) ? 0 :
+                            int paramIndex = paramMutatedInCalledMethodDec.getKey().hasLabel(NodeTypes.THIS_REFERENCE) ? 0 :
                                     (Integer) paramMutatedInCalledMethodDec.getKey()
                                             .getRelationships(Direction.INCOMING, ASTRelationTypes.CALLABLE_PARAM,
                                                     ASTRelationTypes.LAMBDA_PARAM).get(0)
@@ -92,7 +92,7 @@ public class InterproceduralPDG {
                                 decToInvPDGRel.getValue());
                 if (decToInvPDGRel.getKey().getFirst().hasLabel(NodeTypes.ATTR_DEC)) {
                     rel.setProperty("isOwnAccess", decToInvPDGRel.getKey().getSecond().getSecond());
-                } else if (decToInvPDGRel.getKey().getFirst().hasLabel(NodeTypes.THIS_REF))
+                } else if (decToInvPDGRel.getKey().getFirst().hasLabel(NodeTypes.THIS_REFERENCE))
                     rel.setProperty("isOwnAccess", true);
             }
     }
@@ -123,7 +123,7 @@ public class InterproceduralPDG {
         for (PDGMutatedDecInfoInMethod varMayOrMustBeModified : invocationModifyThisVarInfo) {
             boolean isMay = varMayOrMustBeModified.isMay || !must;
             addNewPDGRelFromAnyDecToInv(!isMay, varMayOrMustBeModified.dec, callRel.getEndNode(),
-                    varMayOrMustBeModified.dec.hasLabel(NodeTypes.THIS_REF) ||
+                    varMayOrMustBeModified.dec.hasLabel(NodeTypes.THIS_REFERENCE) ||
                             varMayOrMustBeModified.isOuterMostImplicitThisOrP != IsInstance.NO, methodInfo);
 
             Map<NodeWrapper, PDGRelationTypes> paramRelsOnMethod = methodInfo.paramsToPDGRelations;
@@ -148,7 +148,7 @@ public class InterproceduralPDG {
 
                 addNewPDGRelFromAnyDecToInv(!isMay, methodInfo.thisNodeIfNotStatic, callRel.getEndNode(), true,
                         methodInfo);
-            } else if (varMayOrMustBeModified.dec.hasLabel(NodeTypes.THIS_REF))
+            } else if (varMayOrMustBeModified.dec.hasLabel(NodeTypes.THIS_REFERENCE))
                 addNewPDGRelFromParamToMethod(!isMay && (Boolean) callRel.getProperty("mustBeExecuted"),
                         paramRelsOnMethod, methodInfo.thisNodeIfNotStatic);
         }

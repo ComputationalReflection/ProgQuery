@@ -23,9 +23,7 @@ import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeInfo;
-import es.uniovi.reflection.progquery.cache.DefinitionCache;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
-import es.uniovi.reflection.progquery.utils.types.TypeKey;
 
 public class JavacInfo {
 

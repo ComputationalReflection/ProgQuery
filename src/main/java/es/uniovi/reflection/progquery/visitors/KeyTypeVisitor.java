@@ -2,10 +2,9 @@ package es.uniovi.reflection.progquery.visitors;
 
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.TypeVar;
-import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
+import es.uniovi.reflection.progquery.typeInfo.keys.type.*;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
-import es.uniovi.reflection.progquery.utils.types.TypeKey;
-import es.uniovi.reflection.progquery.utils.types.keys.*;
+import es.uniovi.reflection.progquery.typeInfo.keys.TypeKey;
 
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.TypeVisitor;
@@ -15,7 +14,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
-
+    public KeyTypeVisitor() {
+    }
+    public static final KeyTypeVisitor INSTANCE = new KeyTypeVisitor();
     @Override
     public TypeKey visit(TypeMirror t) {
         throw new IllegalStateException(t.getClass().toString());

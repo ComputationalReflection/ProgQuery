@@ -3,15 +3,13 @@ package es.uniovi.reflection.progquery.database.nodes;
 import java.util.Map.Entry;
 
 import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Relationship;
 
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 
 public class NodeUtils {
 	public static String getNameFromDec(NodeWrapper dec) {
-		return dec.hasLabel(NodeTypes.THIS_REF) ? "THIS" : (String) dec.getProperty("name");
+		return dec.hasLabel(NodeTypes.THIS_REFERENCE) ? "THIS" : (String) dec.getProperty("name");
 	}
 	public static String nodeToString(NodeWrapper n) {
 		if (n == null)

@@ -89,7 +89,7 @@ public class GetDeclarationFromExpression {
 			List<PDGMutatedDecInfoInMethod> identInfo = new ArrayList<>();
 			identInfo.add(new PDGMutatedDecInfoInMethod(false,
 					dec.hasLabel(NodeTypes.ATTR_DEC) && !(Boolean) dec.getProperty("isStatic") ||
-							dec.hasLabel(NodeTypes.THIS_REF)
+							dec.hasLabel(NodeTypes.THIS_REFERENCE)
 							? IsInstance.YES : IsInstance.NO, dec));
 			return Pair.create(identInfo, false);
 		} else

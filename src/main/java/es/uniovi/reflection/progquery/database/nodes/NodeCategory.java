@@ -1,5 +1,6 @@
 package es.uniovi.reflection.progquery.database.nodes;
 
+import es.uniovi.reflection.progquery.CompilationScheduler;
 import org.neo4j.graphdb.Label;
 
 import java.util.HashSet;
@@ -10,6 +11,8 @@ public enum NodeCategory implements Label {
 	AST_NODE, CFG_NODE, PDG_NODE, TYPE_NODE, PACKAGE_NODE,
 
 	AST_TYPE(AST_NODE),
+
+	COMPILATION_UNIT(AST_NODE), //SUPERCLASS FOR FILES
 
 	DECLARATION,	//SUPERCLASS FOR DECLARATION,TYPE_DECLARATION,CALLABLE_DEC
 

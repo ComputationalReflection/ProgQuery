@@ -7,9 +7,10 @@ import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.TypeRelations;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
-import es.uniovi.reflection.progquery.utils.types.TypeKey;
+import es.uniovi.reflection.progquery.typeInfo.keys.CallableKey;
+import es.uniovi.reflection.progquery.typeInfo.keys.ComponentKey;
+import es.uniovi.reflection.progquery.typeInfo.keys.TypeKey;
 import es.uniovi.reflection.progquery.visitors.KeyTypeVisitor;
-import es.uniovi.reflection.progquery.visitors.TypeVisitor;
 import org.neo4j.graphdb.Direction;
 
 import javax.lang.model.type.TypeMirror;
@@ -19,8 +20,8 @@ import java.util.Set;
 
 public class DefinitionCache<TKEY> {
     public static ThreadLocal<DefinitionCache<TypeKey>> TYPE_CACHE = new ThreadLocal<>();
-    public static ThreadLocal<DefinitionCache<String>> CALLABLE_DEC_CACHE = new ThreadLocal<>();
-    public static ThreadLocal<DefinitionCache<Symbol.RecordComponent>> COMPONENT_CACHE = new ThreadLocal<>();
+    public static ThreadLocal<DefinitionCache<CallableKey>> CALLABLE_DEC_CACHE = new ThreadLocal<>();
+    public static ThreadLocal<DefinitionCache<ComponentKey>> COMPONENT_CACHE = new ThreadLocal<>();
 
 
     private final Map<TKEY, NodeWrapper> auxNodeCache = new HashMap<>();
@@ -38,7 +39,7 @@ public class DefinitionCache<TKEY> {
     public static void putClassDefinition(Symbol.ClassSymbol classSymbol, NodeWrapper classDec,
                                           Set<NodeWrapper> typeDecNodeList, Set<NodeWrapper> typeDecsUses) {
         TYPE_CACHE.get()
-                .putClassDefinition(classSymbol.type.accept(new KeyTypeVisitor(), null), classDec, typeDecNodeList,
+                .putClassDefinition(classSymbol.type.accept(KeyTypeVisitor.INSTANCE, null), classDec, typeDecNodeList,
                         typeDecsUses);
     }
 
@@ -108,19 +109,18 @@ public class DefinitionCache<TKEY> {
     }
 
     public static NodeWrapper getOrCreateType(TypeMirror type, ASTAuxiliarStorage ast) {
-        return getOrCreateType(type, type.accept(new KeyTypeVisitor(), null), ast);
+        return getOrCreateType(type, type.accept(KeyTypeVisitor.INSTANCE, null), ast);
     }
 
     public static NodeWrapper createTypeDec(TypeMirror typeSymbol, ASTAuxiliarStorage ast) {
-        return createTypeDec(typeSymbol, typeSymbol.accept(new KeyTypeVisitor(), null), ast);
+        return createTypeDec(typeSymbol, typeSymbol.accept(KeyTypeVisitor.INSTANCE, null), ast);
     }
 
     private static NodeWrapper createTypeDec(TypeMirror type, TypeKey key, ASTAuxiliarStorage ast) {
-        return type.accept(new TypeVisitor(ast), key);
+        return type.accept(ast.getTypeVisitor(), key);
     }
 
-    public void updateToDefinition(TKEY componentSymbol) {
-        NodeWrapper updatedNode = auxNodeCache.get(componentSymbol);
+    public void updateToDefinition(TKEY componentSymbol, NodeWrapper updatedNode) {
         auxNodeCache.remove(componentSymbol);
         definitionNodeCache.put(componentSymbol, updatedNode);
     }

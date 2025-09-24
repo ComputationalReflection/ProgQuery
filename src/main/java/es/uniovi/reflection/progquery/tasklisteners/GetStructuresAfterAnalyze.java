@@ -13,10 +13,11 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import es.uniovi.reflection.progquery.CompilationScheduler;
 import es.uniovi.reflection.progquery.database.DatabaseFacade;
+import es.uniovi.reflection.progquery.database.nodes.NodeProperties;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.*;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
-import es.uniovi.reflection.progquery.typeInfo.PackageInfo;
+import es.uniovi.reflection.progquery.pg.PackageManager;
 import es.uniovi.reflection.progquery.utils.GraphUtils;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
@@ -57,7 +58,7 @@ public class GetStructuresAfterAnalyze implements TaskListener {
                 else {
                     started = true;
                     int currentTypeCounter = classCounter.get(cuTree.getSourceFile());
-                    if (cuTree.getTypeDecls().size() == 0)
+                    if (cuTree.getTypeDecls().size() == 0) //Module-info and package-info have no type declarations
                         firstScanIfNoTypeDecls(cuTree);
                     else {
                         boolean firstClass = classCounter.get(cuTree.getSourceFile()) == cuTree.getTypeDecls().size();
@@ -106,36 +107,38 @@ public class GetStructuresAfterAnalyze implements TaskListener {
                 }
         }
     }
-
+    private final static String MODULE_INFO_FILENAME = "module-info.java";
     private void firstScanIfNoTypeDecls(CompilationUnitTree cu) {
-        JavacInfo.currentJavacInfo.get().setCurrCompilationUnit(cu);
-        String fileName = cu.getSourceFile().toUri().toString();
-        NodeWrapper compilationUnitNode =
-                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(cu, NodeTypes.COMPILATION_UNIT);
-        addPackageInfo(((JCCompilationUnit) cu).packge, compilationUnitNode);
-        compilationUnitNode.setProperty("fileName", fileName);
-        argument = Pair.createPair(compilationUnitNode, null);
+        if (cu.getSourceFile().getName().endsWith(MODULE_INFO_FILENAME)) {
+            String fileName = cu.getSourceFile().getName();
+            //JavacInfo.currentJavacInfo.get().setCurrCompilationUnit(cu); this line only is used to get Position or retrieve information during the traversal
+            NodeWrapper compilationUnitNode =
+                    DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.MODULAR_CU);
+            compilationUnitNode.setProperty(NodeProperties.FILE_NAME, fileName);
+            NodeWrapper module = PackageManager.PACKAGE_MANAGER.get().createUserModule(((JCCompilationUnit) cu).modle);
+            module.createRelationshipTo(compilationUnitNode, PGRelationTypes.MODULE_INFO_FILE);
+        }
     }
-
-    private NodeWrapper addPackageInfo(Symbol currentPackage, NodeWrapper compilationUnitNode) {
-        PackageInfo.PACKAGE_INFO.get().currentPackage = currentPackage;
-        NodeWrapper packageNode = PackageInfo.PACKAGE_INFO.get().putDeclaredPackage(currentPackage);
-        packageNode.createRelationshipTo(compilationUnitNode, PGRelationTypes.PACKAGE_COMPILATION_UNIT);
-        return packageNode;
-    }
-
     private void firstScan(CompilationUnitTree cu, Tree typeDeclaration) {
+        if (typeDeclaration instanceof ModuleTree)
+            throw new IllegalStateException("Module declaration found when there are type declarations in the CU");
         JavacInfo.currentJavacInfo.get().setCurrCompilationUnit(cu);
         String fileName = cu.getSourceFile().getName();
         NodeWrapper compilationUnitNode =
-                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(cu, NodeTypes.COMPILATION_UNIT);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.ORDINARY_CU);
         addPackageInfo(((JCCompilationUnit) cu).packge, compilationUnitNode);
-        compilationUnitNode.setProperty("fileName", fileName);
+        compilationUnitNode.setProperty(NodeProperties.FILE_NAME, fileName);
         argument = Pair.createPair(compilationUnitNode, null);
-        if (typeDeclaration instanceof ModuleTree)
-            return;
         scan((ClassTree) typeDeclaration, true, cu);
     }
+    private NodeWrapper addPackageInfo(Symbol.PackageSymbol currentPackage, NodeWrapper compilationUnitNode) {
+        PackageManager.PACKAGE_MANAGER.get().currentPackage = currentPackage;
+        NodeWrapper packageNode = PackageManager.PACKAGE_MANAGER.get().putDeclaredPackage(currentPackage);
+        packageNode.createRelationshipTo(compilationUnitNode, PGRelationTypes.PACKAGE_INCLUDES_CU);
+        return packageNode;
+    }
+
+
 
     private void scan(ClassTree typeDeclaration, boolean first, CompilationUnitTree cu) {
         new ASTTypesVisitor(typeDeclaration, first, scheduler.getPdgUtils(), scheduler.getAst(),

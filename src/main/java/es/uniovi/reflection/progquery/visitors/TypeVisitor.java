@@ -12,9 +12,9 @@ import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.TypeRelations;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.typeInfo.TypeHierarchy;
+import es.uniovi.reflection.progquery.typeInfo.keys.type.*;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
-import es.uniovi.reflection.progquery.utils.types.TypeKey;
-import es.uniovi.reflection.progquery.utils.types.keys.*;
+import es.uniovi.reflection.progquery.typeInfo.keys.TypeKey;
 
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.*;
@@ -65,8 +65,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
         return node;
     }
 
-    public static NodeWrapper generatedClassType(ClassSymbol classSymbol, ASTAuxiliarStorage ast) {
-        TypeDefinitionKey typeDefKey = new TypeDefinitionKey(classSymbol);
+    public static NodeWrapper generatedClassType(TypeDefinitionKey typeDefKey, ClassSymbol classSymbol, ASTAuxiliarStorage ast) {
         if (DefinitionCache.TYPE_CACHE.get().containsKey(typeDefKey))
             return DefinitionCache.TYPE_CACHE.get().get(typeDefKey);
 
@@ -103,7 +102,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
             declaredType = DatabaseFacade.CURRENT_DB_FACADE.get().createExternalTypeDecNode((ClassType) t);
 
             if (t.getTypeArguments().size() > 0)
-                declaredType.addLabel(NodeTypes.GENERIC_TYPE);
+                declaredType.addLabel(NodeTypes.GENERIC_TYPE_DEC);
             putInCache(declaredTypeKey, declaredType);
             ast.typeDecNodes.add(declaredType);
             ClassSymbol classSymbol = (ClassSymbol) ((Type.ClassType) t).tsym;

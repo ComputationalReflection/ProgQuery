@@ -10,6 +10,10 @@ public enum NodeTypes implements Label {
     /*Package nodes*/
     PROGRAM(NodeCategory.PACKAGE_NODE),
     PACKAGE(NodeCategory.PACKAGE_NODE),
+    MODULE(NodeCategory.PACKAGE_NODE),
+    EXPORTS_DIRECTIVE(NodeCategory.PACKAGE_NODE),
+    PROVIDES_DIRECTIVE(NodeCategory.PACKAGE_NODE),
+    OPENS_DIRECTIVE(NodeCategory.PACKAGE_NODE),
 
     /*Type nodes*/
     ERROR_TYPE(NodeCategory.TYPE_NODE),
@@ -21,7 +25,6 @@ public enum NodeTypes implements Label {
 
     /*Polymorphic AST Types OR Type Nodes*/
     ARRAY_TYPE,
-    GENERIC_TYPE,
     INTERSECTION_TYPE,
     PARAMETERIZED_TYPE,
     PRIMITIVE_TYPE,
@@ -29,7 +32,7 @@ public enum NodeTypes implements Label {
     WILDCARD_TYPE,
 
     /* Program Dependency Graph Nodes*/
-    THIS_REF(NodeCategory.PDG_NODE),
+    THIS_REFERENCE(NodeCategory.PDG_NODE),
 
     /*Control Flow Graph Nodes*/
     CFG_NORMAL_END(NodeCategory.CFG_NODE),
@@ -38,6 +41,7 @@ public enum NodeTypes implements Label {
     CFG_FINALLY_END(NodeCategory.CFG_NODE),
 
     /*Polymorphic Declarations/Definitions AST Nodes or not */
+    GENERIC_TYPE_DEC,
     ANNOTATION_DEC(NodeCategory.TYPE_DEC),
     ATTR_DEC(NodeCategory.VARIABLE_DEC),
     CLASS_DEC(NodeCategory.TYPE_DEC),
@@ -51,8 +55,9 @@ public enum NodeTypes implements Label {
 
     /*AST nodes*/
     ANNOTATION(NodeCategory.AST_NODE),
-    COMPILATION_UNIT(NodeCategory.AST_NODE),
+    ORDINARY_CU(NodeCategory.COMPILATION_UNIT),
     CU_SKIPPED_DEC(NodeCategory.AST_NODE),
+    MODULAR_CU(NodeCategory.COMPILATION_UNIT),
     ERRONEOUS_NODE (NodeCategory.AST_NODE),
     IMPORT(NodeCategory.AST_NODE),
     INITIALIZATION(NodeCategory.ANY_ASSIGNMENT),
@@ -70,7 +75,7 @@ public enum NodeTypes implements Label {
 
     /* AST Patterns */
     TYPE_PATTERN(NodeCategory.PATTERN, NodeCategory.LOCAL_DEC),
-    UNNAMED_PATTERN(NodeCategory.PATTERN),
+    DISCARD_PATTERN(NodeCategory.PATTERN),
     RECORD_PATTERN(NodeCategory.PATTERN),
 
     /*AST Statements OR Statement Sections*/

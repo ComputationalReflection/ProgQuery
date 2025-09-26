@@ -28,7 +28,18 @@
 			<version>4.13.2</version>
 		</dependency>
 	</dependencies>
-	<build>	
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>4.2.2.Final</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    <build>
 	<plugins>
 		<plugin>
 			<groupId>org.apache.maven.plugins</groupId>

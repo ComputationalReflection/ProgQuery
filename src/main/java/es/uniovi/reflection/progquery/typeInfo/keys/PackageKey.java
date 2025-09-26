@@ -4,13 +4,19 @@ import com.sun.tools.javac.code.Symbol;
 
 import java.util.Objects;
 
-public class PackageKey implements ElementKey {
+public class PackageKey implements PackageKeyI {
     private final String packageName;
     private final ModuleKey moduleKey;
 
     public PackageKey(Symbol.PackageSymbol packageSymbol){
         packageName = packageSymbol.getQualifiedName().toString();
         moduleKey = new ModuleKey(packageSymbol.modle);
+    }
+
+    public static PackageKeyI newPackageKey(Symbol.PackageSymbol packageSymbol) {
+        if(packageSymbol instanceof Symbol.RootPackageSymbol)
+            return NoPackageKey.INSTANCE;
+        return new PackageKey(packageSymbol);
     }
 
     @Override
@@ -30,5 +36,10 @@ public class PackageKey implements ElementKey {
     @Override
     public String toString() {
         return "PackageKey{" + "packageName='" + packageName + '\'' + ", moduleKey=" + moduleKey + '}';
+    }
+
+    @Override
+    public String getPackageName() {
+        return packageName;
     }
 }

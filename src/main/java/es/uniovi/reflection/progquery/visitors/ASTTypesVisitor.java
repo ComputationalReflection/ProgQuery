@@ -980,8 +980,8 @@ public class ASTTypesVisitor
                 (throwsTree) -> scan(throwsTree, Pair.createPair(methodNode, ASTRelationTypes.CALLABLE_THROWS)));
 
         scan(methodTree.getBody(), Pair.createPair(methodNode, ASTRelationTypes.CALLABLE_BODY));
-        scan(methodTree.getDefaultValue(), Pair.createPair(methodNode, ASTRelationTypes.DEFAULT_VALUE));
-        scan(methodTree.getReceiverParameter(), Pair.createPair(methodNode, ASTRelationTypes.RECEIVER_PARAM));
+        scan(methodTree.getDefaultValue(), Pair.createPair(methodNode, ASTRelationTypes.METHOD_DEFAULT_VALUE));
+        scan(methodTree.getReceiverParameter(), Pair.createPair(methodNode, ASTRelationTypes.CALLABLE_RECEIVER_PARAM));
 
         pdgUtils.setThisRefOfInstanceMethod(methodState, classState.currentClassDec);
         ast.addInfo(methodTree, methodNode, methodState,

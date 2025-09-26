@@ -171,7 +171,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
                     ("Type %s is package type which is not longer supported. A package type should never be visited " +
                             "here.").formatted(t));
         if (t.getKind() == TypeKind.VOID)
-            return putInCache(key, createWithSingleName(t, NodeTypes.VOID_TYPE));
+            return putInCacheAsTypeNode(key, createWithSingleName(t, NodeTypes.VOID_TYPE));
 
         throw new IllegalStateException(
                 "NoType %s with kind %s different than PACKAGE or VOID".formatted(t, t.getKind()));

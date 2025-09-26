@@ -10,6 +10,7 @@ import es.uniovi.reflection.progquery.database.relations.PGRelationTypes;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.typeInfo.keys.ModuleKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.PackageKey;
+import es.uniovi.reflection.progquery.typeInfo.keys.PackageKeyI;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 
@@ -21,8 +22,8 @@ public class PackageManager {
     public static ThreadLocal<PackageManager> PACKAGE_MANAGER = new ThreadLocal<>();
     public final ProgramManager programManager;
     public Symbol.PackageSymbol currentPackage;
-    private final DefinitionCache<PackageKey> packageCache;
-    private final Set<Pair<PackageKey, PackageKey>> dependenciesSet;
+    private final DefinitionCache<PackageKeyI> packageCache;
+    private final Set<Pair<PackageKeyI, PackageKeyI>> dependenciesSet;
     private final ModuleManager moduleManager;
 
     public PackageManager(ASTAuxiliarStorage ast) {
@@ -49,7 +50,7 @@ public class PackageManager {
     }
     public void handleNewDependency(Symbol.PackageSymbol dependent, Symbol.PackageSymbol dependency) {
         if (!dependent.equals(dependency)) {
-            PackageKey dependentKey = new PackageKey(dependent), dependencyKey = new PackageKey(dependency);
+            PackageKeyI dependentKey = PackageKey.newPackageKey(dependent), dependencyKey = PackageKey.newPackageKey(dependency);
             if(!hasDependency(dependentKey, dependencyKey)) {
                 addDependency(dependentKey, dependencyKey);
                 NodeWrapper dependentNode = getPackageNode(dependentKey), dependencyNode = getPackageNode(dependencyKey);
@@ -64,7 +65,7 @@ public class PackageManager {
     }
 
     public void createStoredPackageDeps() {
-        for (Pair<PackageKey, PackageKey> packageDep : dependenciesSet) {
+        for (Pair<PackageKeyI, PackageKeyI> packageDep : dependenciesSet) {
             NodeWrapper dependencyPack = packageCache.get(packageDep.getSecond());
             if ((Boolean) dependencyPack.getProperty(ASTTypesVisitor.IS_USER_CODE_PROP))
                 packageCache.get(packageDep.getFirst())
@@ -88,15 +89,15 @@ public class PackageManager {
 
     }
 
-    private void addDependency(PackageKey dependent, PackageKey dependency) {
+    private void addDependency(PackageKeyI dependent, PackageKeyI dependency) {
         dependenciesSet.add(Pair.create(dependent, dependency));
     }
 
-    private NodeWrapper getPackageNode(PackageKey packageSymbol) {
+    private NodeWrapper getPackageNode(PackageKeyI packageSymbol) {
         return packageCache.get(packageSymbol);
     }
 
-    private NodeWrapper createPackage(Symbol.PackageSymbol packageSymbol, PackageKey packageKey, boolean isUserCode) {
+    private NodeWrapper createPackage(Symbol.PackageSymbol packageSymbol, PackageKeyI packageKey, boolean isUserCode) {
         NodeWrapper packageNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.PACKAGE);
         if (isUserCode) {
@@ -104,13 +105,13 @@ public class PackageManager {
             programManager.getCurrentProgram().createRelationshipTo(packageNode, PGRelationTypes.PROGRAM_DECLARES_PACKAGE);
         } else
             packageCache.put(packageKey, packageNode);
-        packageNode.setProperty("name", packageSymbol.toString());
+        packageNode.setProperty("name", packageKey.getPackageName());
         packageNode.setProperty(ASTTypesVisitor.IS_USER_CODE_PROP, isUserCode);
         moduleManager.setPackageModule(packageSymbol, packageNode);
         return packageNode;
     }
 
-    private boolean hasDependency(PackageKey dependent, PackageKey dependency) {
+    private boolean hasDependency(PackageKeyI dependent, PackageKeyI dependency) {
         return dependenciesSet.contains(Pair.create(dependent, dependency));
     }
 }

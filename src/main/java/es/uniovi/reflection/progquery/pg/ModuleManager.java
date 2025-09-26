@@ -36,7 +36,7 @@ public class ModuleManager {
 
     void setPackageModule(Symbol.PackageSymbol packageSymbol, NodeWrapper packageNode) {
         Symbol.ModuleSymbol moduleSymbol = packageSymbol.modle;
-        if (moduleSymbol.isUnnamed())
+        if (moduleSymbol==null || moduleSymbol.isUnnamed())
             return;
         NodeWrapper moduleNode = getOrCreateExternalModule(moduleSymbol);
         moduleNode.createRelationshipTo(packageNode, PGRelationTypes.MODULE_CONTAINS_PACKAGE);

@@ -43,7 +43,6 @@ public class ProgQuery {
 
         if (!verbose)
             LOGGER.setLevel(Level.OFF);
-        org.neo4j.internal.unsafe.IllegalAccessLoggerSuppressor.suppress();
     }
 
     public ProgQuery(String neo4j_database_path, String neo4j_database, String userId, String programId,
@@ -57,7 +56,6 @@ public class ProgQuery {
 
         if (!verbose)
             LOGGER.setLevel(Level.OFF);
-        org.neo4j.internal.unsafe.IllegalAccessLoggerSuppressor.suppress();
     }
 
     public List<String> insert(List<String> javac_options_list) {

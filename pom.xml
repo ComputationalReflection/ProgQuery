@@ -10,25 +10,20 @@
 		<dependency>  
 			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j</artifactId>
-			<version>4.4.4</version>
+			<version>2025.08.0</version>
 		</dependency> 
 		<dependency> 
 			<groupId>org.neo4j.driver</groupId>
 			<artifactId>neo4j-java-driver</artifactId>
-			<version>4.4.4</version>
+			<version>5.28.9</version>
 		</dependency>
 		<dependency>
 			<groupId>org.neo4j</groupId>
 			<artifactId>annotations</artifactId>
-			<version>4.4.4</version>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.8.1</version>
+			<version>2025.08.0</version>
 		</dependency>
 	</dependencies>
-	<build>	
+    <build>
 	<plugins>
 		<plugin>
 			<groupId>org.apache.maven.plugins</groupId>
@@ -44,6 +39,7 @@
 					<arg>--add-exports</arg><arg>jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
 					<arg>--add-opens</arg><arg>java.base/java.nio=ALL-UNNAMED</arg>
 					<arg>--add-opens</arg><arg>java.base/java.lang=ALL-UNNAMED</arg>
+					<arg>--add-opens</arg><arg>java.base/sun.nio.ch=ALL-UNNAMED</arg>
 				</compilerArgs>
 			</configuration>
 		  </plugin>

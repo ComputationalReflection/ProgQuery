@@ -1,5 +1,9 @@
 package es.uniovi.reflection.progquery.database.embedded;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.neo4j.configuration.GraphDatabaseSettings;
@@ -16,7 +20,7 @@ public class EmbeddedDBBuilder {
 
     public EmbeddedDBBuilder(String database_directory, String database_name) {
         this.database_name = database_name;
-        manager = configuration(new DatabaseManagementServiceBuilder(Paths.get(database_directory)), database_name);
+        manager = configuration(database_directory, database_name);
         registerShutdownHook(manager);
     }
 
@@ -42,10 +46,28 @@ public class EmbeddedDBBuilder {
         return false;
     }
 
-    public static DatabaseManagementService configuration(DatabaseManagementServiceBuilder dbmsBuilder, String database_name) {
-        return dbmsBuilder
-                .setConfig(GraphDatabaseSettings.default_database, database_name)
-                .build();
+    public static DatabaseManagementService configuration(String database_directory, String database_name) {
+        Path path = Paths.get(database_directory);
+        DatabaseManagementServiceBuilder dbmsBuilder = new DatabaseManagementServiceBuilder(path);
+        DatabaseManagementService managementService = dbmsBuilder.loadPropertiesFromFile(createNeo4jConfFile(path, database_name)).build();
+        managementService.database(database_name);
+        return managementService;
+    }
+
+    private static Path createNeo4jConfFile(Path path, String database_name) {
+        File confDir = new File(path.toFile(), "conf");
+        if (!confDir.exists()) {
+            confDir.mkdirs();
+        }
+        File neo4jConf = new File(confDir, "neo4j.conf");
+
+        try (FileWriter writer = new FileWriter(neo4jConf, false)) {
+            writer.write("# Configuration for embedded Neo4j\n");
+            writer.write("dbms.default_database="+ database_name);
+        } catch (IOException e) {
+            throw new RuntimeException("Error creating neo4j.conf file", e);
+        }
+        return neo4jConf.toPath();
     }
 
     public void shutdownManager() { manager.shutdown(); }

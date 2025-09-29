@@ -2,8 +2,8 @@ package es.uniovi.reflection.progquery.cache;
 
 import com.sun.tools.javac.code.Symbol;
 import es.uniovi.reflection.progquery.ast.ASTAuxiliarStorage;
-import es.uniovi.reflection.progquery.database.relations.CDGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
+import es.uniovi.reflection.progquery.database.relations.CDGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.TypeRelations;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
@@ -22,10 +22,8 @@ public class DefinitionCache<TKEY> {
     public static ThreadLocal<DefinitionCache<TypeKey>> TYPE_CACHE = new ThreadLocal<>();
     public static ThreadLocal<DefinitionCache<CallableKey>> CALLABLE_DEC_CACHE = new ThreadLocal<>();
     public static ThreadLocal<DefinitionCache<ComponentKey>> COMPONENT_CACHE = new ThreadLocal<>();
-
-
-    private final Map<TKEY, NodeWrapper> auxNodeCache = new HashMap<>();
     protected final Map<TKEY, NodeWrapper> definitionNodeCache = new HashMap<>();
+    private final Map<TKEY, NodeWrapper> auxNodeCache = new HashMap<>();
 
     public void put(TKEY k, NodeWrapper v) {
         if (auxNodeCache.containsKey(k))
@@ -49,12 +47,11 @@ public class DefinitionCache<TKEY> {
         if (auxNodeCache.containsKey(classSymbol)) {
             oldClassNode = auxNodeCache.get(classSymbol);
             for (RelationshipWrapper r : oldClassNode.getRelationships(Direction.OUTGOING,
-                    ASTRelationTypes.DECLARES_FIELD, TypeRelations.EXTENDS_CLASS,
-                    TypeRelations.IMPLEMENTS_INTERFACE, TypeRelations.EXTENDS_CLASS,
+                    ASTRelationTypes.DECLARES_FIELD, TypeRelations.IMPLEMENTS_INTERFACE, TypeRelations.EXTENDS_CLASS,
                     TypeRelations.PERMITS_SUBTYPE))
                 r.delete();
             typeDecNodeList.remove(oldClassNode);
-            oldClassNode.getRelationships(Direction.OUTGOING, CDGRelationTypes.USES_TYPE_DEF)
+            oldClassNode.getRelationships(Direction.OUTGOING, CDGRelationTypes.USES_TYPE_DEC)
                     .forEach(usesTypeDecRel -> typeDecsUses.add(usesTypeDecRel.getEndNode()));
         }
         putDefinition(classSymbol, classDec, oldClassNode);
@@ -62,24 +59,6 @@ public class DefinitionCache<TKEY> {
 
     public void putDefinition(TKEY k, NodeWrapper v) {
         putDefinition(k, v, auxNodeCache.get(k));
-    }
-
-    private void putDefinition(TKEY k, NodeWrapper v, NodeWrapper previousNode) {
-        if (previousNode != null) {
-            for (RelationshipWrapper oldRel : previousNode.getRelationships(Direction.INCOMING)) {
-                RelationshipWrapper newRel = oldRel.getStartNode().createRelationshipTo(v, oldRel.getType());
-                oldRel.getAllProperties().forEach(prop -> newRel.setProperty(prop.getKey(), prop.getValue()));
-                oldRel.delete();
-            }
-            for (RelationshipWrapper oldRel : previousNode.getRelationships(Direction.OUTGOING)) {
-                RelationshipWrapper newRel = v.createRelationshipTo(oldRel.getEndNode(), oldRel.getType());
-                oldRel.getAllProperties().forEach(prop -> newRel.setProperty(prop.getKey(), prop.getValue()));
-                oldRel.delete();
-            }
-            auxNodeCache.remove(k);
-            previousNode.delete();
-        }
-        definitionNodeCache.put(k, v);
     }
 
     public NodeWrapper get(TKEY k) {
@@ -116,12 +95,30 @@ public class DefinitionCache<TKEY> {
         return createTypeDec(typeSymbol, typeSymbol.accept(KeyTypeVisitor.INSTANCE, null), ast);
     }
 
-    private static NodeWrapper createTypeDec(TypeMirror type, TypeKey key, ASTAuxiliarStorage ast) {
-        return type.accept(ast.getTypeVisitor(), key);
-    }
-
     public void updateToDefinition(TKEY componentSymbol, NodeWrapper updatedNode) {
         auxNodeCache.remove(componentSymbol);
         definitionNodeCache.put(componentSymbol, updatedNode);
+    }
+
+    private void putDefinition(TKEY k, NodeWrapper v, NodeWrapper previousNode) {
+        if (previousNode != null) {
+            for (RelationshipWrapper oldRel : previousNode.getRelationships(Direction.INCOMING)) {
+                RelationshipWrapper newRel = oldRel.getStartNode().createRelationshipTo(v, oldRel.getType());
+                oldRel.getAllProperties().forEach(prop -> newRel.setProperty(prop.getKey(), prop.getValue()));
+                oldRel.delete();
+            }
+            for (RelationshipWrapper oldRel : previousNode.getRelationships(Direction.OUTGOING)) {
+                RelationshipWrapper newRel = v.createRelationshipTo(oldRel.getEndNode(), oldRel.getType());
+                oldRel.getAllProperties().forEach(prop -> newRel.setProperty(prop.getKey(), prop.getValue()));
+                oldRel.delete();
+            }
+            auxNodeCache.remove(k);
+            previousNode.delete();
+        }
+        definitionNodeCache.put(k, v);
+    }
+
+    private static NodeWrapper createTypeDec(TypeMirror type, TypeKey key, ASTAuxiliarStorage ast) {
+        return type.accept(ast.getTypeVisitor(), key);
     }
 }

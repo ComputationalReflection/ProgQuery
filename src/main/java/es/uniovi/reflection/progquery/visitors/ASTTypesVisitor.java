@@ -401,7 +401,7 @@ public class ASTTypesVisitor
         if (currentTypeDecSymbol.isInner())
             addClassAndDep(outerMostClass);
         if (isNested)
-            currentCU.createRelationshipTo(typeNode, CDGRelationTypes.NESTED_TYPE_DEF);
+            currentCU.createRelationshipTo(typeNode, CDGRelationTypes.HAS_NESTED_TYPE);
 
         setUserTypeParent(currentTypeDecSymbol.getNestingKind(), typeNode, pair);
         DefinitionCache.putClassDefinition(currentTypeDecSymbol, typeNode, ast.typeDecNodes, typeDecUses);
@@ -914,7 +914,7 @@ public class ASTTypesVisitor
                                              Symbol.PackageSymbol dependentPackage) {
         if (!typeDecUses.contains(newTypeDec) && !currentClass.equals(newTypeDec)) {
             PackageManager.PACKAGE_MANAGER.get().handleNewDependency(dependentPackage, newPackageSymbol);
-            currentClass.createRelationshipTo(newTypeDec, CDGRelationTypes.USES_TYPE_DEF);
+            currentClass.createRelationshipTo(newTypeDec, CDGRelationTypes.USES_TYPE_DEC);
             typeDecUses.add(newTypeDec);
         }
     }
@@ -1712,7 +1712,7 @@ public class ASTTypesVisitor
                 TypeVisitor.generatedClassType(callableKey.getOwnerKey(), (ClassSymbol) newClassConstructor.owner, ast);
 
         if (!typeDecUses.contains(generatedClassNode)) {
-            classState.currentClassDec.createRelationshipTo(generatedClassNode, CDGRelationTypes.USES_TYPE_DEF);
+            classState.currentClassDec.createRelationshipTo(generatedClassNode, CDGRelationTypes.USES_TYPE_DEC);
             typeDecUses.add(generatedClassNode);
         }
         NodeWrapper constructorDef = createAndLinkNonDeclaredCallable(generatedClassNode, true);

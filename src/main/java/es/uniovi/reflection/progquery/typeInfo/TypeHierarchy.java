@@ -29,7 +29,7 @@ public class TypeHierarchy {
             NodeWrapper superTypeClass = DefinitionCache.getOrCreateType(endType, ast);
             startNode.createRelationshipTo(superTypeClass, rel);
             if (astVisitor == null) {
-                startNode.createRelationshipTo(superTypeClass, CDGRelationTypes.USES_TYPE_DEF);
+                startNode.createRelationshipTo(superTypeClass, CDGRelationTypes.USES_TYPE_DEC);
                 PackageManager.PACKAGE_MANAGER.get().handleNewDependency(startSymbol.packge(), endType.tsym.packge());
             } else
                 astVisitor.addToTypeDependencies(superTypeClass, endType.tsym.packge());

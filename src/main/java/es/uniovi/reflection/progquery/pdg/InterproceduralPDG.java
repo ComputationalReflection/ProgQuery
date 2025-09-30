@@ -16,6 +16,8 @@ import org.neo4j.graphdb.Direction;
 import java.util.*;
 import java.util.Map.Entry;
 
+import static es.uniovi.reflection.progquery.database.relations.RelationProperties.IS_OWN_ACCESS;
+
 public class InterproceduralPDG {
 
     private Map<NodeWrapper, Iterable<RelationshipWrapper>> methodDecToCalls;
@@ -92,9 +94,9 @@ public class InterproceduralPDG {
                         .createRelationshipTo(decToInvPDGRel.getKey().getSecond().getFirst(),
                                 decToInvPDGRel.getValue());
                 if (decToInvPDGRel.getKey().getFirst().hasLabel(NodeTypes.ATTR_DEC)) {
-                    rel.setProperty("isOwnAccess", decToInvPDGRel.getKey().getSecond().getSecond());
+                    rel.setProperty(IS_OWN_ACCESS, decToInvPDGRel.getKey().getSecond().getSecond());
                 } else if (decToInvPDGRel.getKey().getFirst().hasLabel(NodeTypes.THIS_REFERENCE))
-                    rel.setProperty("isOwnAccess", true);
+                    rel.setProperty(IS_OWN_ACCESS, true);
             }
     }
 

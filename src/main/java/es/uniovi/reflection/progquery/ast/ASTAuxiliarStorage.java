@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_INITIALIZER;
 import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_USER_CODE;
 
 public class ASTAuxiliarStorage {
@@ -164,7 +165,7 @@ public class ASTAuxiliarStorage {
         for (NodeWrapper accMethod : new HashSet<>(newAccessibleMethods))
             addAllCallees(newAccessibleMethods, callGraph.get(accMethod));
         for (MethodInfo mInfo : methodInfo.values())
-            mInfo.methodNode.setProperty("isInitializer", !newAccessibleMethods.contains(mInfo.methodNode));
+            mInfo.methodNode.setProperty(IS_INITIALIZER, !newAccessibleMethods.contains(mInfo.methodNode));
     }
 
     public void createAllParamsToMethodsPDGRels() {

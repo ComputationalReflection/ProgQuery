@@ -16,6 +16,7 @@ public class NodeProperties {
     public static final String IS_FINAL_PROP = "isFinal";
     public static final String IS_SYNCHRONIZED_PROP = "isSynchronized";
     public static final String IS_STRICTFP_PROP = "isStrictfp";
+    public static final String IS_TRANSIENT = "isTransient";
 
     public static final String IS_INNER = "isInner";
     public static final String FULL_NAME = "fullyQualifiedName";
@@ -23,9 +24,15 @@ public class NodeProperties {
     public static final String SIMPLE_NAME = "simpleName";
     public static final String NAME_PROP = "name";
     public static final String SELECTED_NAME = "selectedName";
+    public static final String OPERATOR = "operator";
 
     public static final String ACTUAL_TYPE = "actualType";
+    public static final String TYPE_TAG = "typetag";
+    public static final String TYPE_KIND = "typeKind";
+
     public static final String LINE_NUMBER = "lineNumber";
     public static final String COLUMN = "column";
     public static final String POSITION = "position";
+
+    public static final String IS_INITIALIZER = "isInitializer";
 }

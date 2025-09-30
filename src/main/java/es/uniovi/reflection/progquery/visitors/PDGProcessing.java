@@ -13,10 +13,7 @@ import es.uniovi.reflection.progquery.ast.ASTAuxiliarStorage;
 import es.uniovi.reflection.progquery.cache.DefinitionCache;
 import es.uniovi.reflection.progquery.database.DatabaseFacade;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
-import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.PDGRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.PartialRelation;
-import es.uniovi.reflection.progquery.database.relations.RelationTypesInterface;
+import es.uniovi.reflection.progquery.database.relations.*;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import es.uniovi.reflection.progquery.typeInfo.keys.ElementKey;
@@ -35,8 +32,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 
-import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_STATIC_PROP;
-import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_USER_CODE;
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.*;
 
 public class PDGProcessing {
     public static final PDGRelationTypes[] USED = new PDGRelationTypes[]{PDGRelationTypes.USED_BY}, MODIFIED =
@@ -351,7 +347,7 @@ public class PDGProcessing {
                                          boolean isAttrDecOrThis, boolean isInstanceRel, boolean isStatic) {
         RelationshipWrapper relationship = start.createRelationshipTo(end, rel);
         if (isAttrDecOrThis && !isStatic)
-            relationship.setProperty("isOwnAccess", isInstanceRel);
+            relationship.setProperty(RelationProperties.IS_OWN_ACCESS, isInstanceRel);
         return start;
     }
 

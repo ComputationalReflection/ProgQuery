@@ -193,7 +193,7 @@ public class ASTTypesVisitor
                                         Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper binaryNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(binaryTree, NodeTypes.BINARY_OPERATION);
-        binaryNode.setProperty("operator", binaryTree.getKind().toString());
+        binaryNode.setProperty(OPERATOR, binaryTree.getKind().toString());
         attachTypeDirect(binaryNode, binaryTree);
         GraphUtils.connectWithParent(binaryNode, t);
 
@@ -458,7 +458,7 @@ public class ASTTypesVisitor
                                                     Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper assignmentNode = DatabaseFacade.CURRENT_DB_FACADE.get()
                 .createSkeletonNode(compoundAssignmentTree, NodeTypes.COMPOUND_ASSIGNMENT);
-        assignmentNode.setProperty("operator", compoundAssignmentTree.getKind().toString());
+        assignmentNode.setProperty(OPERATOR, compoundAssignmentTree.getKind().toString());
 
         GraphUtils.connectWithParent(assignmentNode, t);
         attachTypeDirect(assignmentNode, compoundAssignmentTree);
@@ -820,7 +820,7 @@ public class ASTTypesVisitor
 
         NodeWrapper literalNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(literalTree, NodeTypes.LITERAL);
-        literalNode.setProperty("typetag", literalTree.getKind().toString());
+        literalNode.setProperty(TYPE_TAG, literalTree.getKind().toString());
         if (literalTree.getValue() != null)
             literalNode.setProperty("value", literalTree.getValue().toString());
 
@@ -1075,7 +1075,7 @@ public class ASTTypesVisitor
     }
 
     public static void checkTransientMod(Set<Modifier> modifiers, NodeWrapper node) {
-        node.setProperty("isTransient", modifiers.contains(Modifier.TRANSIENT));
+        node.setProperty(IS_TRANSIENT, modifiers.contains(Modifier.TRANSIENT));
     }
 
     public static void checkSynchroMod(Set<Modifier> modifiers, NodeWrapper node) {
@@ -1343,7 +1343,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitUnary(UnaryTree unaryTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper unaryNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(unaryTree, NodeTypes.UNARY_OPERATION);
-        unaryNode.setProperty("operator", unaryTree.getKind().toString());
+        unaryNode.setProperty(OPERATOR, unaryTree.getKind().toString());
         boolean impliesModification =
                 unaryTree.getKind() == Kind.POSTFIX_INCREMENT || unaryTree.getKind() == Kind.POSTFIX_DECREMENT ||
                         unaryTree.getKind() == Kind.PREFIX_INCREMENT || unaryTree.getKind() == Kind.PREFIX_DECREMENT;
@@ -1758,7 +1758,7 @@ public class ASTTypesVisitor
             varDecNode.createRelationshipTo(initNode, ASTRelationTypes.VAR_DEC_INIT);
             RelationshipWrapper r = varDecNode.createRelationshipTo(initNode, PDGRelationTypes.MODIFIED_BY);
             if (isAttr && !isStatic)
-                r.setProperty("isOwnAccess", true);
+                r.setProperty(RelationProperties.IS_OWN_ACCESS, true);
             scan(varTree.getInitializer(), Pair.createPair(initNode, ASTRelationTypes.INITIALIZATION_EXPR));
             PDGProcessing.createVarDecInitRel(classState.currentClassDec, initNode, isAttr, isStatic);
             return initNode;

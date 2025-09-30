@@ -13,6 +13,7 @@ import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 
 import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.ACTUAL_TYPE;
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.TYPE_KIND;
 
 public class GraphUtils {
 
@@ -65,7 +66,7 @@ public class GraphUtils {
 
     private static void attachTypeDirect(NodeWrapper node, NodeWrapper endNode, String actualType, String typeKind) {
         node.setProperty(ACTUAL_TYPE, actualType);
-        node.setProperty("typeKind", typeKind);
+        node.setProperty(TYPE_KIND, typeKind);
         node.createRelationshipTo(endNode, TypeRelations.ITS_TYPE_IS);
     }
 

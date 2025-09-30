@@ -25,7 +25,7 @@ import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeInfo;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 
-import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.LINE_NUMBER;
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.*;
 
 public class JavacInfo {
 
@@ -69,12 +69,12 @@ public class JavacInfo {
 
 	}
 	private static Object[] getPosition(Object line, Object column, Object position) {
-		return new Object[] { LINE_NUMBER, line, "column",
-				column, "position", position
+		return new Object[] { LINE_NUMBER, line, COLUMN,
+				column, POSITION, position
 		};
 	}
 	public static Object[] getPosition(NodeWrapper node) {
-		return getPosition(node.getProperty(LINE_NUMBER), node.getProperty("column"), node.getProperty("position"));
+		return getPosition(node.getProperty(LINE_NUMBER), node.getProperty(COLUMN), node.getProperty(POSITION));
 	}
 
 	public static long getSize(Tree tree) {

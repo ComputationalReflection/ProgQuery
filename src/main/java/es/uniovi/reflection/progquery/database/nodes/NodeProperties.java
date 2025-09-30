@@ -26,5 +26,6 @@ public class NodeProperties {
 
     public static final String ACTUAL_TYPE = "actualType";
     public static final String LINE_NUMBER = "lineNumber";
-
+    public static final String COLUMN = "column";
+    public static final String POSITION = "position";
 }

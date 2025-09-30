@@ -10,15 +10,15 @@ import es.uniovi.reflection.progquery.database.relations.PGRelationTypes;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import es.uniovi.reflection.progquery.typeInfo.keys.ModuleKey;
-import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
 
 import java.util.List;
 
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_USER_CODE;
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.NAME_PROP;
 import static es.uniovi.reflection.progquery.database.nodes.NodeTypes.OPENS_DIRECTIVE;
 import static es.uniovi.reflection.progquery.pg.PackageManager.PACKAGE_MANAGER;
 
@@ -50,7 +50,7 @@ public class ModuleManager {
             moduleCache.putDefinition(moduleKey, moduleNode);
         } else {
             moduleCache.updateToDefinition(moduleKey, moduleNode);
-            moduleNode.setProperty(ASTTypesVisitor.IS_USER_CODE_PROP, true);
+            moduleNode.setProperty(IS_USER_CODE, true);
         }
         if (!moduleNode.hasProperty("version"))
             moduleNode.setProperty("version", moduleSymbol.version.toString());
@@ -72,11 +72,11 @@ public class ModuleManager {
 
     private NodeWrapper createModule(Symbol.ModuleSymbol moduleSymbol, boolean isUserCode) {
         NodeWrapper moduleNode = DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.MODULE);
-        moduleNode.setProperty("name", moduleSymbol.name.toString());
+        moduleNode.setProperty(NAME_PROP, moduleSymbol.name.toString());
         if (moduleSymbol.version != null)
             moduleNode.setProperty("version", moduleSymbol.version.toString());
         moduleNode.setProperty("isOpened", moduleSymbol.isOpen());
-        moduleNode.setProperty(ASTTypesVisitor.IS_USER_CODE_PROP, isUserCode);
+        moduleNode.setProperty(IS_USER_CODE, isUserCode);
         return moduleNode;
     }
 

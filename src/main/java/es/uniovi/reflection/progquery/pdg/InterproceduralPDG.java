@@ -4,6 +4,7 @@ import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.CGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.PDGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
+import es.uniovi.reflection.progquery.database.relations.RelationProperties;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import es.uniovi.reflection.progquery.pdg.GetDeclarationFromExpression.IsInstance;
@@ -60,7 +61,7 @@ public class InterproceduralPDG {
                                     (Integer) paramMutatedInCalledMethodDec.getKey()
                                             .getRelationships(Direction.INCOMING, ASTRelationTypes.CALLABLE_PARAM,
                                                     ASTRelationTypes.LAMBDA_PARAM).get(0)
-                                            .getProperty("paramIndex");
+                                            .getProperty(RelationProperties.PARAM_INDEX);
                             MutatedParamInCallInfo mutatedParamIndexAndMust = new MutatedParamInCallInfo(paramIndex,
                                     paramMutatedInCalledMethodDec.getValue() == PDGRelationTypes.STATE_MODIFIED_BY,
                                     calledMethodInfo.varArgParamIndex == paramIndex);

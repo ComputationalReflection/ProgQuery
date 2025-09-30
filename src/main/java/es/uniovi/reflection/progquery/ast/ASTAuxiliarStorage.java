@@ -15,13 +15,14 @@ import es.uniovi.reflection.progquery.pdg.InterproceduralPDG;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodInfo;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodState;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
-import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 import es.uniovi.reflection.progquery.visitors.TypeVisitor;
 import org.neo4j.graphdb.Direction;
 
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_USER_CODE;
 
 public class ASTAuxiliarStorage {
     public static final int NO_VARG_ARG = -1;
@@ -188,7 +189,7 @@ public class ASTAuxiliarStorage {
         if (callees == null)
             return;
         for (NodeWrapper callee : callees)
-            if (!newNodes.contains(callee) && (Boolean) callee.getProperty(ASTTypesVisitor.IS_USER_CODE_PROP) &&
+            if (!newNodes.contains(callee) && (Boolean) callee.getProperty(IS_USER_CODE) &&
                     callee.hasLabel(NodeTypes.METHOD_DEC)) {
                 newNodes.add(callee);
                 addAllCallees(newNodes, callGraph.get(callee));

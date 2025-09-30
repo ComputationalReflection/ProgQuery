@@ -10,7 +10,7 @@ import es.uniovi.reflection.progquery.database.DatabaseFacade;
 import es.uniovi.reflection.progquery.database.nodes.NodeCategory;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.RelationTypesInterface;
+import es.uniovi.reflection.progquery.database.relations.RelationProperties;
 import es.uniovi.reflection.progquery.database.relations.TypeRelations;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.typeInfo.TypeHierarchy;
@@ -21,6 +21,8 @@ import es.uniovi.reflection.progquery.utils.JavacInfo;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.*;
 import java.util.List;
+
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.*;
 
 public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrapper, TypeKey> {
     private ASTAuxiliarStorage ast;
@@ -79,7 +81,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
             for (int i = 0; i < t.getTypeArguments().size(); i++)
                 declaredType.createRelationshipTo(
                         DefinitionCache.getOrCreateType(t.getTypeArguments().get(i), typeArgKeys.get(i), ast),
-                        TypeRelations.TYPE_ARGUMENT).setProperty("argumentIndex", i + 1);
+                        TypeRelations.TYPE_ARGUMENT).setProperty(RelationProperties.ARGUMENT_INDEX, i + 1);
         } else {
 
             //            typeArgKeys = t.getTypeArguments().stream()
@@ -113,7 +115,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
 
             for (int i = 0; i < t.getTypeArguments().size(); i++)
                 declaredType.createRelationshipTo(createTypeParameterNode((TypeVariable) t.getTypeArguments().get(i)),
-                        ASTRelationTypes.GENERIC_TYPE_PARAM).setProperty("paramIndex", i + 1);
+                        ASTRelationTypes.GENERIC_TYPE_PARAM).setProperty(RelationProperties.PARAM_INDEX, i + 1);
         }
         return declaredType;
     }
@@ -138,7 +140,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
             methodTypeNode.createRelationshipTo(
                             DefinitionCache.getOrCreateType(t.getParameterTypes().get(i), pKey, ast),
                             TypeRelations.PARAM_TYPE)
-                    .setProperty("paramIndex", ++i);
+                    .setProperty(RelationProperties.PARAM_INDEX, ++i);
         }
         for (i = 0; i < t.getThrownTypes().size(); i++)
             methodTypeNode.createRelationshipTo(
@@ -211,11 +213,11 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
             NodeWrapper alternative = DefinitionCache.getOrCreateType(t.getAlternatives().get(i),
                     ((CompoundTypeKey) key).getTypes().get(i), ast);
             union.createRelationshipTo(alternative, TypeRelations.UNION_ALTERNATIVE);
-            fullName += "|" + alternative.getProperty("fullyQualifiedName");
-            simpleName += "|" + alternative.getProperty("simpleName");
+            fullName += "|" + alternative.getProperty(FULL_NAME);
+            simpleName += "|" + alternative.getProperty(SIMPLE_NAME);
         }
-        union.setProperty("fullyQualifiedName", fullName.substring(1));
-        union.setProperty("simpleName", simpleName.substring(1));
+        union.setProperty(FULL_NAME, fullName.substring(1));
+        union.setProperty(SIMPLE_NAME, simpleName.substring(1));
         union.setProperty("resultingType", t.toString());
         return union;
     }
@@ -257,8 +259,8 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
     public NodeWrapper createTypeParameterNode(TypeVariable typeVariable) {
         NodeWrapper typeParameterNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.TYPE_PARAM);
-        typeParameterNode.setProperty(ASTTypesVisitor.IS_USER_CODE_PROP, false);
-        typeParameterNode.setProperty("name", typeVariable.toString());
+        typeParameterNode.setProperty(IS_USER_CODE, false);
+        typeParameterNode.setProperty(NAME_PROP, typeVariable.toString());
         if (typeVariable.getUpperBound() != null)
             typeParameterNode.createRelationshipTo(DefinitionCache.getOrCreateType(typeVariable.getUpperBound(), ast),
                     TypeRelations.TYPE_PARAM_EXTENDS);

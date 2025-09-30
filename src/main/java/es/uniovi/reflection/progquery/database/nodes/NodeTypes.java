@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public enum NodeTypes implements Label {
+public enum NodeTypes implements NodeLabel {
     /*Package nodes*/
     PROGRAM(NodeCategory.PACKAGE_NODE),
     PACKAGE(NodeCategory.PACKAGE_NODE),

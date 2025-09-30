@@ -6,7 +6,7 @@ import org.neo4j.graphdb.Label;
 import java.util.HashSet;
 import java.util.Set;
 
-public enum NodeCategory implements Label {
+public enum NodeCategory implements NodeLabel{
 	PQ_NODE, //TOP Category
 	AST_NODE, CFG_NODE, PDG_NODE, TYPE_NODE, PACKAGE_NODE,
 

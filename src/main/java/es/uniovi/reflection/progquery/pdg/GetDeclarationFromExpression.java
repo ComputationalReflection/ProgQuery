@@ -5,11 +5,11 @@ import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.CGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.PDGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
+import es.uniovi.reflection.progquery.database.relations.RelationProperties;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodInfo;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
-import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 import org.neo4j.graphdb.Direction;
 
 import java.util.ArrayList;
@@ -17,6 +17,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_STATIC_PROP;
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_USER_CODE;
 
 public class GetDeclarationFromExpression {
 	enum IsInstance {
@@ -88,7 +91,7 @@ public class GetDeclarationFromExpression {
 		if (dec != null) {
 			List<PDGMutatedDecInfoInMethod> identInfo = new ArrayList<>();
 			identInfo.add(new PDGMutatedDecInfoInMethod(false,
-					dec.hasLabel(NodeTypes.ATTR_DEC) && !(Boolean) dec.getProperty("isStatic") ||
+					dec.hasLabel(NodeTypes.ATTR_DEC) && !(Boolean) dec.getProperty(IS_STATIC_PROP) ||
 							dec.hasLabel(NodeTypes.THIS_REFERENCE)
 							? IsInstance.YES : IsInstance.NO, dec));
 			return Pair.create(identInfo, false);
@@ -129,15 +132,15 @@ public class GetDeclarationFromExpression {
 		Pair<List<PDGMutatedDecInfoInMethod>, Boolean> thisArgRet;
 		NodeWrapper calleeMethodNode =
 				methodInvocation.getSingleRelationship(Direction.OUTGOING, CGRelationTypes.CALLEE).getEndNode();
-		boolean isDeclared = (Boolean) calleeMethodNode.getProperty(ASTTypesVisitor.IS_USER_CODE_PROP);
+		boolean isDeclared = (Boolean) calleeMethodNode.getProperty(IS_USER_CODE);
 		thisArgRet = calleeMethodNode.hasLabel(NodeTypes.CONSTRUCTOR_DEC) ||
-				(isDeclared && !(Boolean) calleeMethodNode.getProperty("isStatic")) ? scan(methodInvocation
+				(isDeclared && !(Boolean) calleeMethodNode.getProperty(IS_STATIC_PROP)) ? scan(methodInvocation
 				.getSingleRelationship(Direction.OUTGOING, ASTRelationTypes.INVOCATION_METHOD_SELECTION).getEndNode()) :
 				Pair.create(new ArrayList<>(), false);
 		varDecsInArguments.put(0, thisArgRet.getFirst());
 		for (RelationshipWrapper argumentRel : methodInvocation
 				.getRelationships(Direction.OUTGOING, ASTRelationTypes.INVOCATION_ARG))
-			varDecsInArguments.put((int) argumentRel.getProperty("argumentIndex"),
+			varDecsInArguments.put((int) argumentRel.getProperty(RelationProperties.ARGUMENT_INDEX),
 					isDeclared ? scan(argumentRel.getEndNode()).getFirst() : new ArrayList<>());
 		invocationsMayModifyVars.put(methodInvocation, varDecsInArguments);
 		return Pair.create(new ArrayList<>(), thisArgRet.getSecond());
@@ -151,7 +154,7 @@ public class GetDeclarationFromExpression {
 		for (RelationshipWrapper argumentRel : newClass
 				.getRelationships(Direction.OUTGOING, ASTRelationTypes.NEW_INSTANCE_ARG))
 			varDecsInArguments
-					.put((int) argumentRel.getProperty("argumentIndex"), scan(argumentRel.getEndNode()).getFirst());
+					.put((int) argumentRel.getProperty(RelationProperties.ARGUMENT_INDEX), scan(argumentRel.getEndNode()).getFirst());
 		invocationsMayModifyVars.put(newClass, varDecsInArguments);
 		return new ArrayList<Pair<NodeWrapper, Boolean>>();
 	}

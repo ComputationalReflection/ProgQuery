@@ -35,6 +35,9 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_STATIC_PROP;
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_USER_CODE;
+
 public class PDGProcessing {
     public static final PDGRelationTypes[] USED = new PDGRelationTypes[]{PDGRelationTypes.USED_BY}, MODIFIED =
             new PDGRelationTypes[]{PDGRelationTypes.MODIFIED_BY}, STATE_MODIFIED =
@@ -85,7 +88,7 @@ public class PDGProcessing {
     public void setThisRefOfInstanceMethod(MethodState methodState, NodeWrapper currentClassDec) {
         NodeWrapper method = methodState.lastMethodDecVisited;
         if (!method.hasLabel(NodeTypes.ATTR_DEC)) {
-            boolean isStatic = (boolean) method.getProperty("isStatic");
+            boolean isStatic = (boolean) method.getProperty(IS_STATIC_PROP);
             if (!isStatic && methodState.thisNode == null)
                 methodState.thisNode = getOrCreateThisNode(currentClassDec).getEndNode();
         }
@@ -375,7 +378,7 @@ public class PDGProcessing {
     private NodeWrapper createNotDeclaredFieldOrEnum(VarSymbol s, ASTAuxiliarStorage ast, NodeTypes nodeType,
                                                      ASTRelationTypes relationWithParent) {
         NodeWrapper decNode = DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(nodeType);
-        decNode.setProperty(ASTTypesVisitor.IS_USER_CODE_PROP, false);
+        decNode.setProperty(IS_USER_CODE, false);
         decNode.setProperty("name", s.name.toString());
         GraphUtils.attachType(decNode, s.type, ast);
         DefinitionCache.getOrCreateType(s.owner.type, ast).createRelationshipTo(decNode, relationWithParent);

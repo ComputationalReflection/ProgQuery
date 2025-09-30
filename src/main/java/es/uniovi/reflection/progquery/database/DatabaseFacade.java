@@ -2,12 +2,12 @@ package es.uniovi.reflection.progquery.database;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.Tree;
-import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.tree.JCTree;
 import es.uniovi.reflection.progquery.ast.ASTAuxiliarStorage;
 import es.uniovi.reflection.progquery.database.nodes.NodeCategory;
+import es.uniovi.reflection.progquery.database.nodes.NodeProperties;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.PartialWithEnd;
@@ -19,6 +19,8 @@ import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 
 import javax.lang.model.element.ElementKind;
+
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.*;
 
 public class DatabaseFacade {
     private final InsertionStrategy insertionStrategy;
@@ -56,7 +58,7 @@ public class DatabaseFacade {
         NodeWrapper node = createNodeWithoutExplicitTree(nodeType);
 
         node.setProperties(((JCTree) tree).pos == IMPLICIT_POSITION ?
-                new Object[]{"lineNumber", IMPLICIT_POSITION, "column", IMPLICIT_POSITION, "position",
+                new Object[]{LINE_NUMBER, IMPLICIT_POSITION, "column", IMPLICIT_POSITION, "position",
                         IMPLICIT_POSITION} : getPosition(tree));
         return node;
     }
@@ -83,17 +85,17 @@ public class DatabaseFacade {
     }
 
     public static Object[] getTypeProperties(String fullyQualifiedType) {
-        return new Object[]{"fullyQualifiedName", WrapperUtils.stringToNeo4jQueryString(fullyQualifiedType)};
+        return new Object[]{NodeProperties.FULL_NAME, WrapperUtils.stringToNeo4jQueryString(fullyQualifiedType)};
     }
 
     public static Object[] getTypeProperties(String simpleName, String fullyQualifiedType) {
         return join(getTypeProperties(fullyQualifiedType),
-                new Object[]{"simpleName", WrapperUtils.stringToNeo4jQueryString(simpleName)});
+                new Object[]{SIMPLE_NAME, WrapperUtils.stringToNeo4jQueryString(simpleName)});
     }
 
     public static Object[] getTypeDecProperties(String simpleName, String fullyQualifiedType, boolean isUserCode) {
         return join(getTypeProperties(simpleName, fullyQualifiedType),
-                new Object[]{ASTTypesVisitor.IS_USER_CODE_PROP, isUserCode});
+                new Object[]{IS_USER_CODE, isUserCode});
     }
 
     public NodeWrapper createTypeDecNode(ClassSymbol symbol, String simpleName, String fullyQualifiedName,

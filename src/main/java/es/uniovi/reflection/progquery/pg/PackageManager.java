@@ -8,15 +8,15 @@ import es.uniovi.reflection.progquery.database.DatabaseFacade;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.PGRelationTypes;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
-import es.uniovi.reflection.progquery.typeInfo.keys.ModuleKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.PackageKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.PackageKeyI;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
-import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 
-import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_USER_CODE;
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.NAME_PROP;
 
 public class PackageManager {
     public static ThreadLocal<PackageManager> PACKAGE_MANAGER = new ThreadLocal<>();
@@ -40,7 +40,7 @@ public class PackageManager {
         else {
             NodeWrapper packageNode = getPackageNode(packageKey);
             if (packageNode != null) {
-                packageNode.setProperty(ASTTypesVisitor.IS_USER_CODE_PROP, true);
+                packageNode.setProperty(IS_USER_CODE, true);
                 programManager.getCurrentProgram().createRelationshipTo(packageNode, PGRelationTypes.PROGRAM_DECLARES_PACKAGE);
                 packageCache.updateToDefinition(packageKey, packageNode);
             } else
@@ -67,7 +67,7 @@ public class PackageManager {
     public void createStoredPackageDeps() {
         for (Pair<PackageKeyI, PackageKeyI> packageDep : dependenciesSet) {
             NodeWrapper dependencyPack = packageCache.get(packageDep.getSecond());
-            if ((Boolean) dependencyPack.getProperty(ASTTypesVisitor.IS_USER_CODE_PROP))
+            if ((Boolean) dependencyPack.getProperty(IS_USER_CODE))
                 packageCache.get(packageDep.getFirst())
                         .createRelationshipTo(dependencyPack, PGRelationTypes.DEPENDS_ON_PACKAGE);
             else
@@ -105,8 +105,8 @@ public class PackageManager {
             programManager.getCurrentProgram().createRelationshipTo(packageNode, PGRelationTypes.PROGRAM_DECLARES_PACKAGE);
         } else
             packageCache.put(packageKey, packageNode);
-        packageNode.setProperty("name", packageKey.getPackageName());
-        packageNode.setProperty(ASTTypesVisitor.IS_USER_CODE_PROP, isUserCode);
+        packageNode.setProperty(NAME_PROP, packageKey.getPackageName());
+        packageNode.setProperty(IS_USER_CODE, isUserCode);
         moduleManager.setPackageModule(packageSymbol, packageNode);
         return packageNode;
     }

@@ -1,5 +1,6 @@
 package es.uniovi.reflection.progquery.mig;
 
+import es.uniovi.reflection.progquery.database.nodes.NodeProperties;
 import es.uniovi.reflection.progquery.database.relations.CGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.TypeRelations;
@@ -12,6 +13,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_ABSTRACT_PROP;
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_STATIC_PROP;
 
 public class HierarchyAnalysis {
     private Map<NodeWrapper, InfoFromSubtypes> typeToInheritedInfo = new HashMap<>();
@@ -54,10 +58,10 @@ public class HierarchyAnalysis {
             fieldAnalysis(subTypeInfo.getKey(), declaredFields);
             for (RelationshipWrapper declaredMethodRel : declaredMethods) {
                 NodeWrapper declaredMethod = declaredMethodRel.getEndNode();
-                if ((boolean) declaredMethod.getProperty("isStatic"))
+                if ((boolean) declaredMethod.getProperty(IS_STATIC_PROP))
                     continue;
                 String typedName =
-                        declaredMethod.getProperty("fullyQualifiedName").toString().split(":")[1].split("\\)")[0];
+                        declaredMethod.getProperty(NodeProperties.FULL_NAME).toString().split(":")[1].split("\\)")[0];
                 NodeWrapper overriderMethodInThisSubtype = subTypeInfo.getValue().get(typedName);
                 if (overriderMethodInThisSubtype == null) {
                     subTypeInfo.getKey().createRelationshipTo(declaredMethod, TypeRelations.INHERITS_METHOD);
@@ -71,14 +75,14 @@ public class HierarchyAnalysis {
         inheritedInfo.subtypesToLastOverrider.put(typeDec, new HashMap<>());
         for (RelationshipWrapper declaredMethodRel : declaredMethods) {
             NodeWrapper declaredMethod = declaredMethodRel.getEndNode();
-            if ((boolean) declaredMethod.getProperty("isStatic"))
+            if ((boolean) declaredMethod.getProperty(IS_STATIC_PROP))
                 continue;
             String typedName =
-                    declaredMethod.getProperty("fullyQualifiedName").toString().split(":")[1].split("\\)")[0];
+                    declaredMethod.getProperty(NodeProperties.FULL_NAME).toString().split(":")[1].split("\\)")[0];
             inheritedInfo.subtypesToLastOverrider.get(typeDec).put(typedName, declaredMethod);
 
             Set<NodeWrapper> overriderMethods = inheritedInfo.transitiveOverridersMethods.get(typedName);
-            boolean isAbstract = (boolean) declaredMethod.getProperty("isAbstract");
+            boolean isAbstract = (boolean) declaredMethod.getProperty(IS_ABSTRACT_PROP);
 
             Iterable<RelationshipWrapper> invocationRels =
                     declaredMethod.getRelationships(Direction.INCOMING, CGRelationTypes.REFERS_TO);
@@ -88,7 +92,7 @@ public class HierarchyAnalysis {
             else {
                 boolean mayRefer = !isAbstract || overriderMethods.size() > 1;
                 overriderMethods.forEach(ovMethod -> {
-                    if (!(boolean) ovMethod.getProperty("isAbstract"))
+                    if (!(boolean) ovMethod.getProperty(IS_ABSTRACT_PROP))
                         invocationRels.forEach(r -> {
                             if (!trustableInv.contains(r.getStartNode()))
                                 r.getStartNode().createRelationshipTo(ovMethod,
@@ -114,7 +118,7 @@ public class HierarchyAnalysis {
 
     private void fieldAnalysis(NodeWrapper subtype, Iterable<RelationshipWrapper> declaredFields) {
         for (RelationshipWrapper declaredFieldRel : declaredFields)
-            if (!(Boolean) declaredFieldRel.getEndNode().getProperty("isStatic"))
+            if (!(Boolean) declaredFieldRel.getEndNode().getProperty(IS_STATIC_PROP))
                 subtype.createRelationshipTo(declaredFieldRel.getEndNode(), TypeRelations.INHERITS_FIELD);
     }
 }

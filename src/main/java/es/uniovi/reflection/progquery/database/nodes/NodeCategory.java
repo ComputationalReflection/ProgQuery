@@ -7,44 +7,55 @@ import java.util.HashSet;
 import java.util.Set;
 
 public enum NodeCategory implements NodeLabel{
-	PQ_NODE, //TOP Category
-	AST_NODE, CFG_NODE, PDG_NODE, TYPE_NODE, PACKAGE_NODE,
+	PQ_NODE("PQ Node"), //TOP Category
+	AST_NODE("AST Node"),
+	CFG_NODE("CFG Node"),
+	PDG_NODE("PDG Node"),
+	TYPE_NODE("Type Node"),
+	PACKAGE_NODE("Package Node"),
 
-	AST_TYPE(AST_NODE),
+	AST_TYPE("AST Type", AST_NODE),
 
-	COMPILATION_UNIT(AST_NODE), //SUPERCLASS FOR FILES
+	COMPILATION_UNIT("Compilation Unit", AST_NODE), //SUPERCLASS FOR FILES
 
-	DECLARATION,	//SUPERCLASS FOR DECLARATION,TYPE_DECLARATION,CALLABLE_DEC
+	DECLARATION("Declaration"),    //SUPERCLASS FOR DECLARATION,TYPE_DECLARATION,CALLABLE_DEC
 
-	TYPE_DEC(DECLARATION, TYPE_NODE), //SUPERCLASS FOR CLASS INTERFACE ENUM
+	TYPE_DEC("Type Declaration", DECLARATION, TYPE_NODE), //SUPERCLASS FOR CLASS INTERFACE ENUM
 
-	CALLABLE_DEC(DECLARATION), // SUPERCLASS FOR CONSTRUCTOR AND METHODS
+	CALLABLE_DEC("Callable Declaration", DECLARATION), // SUPERCLASS FOR CONSTRUCTOR AND METHODS
 
-	VARIABLE_DEC(DECLARATION), //SUPERCLASS FOR PARAM_DEC, VAR_DEC, ATTR_DEC
-	LOCAL_DEC(AST_NODE, VARIABLE_DEC), //SUPERCLASS FOR PARAM_DEC, VAR_DEC,
+	VARIABLE_DEC("Variable Declaration", DECLARATION), //SUPERCLASS FOR PARAM_DEC, VAR_DEC, ATTR_DEC
+	LOCAL_DEC("Local Declaration", AST_NODE, VARIABLE_DEC), //SUPERCLASS FOR PARAM_DEC, VAR_DEC,
 	//Currently there is no rel between a non-declared method and its parameters
 	//So, LOCAL_DEC -> AST_NODE
 
-	STATEMENT(AST_NODE),
-	LOOP(STATEMENT),
+	STATEMENT("Statement", AST_NODE),
+	LOOP("Loop", STATEMENT),
 
-	CASE(AST_NODE),
+	CASE("Case", AST_NODE),
 
-	PATTERN(AST_NODE),
+	PATTERN("Pattern", AST_NODE),
 
-	EXPRESSION(AST_NODE),
-	CALL(EXPRESSION), //SUPERCLASS FOR METHOD_INV AND NEW_
-	LVALUE(EXPRESSION),
-	ANY_ASSIGNMENT(AST_NODE),
-	SWITCH(AST_NODE),
+	EXPRESSION("Expression", AST_NODE),
+	CALL("Call", EXPRESSION), //SUPERCLASS FOR METHOD_INV AND NEW_
+	LVALUE("L-Value", EXPRESSION),
+	ANY_ASSIGNMENT("Any Assignment", AST_NODE),
+	SWITCH("Switch", AST_NODE),
 
-	IDENTIFIER(AST_NODE),
-	IDENTIFIER_SELECTION(AST_NODE);
+	IDENTIFIER("Identifier", AST_NODE),
+	IDENTIFIER_SELECTION("Identifier Selection", AST_NODE);
 
+
+	private final String name;
 	Set<NodeCategory> hypernyms = new HashSet<>();
 
-	NodeCategory(NodeCategory... hypernyms){
+	NodeCategory(String name, NodeCategory... hypernyms){
+		this.name = name;
 		for(NodeCategory n: hypernyms)
 			this.hypernyms.add(n);
+	}
+
+	public String getName() {
+		return name;
 	}
 }

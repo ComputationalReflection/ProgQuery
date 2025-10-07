@@ -1,7 +1,5 @@
 package es.uniovi.reflection.progquery.database.nodes;
 
-import org.neo4j.graphdb.Label;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -87,7 +85,7 @@ public enum NodeTypes implements NodeLabel {
     BREAK_STATEMENT("Break Statement", NodeCategory.STATEMENT),
     CASE_COLON("Case Colon", NodeCategory.CASE),
     CASE_ARROW("Case Arrow", NodeCategory.CASE),
-    CATCH_BLOCK("Catch Block", NodeCategory.AST_NODE),
+    CATCH_CLAUSE("Catch Block", NodeCategory.AST_NODE),
     CONTINUE_STATEMENT("Continue Statement", NodeCategory.STATEMENT),
     DO_WHILE_LOOP("Do-While Loop", NodeCategory.LOOP),
     EMPTY_STATEMENT("Empty Statement", NodeCategory.STATEMENT),
@@ -100,7 +98,7 @@ public enum NodeTypes implements NodeLabel {
     LOCAL_VAR_DEC("Local Variable Declaration", NodeCategory.LOCAL_DEC, NodeCategory.STATEMENT),
     RETURN_STATEMENT("Return Statement", NodeCategory.STATEMENT),
     SWITCH_STATEMENT("Switch Statement", NodeCategory.STATEMENT, NodeCategory.SWITCH),
-    SYNCHRONIZED_BLOCK("Synchronized Block", NodeCategory.STATEMENT),
+    SYNCHRONIZED_STATEMENT("Synchronized Block", NodeCategory.STATEMENT),
     THROW_STATEMENT("Throw Statement", NodeCategory.STATEMENT),
     TRY_STATEMENT("Try Statement", NodeCategory.STATEMENT),
     WHILE_LOOP("While Loop", NodeCategory.LOOP),

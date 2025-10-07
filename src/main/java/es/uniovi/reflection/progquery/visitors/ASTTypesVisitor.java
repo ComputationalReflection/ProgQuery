@@ -309,7 +309,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitCatch(CatchTree catchTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
 
         NodeWrapper catchNode =
-                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(catchTree, NodeTypes.CATCH_BLOCK);
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(catchTree, NodeTypes.CATCH_CLAUSE);
         methodState.putCfgNodeInCache(catchTree, catchNode);
         GraphUtils.connectWithParent(catchNode, t);
 
@@ -586,7 +586,7 @@ public class ASTTypesVisitor
         NodeWrapper enhancedForLoopNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(enhancedForLoopTree, NodeTypes.FOR_EACH_LOOP);
         GraphUtils.connectWithParent(enhancedForLoopNode, t);
-        scan(enhancedForLoopTree.getVariable(), Pair.createPair(enhancedForLoopNode, ASTRelationTypes.FOREACH_VAR));
+        scan(enhancedForLoopTree.getVariable(), Pair.createPair(enhancedForLoopNode, ASTRelationTypes.FOREACH_VARIABLE));
         scan(enhancedForLoopTree.getExpression(), Pair.createPair(enhancedForLoopNode, ASTRelationTypes.FOREACH_EXPR));
         addInvocationInStatement(enhancedForLoopNode);
         methodState.putCfgNodeInCache(enhancedForLoopTree, enhancedForLoopNode);
@@ -1260,7 +1260,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitSynchronized(SynchronizedTree synchronizedTree,
                                               Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         NodeWrapper synchronizedNode = DatabaseFacade.CURRENT_DB_FACADE.get()
-                .createSkeletonNode(synchronizedTree, NodeTypes.SYNCHRONIZED_BLOCK);
+                .createSkeletonNode(synchronizedTree, NodeTypes.SYNCHRONIZED_STATEMENT);
         GraphUtils.connectWithParent(synchronizedNode, t);
         methodState.putCfgNodeInCache(synchronizedTree, synchronizedNode);
         scan(synchronizedTree.getExpression(), Pair.createPair(synchronizedNode, ASTRelationTypes.SYNCHRONIZED_EXPR));
@@ -1466,7 +1466,7 @@ public class ASTTypesVisitor
                         NodeCategory.AST_NODE);
         wildcardNode.setProperty("typeBoundKind", wildcardTree.getKind().toString());
         GraphUtils.connectWithParent(wildcardNode, t);
-        scan(wildcardTree.getBound(), Pair.createPair(wildcardNode, ASTRelationTypes.WILDCARD_BOUND));
+        scan(wildcardTree.getBound(), Pair.createPair(wildcardNode, ASTRelationTypes.AST_WILDCARD_BOUND));
         return null;
     }
 

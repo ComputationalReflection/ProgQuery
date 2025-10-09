@@ -292,8 +292,8 @@ public class ASTTypesVisitor
         // Any switch with one case with default label
         // Switch that requires full coverage with one case
         boolean isAUnconditionalDefault = numberOfCases == 1 &&
-                ((Boolean) t.getFirst().getStartingNode().getProperty(REQUIRES_FULL_COVERAGE) ||
-                        hasDefault) || caseTree.getCaseKind() == CaseTree.CaseKind.STATEMENT && hasDefault && !anyBreak;
+                ((Boolean) t.getFirst().getStartingNode().getProperty(REQUIRES_FULL_COVERAGE) || hasDefault) ||
+                caseTree.getCaseKind() == CaseTree.CaseKind.STATEMENT && hasDefault && !anyBreak;
         must = prevMust && isAUnconditionalDefault;
         if (!isAUnconditionalDefault)
             pdgUtils.enteringNewBranch();
@@ -440,6 +440,7 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitCompilationUnit(CompilationUnitTree compilationUnitTree,
                                                  Pair<PartialRelation<RelationTypesInterface>, Object> pair) {
+        //        System.out.println("Visiting CU: " + compilationUnitTree.getSourceFile().getName());
         if (first) {
             currentCU.setProperty("packageName", ((JCCompilationUnit) compilationUnitTree).packge.toString());
             scan(compilationUnitTree.getPackageAnnotations(), pair);
@@ -586,7 +587,8 @@ public class ASTTypesVisitor
         NodeWrapper enhancedForLoopNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(enhancedForLoopTree, NodeTypes.FOR_EACH_LOOP);
         GraphUtils.connectWithParent(enhancedForLoopNode, t);
-        scan(enhancedForLoopTree.getVariable(), Pair.createPair(enhancedForLoopNode, ASTRelationTypes.FOREACH_VARIABLE));
+        scan(enhancedForLoopTree.getVariable(),
+                Pair.createPair(enhancedForLoopNode, ASTRelationTypes.FOREACH_VARIABLE));
         scan(enhancedForLoopTree.getExpression(), Pair.createPair(enhancedForLoopNode, ASTRelationTypes.FOREACH_EXPR));
         addInvocationInStatement(enhancedForLoopNode);
         methodState.putCfgNodeInCache(enhancedForLoopTree, enhancedForLoopNode);
@@ -801,9 +803,9 @@ public class ASTTypesVisitor
         boolean prevIsInAccesibleCtxt = isInAccessibleContext;
         isInAccessibleContext = false;
         inALambda = true;
-        scan(lambdaExpressionTree.getBody(), Pair.createPair(lambdaExpressionNode, ASTRelationTypes.LAMBDA_BODY));
         scanListWithPropertyIndex(lambdaExpressionTree.getParameters(), lambdaExpressionNode,
                 ASTRelationTypes.LAMBDA_PARAM, RelationProperties.PARAM_INDEX);
+        scan(lambdaExpressionTree.getBody(), Pair.createPair(lambdaExpressionNode, ASTRelationTypes.LAMBDA_BODY));
         inALambda = false;
         insideConstructor = prevInside;
         isInAccessibleContext = prevIsInAccesibleCtxt;
@@ -885,9 +887,13 @@ public class ASTTypesVisitor
                         PDGProcessing.modifiedToStateModified(t)));
         if (outsideAnnotation) {
             boolean isInstance = memberSelResult != null && !memberSymbol.isStatic() && memberSelResult.isInstance();
-            if (fieldOrEnum)
-                pdgUtils.relationOnFieldAccess(isThis, memberSelectTree, memberSelectNode, t, methodState,
-                        classState.currentClassDec, isInstance);
+            if (fieldOrEnum) {
+                if (memberSelectTree.getIdentifier().toString().contentEquals("class"))
+                    isInstance = false;
+                else
+                    pdgUtils.relationOnFieldAccess(isThis, memberSelectTree, memberSelectNode, t, methodState,
+                            classState.currentClassDec, isInstance);
+            }
             memberSelResult = new VisitorResultImpl(isInstance);
 
         }
@@ -991,7 +997,6 @@ public class ASTTypesVisitor
     @Override
     public ASTVisitorResult visitMethodInvocation(MethodInvocationTree methodInvocationTree,
                                                   Pair<PartialRelation<RelationTypesInterface>, Object> pair) {
-
         Symbol symbol = JavacInfo.getSymbolFromTree(methodInvocationTree.getMethodSelect());
         NodeWrapper decNode;
         NodeWrapper methodInvocationNode;

@@ -1665,7 +1665,7 @@ public class ASTTypesVisitor
         } else {
             checkStaticMod(symbol, callableNode);
             checkFinalMod(symbol, callableNode);
-            boolean isAbstract = symbol.isAbstract() && isDefault;
+            boolean isAbstract = symbol.isAbstract();
             callableNode.setProperty(IS_ABSTRACT_PROP, isAbstract);
             setFPSynchroNative(modifiers, callableNode, isAbstract);
         }

@@ -19,14 +19,14 @@ public class Main {
 
         System.out.print("\nBuilding " + parameters.userId + ":" + parameters.programId + "... ");
         Instant buildStart = Instant.now();
-        List<String> insertResult = progquery.insert(parameters.javac_options);
-        if(insertResult.stream().filter(error -> error.startsWith(Diagnostic.Kind.ERROR.toString())).count() == 0) {
+        InsertResult insertResult = progquery.insert(parameters.javac_options);
+        if(insertResult.isSuccess()) {
             Instant buildFinish = Instant.now();
             System.out.println("completed [" + (Duration.between(buildStart, buildFinish).toMillis() / 1000)  + " s]");
         } else {
             System.err.println("Build failed! Use -verbose option for details.");
             System.err.println("Program '" + parameters.userId + ":" + parameters.programId + "' insertion failed.");
-            String errors = String.join(System.getProperty("line.separator"), insertResult);
+            String errors = String.join(System.getProperty("line.separator"), insertResult.getAllDiagnostics());
             System.err.println(errors);
             System.exit(1);
         }

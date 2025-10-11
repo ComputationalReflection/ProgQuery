@@ -58,7 +58,7 @@ public class ProgQuery {
             LOGGER.setLevel(Level.OFF);
     }
 
-    public List<String> insert(List<String> javac_options_list) {
+    public InsertResult insert(List<String> javac_options_list) {
         createCaches(ast);
         CompilationScheduler compilationScheduler;
         if (neo4j_server_mode)
@@ -68,20 +68,29 @@ public class ProgQuery {
         else
             compilationScheduler =
                     new CompilationScheduler(ast, neo4j_database_path, neo4j_database, programId, userId);
-        List<String> errors = new ArrayList<>();
+        InsertResult result = new InsertResult();
         ProgQuery.LOGGER.info("Insertion started ...");
         for (String javac_options : javac_options_list)
-            errors.addAll(compilationScheduler.newCompilationTask(javac_options));
-        if (errors.stream().filter(error -> error.startsWith(Diagnostic.Kind.ERROR.toString())).count() == 0) {
+            result.addCompilationResult(compilationScheduler.newCompilationTask(javac_options));
+        if (result.isSuccess()) {
             compilationScheduler.finalizeInsertion();
-            if (errors.isEmpty())
-                ProgQuery.LOGGER.info("Insertion completed without errors.");
-            else
+            if ((result.hasWarnings()))
                 ProgQuery.LOGGER.info("Insertion completed with warnings.");
+            else
+                ProgQuery.LOGGER.info("Insertion completed without errors.");
+            ProgQuery.LOGGER.info("Insertion Summary"
+                    + "\n\tSuccess: " + result.isSuccess()
+                    + "\n\tCompilation Tasks: " + result.getCompilationResults().size()
+                    + "\n\tJavac Version: " + result.getJavacVersion()
+                    + "\n\tTotal Files Compiled: " + result.getTotalCompiledFiles()
+                    + "\n\tTotal Number of Diagnostics: " + result.getAllDiagnostics().size()
+                    + "\n\tHas Warnings: " + result.hasWarnings()
+                    + "\n\tTotal Elapsed Time (millis): " + result.getTotalElapsedTime()
+                    + "\n");
         } else
-            ProgQuery.LOGGER.info(errors.size() + " errors found, insertion aborted.");
+            ProgQuery.LOGGER.info("Insertion aborted, errors found.");
         resetCaches();
-        return errors;
+        return result;
     }
 
     public static void resetCaches() {

@@ -20,6 +20,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -61,14 +63,32 @@ public class CompilationScheduler {
         setCurrentProgram(programID, userID);
     }
 
-    public List<String> newCompilationTask(String javac_options) {
+    private String getOptionValue(List<String> options, String option){
+        String value = options.stream().filter(o -> o.startsWith(option)).findFirst().orElse("");
+        if (value.isEmpty()) {
+            value = options.stream().filter(o -> o.startsWith("-" + option)).findFirst().orElse("");
+            if (value.isEmpty())
+                return value;
+        }
+        return value.substring(option.length()+1);
+    }
+
+    public CompilationResult newCompilationTask(String javac_options) {
+        CompilationResult result = new CompilationResult(javac_options);
         try {
+            Instant buildStart = Instant.now();
             ProgQuery.LOGGER.info(String.format("New Compilation Task: %s", javac_options));
             List<String> options = parseOptions(javac_options);
-            String sourcepath = options.stream().filter(o -> o.startsWith("-sourcepath")).findFirst().orElse("");
+
+            String javac_version = getOptionValue(options,"-release");
+            if (javac_version.isEmpty())
+                javac_version = getOptionValue(options,"-target");
+            result.setJavacVersion(javac_version);
+
+            String sourcepath = getOptionValue(options,"-sourcepath");
             List<File> files = new ArrayList<>();
             if (!sourcepath.isEmpty()) {
-                for (String sourceFolder : sourcepath.substring(12).split(File.pathSeparator))
+                for (String sourceFolder : sourcepath.split(File.pathSeparator))
                     files.addAll(listFiles(new File(sourceFolder).getCanonicalPath()));
             }
 
@@ -84,21 +104,24 @@ public class CompilationScheduler {
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
             StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, Charset.forName("UTF-8"));
             Iterable<? extends JavaFileObject> sources = fileManager.getJavaFileObjectsFromFiles(files);
-
+            result.setCompiledFiles(files.size());
             if (files.isEmpty()) {
                 ProgQuery.LOGGER.info("Skipping Compilation Task, no sources to compile.");
-                return new ArrayList<>();
+                return result;
             }
+
             JavacTaskImpl compilerTask =
                     (JavacTaskImpl) compiler.getTask(null, null, diagnostics, task_options, null, sources);
             JavacInfo.currentJavacInfo.set(new JavacInfo(compilerTask));
             addListener(compilerTask, StreamSupport.stream(sources.spliterator(), false).collect(Collectors.toSet()));
             runPQCompilationTask(compilerTask);
-            return showErrors(diagnostics);
+            result.addDiagnostics(showErrors(diagnostics));
+            result.setElapsedTime(Duration.between(buildStart, Instant.now()).toMillis());
+            return result;
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
-            return new ArrayList<>();
+            return result;
         }
     }
 

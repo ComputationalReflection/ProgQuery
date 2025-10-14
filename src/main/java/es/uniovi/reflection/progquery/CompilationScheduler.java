@@ -76,7 +76,6 @@ public class CompilationScheduler {
     public CompilationResult newCompilationTask(String javac_options) {
         CompilationResult result = new CompilationResult(javac_options);
         try {
-            Instant buildStart = Instant.now();
             ProgQuery.LOGGER.info(String.format("New Compilation Task: %s", javac_options));
             List<String> options = parseOptions(javac_options);
 
@@ -110,13 +109,11 @@ public class CompilationScheduler {
                 return result;
             }
 
-            JavacTaskImpl compilerTask =
-                    (JavacTaskImpl) compiler.getTask(null, null, diagnostics, task_options, null, sources);
+            JavacTaskImpl compilerTask = (JavacTaskImpl) compiler.getTask(null, null, diagnostics, task_options, null, sources);
             JavacInfo.currentJavacInfo.set(new JavacInfo(compilerTask));
             addListener(compilerTask, StreamSupport.stream(sources.spliterator(), false).collect(Collectors.toSet()));
             runPQCompilationTask(compilerTask);
             result.addDiagnostics(showErrors(diagnostics));
-            result.setElapsedTime(Duration.between(buildStart, Instant.now()).toMillis());
             return result;
         } catch (IOException e) {
             e.printStackTrace();

@@ -7,6 +7,8 @@ import es.uniovi.reflection.progquery.pg.PackageManager;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
 
 import javax.tools.Diagnostic;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -70,10 +72,12 @@ public class ProgQuery {
                     new CompilationScheduler(ast, neo4j_database_path, neo4j_database, programId, userId);
         InsertResult result = new InsertResult();
         ProgQuery.LOGGER.info("Insertion started ...");
+        Instant buildStart = Instant.now();
         for (String javac_options : javac_options_list)
             result.addCompilationResult(compilationScheduler.newCompilationTask(javac_options));
         if (result.isSuccess()) {
             compilationScheduler.finalizeInsertion();
+            result.setElapsedTime(Duration.between(buildStart, Instant.now()).toMillis());
             if ((result.hasWarnings()))
                 ProgQuery.LOGGER.info("Insertion completed with warnings.");
             else
@@ -85,7 +89,7 @@ public class ProgQuery {
                     + "\n\tTotal Files Compiled: " + result.getTotalCompiledFiles()
                     + "\n\tTotal Number of Diagnostics: " + result.getAllDiagnostics().size()
                     + "\n\tHas Warnings: " + result.hasWarnings()
-                    + "\n\tTotal Elapsed Time (millis): " + result.getTotalElapsedTime()
+                    + "\n\tTotal Elapsed Time (millis): " + result.getElapsedTime()
                     + "\n");
         } else
             ProgQuery.LOGGER.info("Insertion aborted, errors found.");

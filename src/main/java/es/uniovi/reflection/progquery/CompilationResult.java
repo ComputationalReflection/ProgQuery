@@ -9,7 +9,6 @@ public class CompilationResult {
     private String javacOptions;
     private String javacVersion;
     private int compiledFiles;
-    private long elapsedTime;
 
     public CompilationResult(String javacOptions) {
         this.javacOptions = javacOptions;
@@ -17,8 +16,6 @@ public class CompilationResult {
         this.diagnostics = new ArrayList<>();
     }
 
-    public long getElapsedTime() { return elapsedTime; }
-    public void setElapsedTime(long elapsedTime) { this.elapsedTime = elapsedTime; }
     public void setJavacVersion(String javacVersion) { this.javacVersion = javacVersion; }
     public void addDiagnostics(List<String> diagnostics) { this.diagnostics.addAll(diagnostics); }
     public void setCompiledFiles(int compiledFiles) { this.compiledFiles = compiledFiles; }

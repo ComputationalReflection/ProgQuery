@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 public class InsertResult {
     private List<CompilationResult> compilationResults;
+    private long elapsedTime;
 
     public InsertResult() {
         this.compilationResults = new ArrayList<>();
@@ -26,10 +27,6 @@ public class InsertResult {
         return compilationResults.stream().anyMatch(CompilationResult::hasWarnings);
     }
 
-    public long getTotalElapsedTime() {
-        return compilationResults.stream().mapToLong(CompilationResult::getElapsedTime).sum();
-    }
-
     public int getTotalCompiledFiles() {
         return compilationResults.stream().mapToInt(CompilationResult::getCompiledFiles).sum();
     }
@@ -37,6 +34,8 @@ public class InsertResult {
     public List<String> getAllDiagnostics() {
         return compilationResults.stream().flatMap(result -> result.getDiagnostics().stream()).toList();
     }
+    public void setElapsedTime(long elapsedTime) { this.elapsedTime = elapsedTime;}
+    public long getElapsedTime() { return elapsedTime; }
 
     public String getJavacVersion() {
         return compilationResults.stream()

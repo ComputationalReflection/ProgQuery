@@ -1589,9 +1589,9 @@ public class ASTTypesVisitor
         componentNode.addLabel(NodeCategory.AST_NODE);
         componentNode.setProperties(JavacInfo.getPosition(recordNode));
 
-        PartialWithEnd componentTypeRel = new PartialWithEnd<>(componentNode, ASTRelationTypes.COMPONENT_TYPE);
-        componentSymbol.declarationFor().getType().accept(this, Pair.createPair(componentTypeRel));
-        componentTypeRel.getEndNode().setProperties(JavacInfo.getPosition(recordNode));
+//        PartialWithEnd componentTypeRel = new PartialWithEnd<>(componentNode, ASTRelationTypes.COMPONENT_TYPE);
+//        componentSymbol.declarationFor().getType().accept(this, Pair.createPair(componentTypeRel));
+//        componentTypeRel.getEndNode().setProperties(JavacInfo.getPosition(recordNode));
         DefinitionCache.COMPONENT_CACHE.get().updateToDefinition(new ComponentKey(componentSymbol), componentNode);
 
         componentNode.createRelationshipTo(fieldNode, ASTRelationTypes.COMPONENT_FIELD);

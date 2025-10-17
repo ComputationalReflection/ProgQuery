@@ -32,12 +32,13 @@ import java.util.stream.StreamSupport;
 
 public class CompilationScheduler {
     private static final boolean MERGING_ALLOWED = true;
-    private PDGProcessing pdgUtils = new PDGProcessing();
+    private PDGProcessing pdgUtils;
     private ASTAuxiliarStorage ast;
     private JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
     private CompilationScheduler(ASTAuxiliarStorage ast) {
         this.ast = ast;
+        pdgUtils = new PDGProcessing(ast);
     }
 
     public CompilationScheduler(ASTAuxiliarStorage ast, String neo4j_host, String neo4j_port, String neo4j_user,
@@ -170,7 +171,7 @@ public class CompilationScheduler {
 
     public void finalizeInsertion() {
         ProgQuery.LOGGER.info("Finishing insertion ...");
-        pdgUtils.createNotDeclaredAttrRels(ast);
+//        pdgUtils.createNotDeclaredAttrRels(ast);
         createStoredPackageDeps();
         dynamicMethodCallAnalysis();
         interproceduralPDGAnalysis();

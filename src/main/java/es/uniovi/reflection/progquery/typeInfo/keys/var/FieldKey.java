@@ -1,9 +1,11 @@
 package es.uniovi.reflection.progquery.typeInfo.keys.var;
 
 import com.sun.tools.javac.code.Symbol;
+import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.typeInfo.keys.ComponentKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.VarKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.type.TypeDefinitionKey;
+import es.uniovi.reflection.progquery.visitors.PDGProcessing;
 
 import java.util.Objects;
 
@@ -35,5 +37,14 @@ public class FieldKey  extends ComponentKey implements VarKey {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), getFieldName(), getOwnerKey());
+    }
+
+    @Override
+    public void putDecInCache(PDGProcessing pdgProcessing, NodeWrapper definitionNode) {
+        pdgProcessing.putDecInCache(this, definitionNode, pdgProcessing.getAttrCache());
+    }
+    @Override
+    public NodeWrapper getNode(PDGProcessing pdgProcessing) {
+        return pdgProcessing.getNode(this, pdgProcessing.getAttrCache());
     }
 }

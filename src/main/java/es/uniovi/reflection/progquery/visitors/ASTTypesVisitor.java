@@ -1438,7 +1438,7 @@ public class ASTTypesVisitor
             methodState.putCfgNodeInCache(variableTree, variableNode);
             addInvocationInStatement(variableNode);
         }
-        pdgUtils.putDecInCache(varKey, variableNode);
+        varKey.putDecInCache(pdgUtils, variableNode);
         if (isAttrOrEnum) {
             methodState = previousState;
         }

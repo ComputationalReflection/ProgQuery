@@ -34,7 +34,6 @@ public class ProgQuery {
                      boolean verbose) {
         this.userId = userId;
         this.programId = programId;
-
         this.neo4j_host = neo4j_host;
         this.neo4j_port = neo4j_port;
         this.neo4j_user = neo4j_user;

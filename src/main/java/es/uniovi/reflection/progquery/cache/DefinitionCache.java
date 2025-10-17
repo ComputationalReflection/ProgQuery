@@ -10,6 +10,7 @@ import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import es.uniovi.reflection.progquery.typeInfo.keys.CallableKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.ComponentKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.TypeKey;
+import es.uniovi.reflection.progquery.typeInfo.keys.var.FieldKey;
 import es.uniovi.reflection.progquery.visitors.KeyTypeVisitor;
 import org.neo4j.graphdb.Direction;
 

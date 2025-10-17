@@ -42,9 +42,30 @@ public class PDGProcessing {
             new PDGRelationTypes[]{PDGRelationTypes.USED_BY, PDGRelationTypes.STATE_MODIFIED_BY};
     private static final Map<PDGRelationTypes[], PDGRelationTypes[]> toModify = getMapToModify();
     public NodeWrapper lastAssignment;
-    private Map<VarKey, NodeWrapper> definitionTable = new HashMap<>();
-    private Map<FieldKey, List<Consumer<NodeWrapper>>> toDo = new HashMap<>();
+//    private Map<VarKey, NodeWrapper> definitionTable = new HashMap<>();
+//    private Map<FieldKey, List<Consumer<NodeWrapper>>> toDo = new HashMap<>();
+    private DefinitionCache<LocalScopeVarKey> localVarDefCache = new DefinitionCache<>();
+    private DefinitionCache<FieldKey> attrCache = new DefinitionCache<>();
+    private DefinitionCache<ThisKey> thisCache = new DefinitionCache<>();
+    private ASTAuxiliarStorage ast;
+
     private Set<NodeWrapper> parametersPreviouslyModified, auxParamsModified, parametersMaybePrevioslyModified;
+
+    public PDGProcessing(ASTAuxiliarStorage ast) {
+    this.ast = ast;
+    }
+
+    public DefinitionCache<LocalScopeVarKey> getLocalVarDefCache() {
+        return localVarDefCache;
+    }
+
+    public DefinitionCache<FieldKey> getAttrCache() {
+        return attrCache;
+    }
+
+    public DefinitionCache<ThisKey> getThisCache() {
+        return thisCache;
+    }
 
     public void visitNewMethod() {
         parametersPreviouslyModified = new HashSet<>();
@@ -94,15 +115,18 @@ public class PDGProcessing {
         return expStatementTree.getExpression().getKind() == Kind.ASSIGNMENT ? MODIFIED : null;
     }
 
-    public void putDecInCache(VarKey varKey, NodeWrapper n) {
-        if (toDo.containsKey(varKey)) {
-            for (Consumer<NodeWrapper> consumer : toDo.get(varKey))
-                consumer.accept(n);
-            toDo.remove(varKey);
-        }
-        definitionTable.put(varKey, n);
+    public <TKEY> void putDecInCache(TKEY varKey, NodeWrapper n, DefinitionCache<TKEY> definitionCache) {
+//        if (definitionCache.containsKey(varKey)) {
+//            for (Consumer<NodeWrapper> consumer : toDo.get(varKey))
+//                consumer.accept(n);
+//            toDo.remove(varKey);
+//        }
+//        definitionTable.put(varKey, n);
+    definitionCache.putDefinition(varKey, n);
     }
-
+    public <TKEY> NodeWrapper getNode(TKEY varKey, DefinitionCache<TKEY> definitionCache) {
+        return definitionCache.get(varKey);
+    }
     public static Object getLefAssignmentArg(Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         return t.getSecond() == MODIFIED ? MODIFIED : USED_AND_MOD;
     }
@@ -143,7 +167,7 @@ public class PDGProcessing {
                 symbolKind == ElementKind.ENUM * || symbolKind == ElementKind.PACKAGE * ||
                 symbolKind == ElementKind.ANNOTATION_TYPE * || symbolKind == ElementKind.RECORD *)
             return true; */ // Checked in the ASTVisitor
-        ElementKey varKey = null;
+        VarKey varKey = null;
         boolean isAttr = false;
         if (isThis) {
             varKey = new ThisKey(identSymbol.owner);
@@ -154,34 +178,35 @@ public class PDGProcessing {
             else
                 varKey = new LocalScopeVarKey(identSymbol);
         }
-        NodeWrapper decNode = definitionTable.get(varKey);
+//        NodeWrapper decNode = definitionTable.get(varKey);
+        NodeWrapper decNode = varKey.getNode(this);
         boolean isInstance = (isAttr || isThis) && !identSymbol.isStatic();
         addRels(identSymbol, identifierNode, t.getSecond(), currentClassDec, true, methodState, decNode, isThis,
-                isInstance);
+                isInstance, isAttr);
         return isInstance;
     }
 
-    public void createNotDeclaredAttrRels(ASTAuxiliarStorage ast) {
-        for (Entry<FieldKey, List<Consumer<NodeWrapper>>> entry : toDo.entrySet()) {
-            VarSymbol symbol = (VarSymbol) entry.getKey().getSymbol();
-            boolean isAttr;
-            if ((isAttr = symbol.getKind() == ElementKind.FIELD) || symbol.getKind() == ElementKind.ENUM_CONSTANT) {
-                NodeWrapper declaration =
-                        isAttr ? createNotDeclaredAttr(symbol, ast) : createNotDeclaredEnum(symbol, ast);
-                entry.getValue().forEach(decConsumer -> decConsumer.accept(declaration));
-            }
-        }
-        toDo.clear();
-    }
+//    public void createNotDeclaredAttrRels(ASTAuxiliarStorage ast) {
+//        for (Entry<FieldKey, List<Consumer<NodeWrapper>>> entry : toDo.entrySet()) {
+//            VarSymbol symbol = (VarSymbol) entry.getKey().getSymbol();
+//            boolean isAttr;
+//            if ((isAttr = symbol.getKind() == ElementKind.FIELD) || symbol.getKind() == ElementKind.ENUM_CONSTANT) {
+//                NodeWrapper declaration =
+//                        isAttr ? createNotDeclaredAttr(symbol, ast) : createNotDeclaredEnum(symbol, ast);
+//                entry.getValue().forEach(decConsumer -> decConsumer.accept(declaration));
+//            }
+//        }
+//        toDo.clear();
+//    }
 
     public void relationOnFieldAccess(boolean isThis, MemberSelectTree memberSelectTree, NodeWrapper memberSelectNode,
                                       Pair<PartialRelation<RelationTypesInterface>, Object> t, MethodState methodState,
                                       NodeWrapper currentClassDec, boolean isInstance) {
         Symbol symbol = ((JCFieldAccess) memberSelectTree).sym;
         VarKey varKey = isThis ? new ThisKey(symbol.owner) : new FieldKey(symbol);
-        NodeWrapper decNode = definitionTable.get(varKey);
+        NodeWrapper decNode = varKey.getNode(this);
         addRels(symbol, memberSelectNode, t.getSecond(), currentClassDec, false, methodState, decNode, isThis,
-                isInstance);
+                isInstance, !isThis);
     }
 
     public void addParamsPrevModifiedForInv(NodeWrapper methodInvocationNode, MethodState methodState) {
@@ -210,38 +235,49 @@ public class PDGProcessing {
 
     private void addRels(Symbol s, NodeWrapper node, Object ASTVisitorParam, NodeWrapper currentClassDec,
                          boolean isIdent, MethodState methodState, NodeWrapper decNode, boolean isThis,
-                         boolean isInstance) {
+                         boolean isInstance, boolean isAttr) {
         List<Consumer<NodeWrapper>> list = null;
         if (decNode == null)
             if (isThis)
-                definitionTable.put(new ThisKey(s.owner), decNode = getOrCreateThisNode(currentClassDec).getEndNode());
+                thisCache.put(new ThisKey(s.owner), decNode = getOrCreateThisNode(currentClassDec).getEndNode());
             else {
                 FieldKey fieldKey = new FieldKey(s);
-                list = toDo.get(fieldKey);
-                if (list == null) {
-                    list = new ArrayList<>();
-                    toDo.put(fieldKey, list);
-                }
+//                list = toDo.get(fieldKey);
+//                if (list == null) {
+//                    list = new ArrayList<>();
+//                    toDo.put(fieldKey, list);
+//                }
+                attrCache.put(fieldKey, decNode = createNonDeclaredField(fieldKey));
             }
-        boolean isAttr = decNode == null || decNode.hasLabel(NodeTypes.ATTR_DEC);
+//        boolean isAttr = decNode == null || decNode.hasLabel(NodeTypes.ATTR_DEC);
         boolean isStatic = s.isStatic();
         if (ASTVisitorParam == null)
-            addRelWithoutAnalysis(list, decNode, node, PDGRelationTypes.USED_BY, isAttr || isThis, isInstance,
+            addRelWithoutAnalysis(decNode, node, PDGRelationTypes.USED_BY, isAttr || isThis, isInstance,
                     isStatic);
         else
             for (PDGRelationTypes pdgRel : (PDGRelationTypes[]) ASTVisitorParam)
-                addUnknownRel(list, decNode, node, pdgRel, methodState, isIdent, currentClassDec, isAttr, isThis,
+                addUnknownRel(decNode, node, pdgRel, methodState, isIdent, currentClassDec, isAttr, isThis,
                         isInstance, isStatic);
     }
 
-    private void addUnknownRel(List<Consumer<NodeWrapper>> list, NodeWrapper dec, NodeWrapper concrete,
+    private NodeWrapper createNonDeclaredField(FieldKey fieldKey) {
+        VarSymbol symbol = (VarSymbol) fieldKey.getSymbol();
+        boolean isAttr= symbol.getKind() == ElementKind.FIELD;
+//        if ((isAttr = symbol.getKind() == ElementKind.FIELD) || symbol.getKind() == ElementKind.ENUM_CONSTANT) {
+            return
+                    isAttr ? createNotDeclaredAttr(symbol, ast) : createNotDeclaredEnum(symbol, ast);
+//            entry.getValue().forEach(decConsumer -> decConsumer.accept(declaration));
+//        }
+    }
+
+    private void addUnknownRel(NodeWrapper dec, NodeWrapper concrete,
                                PDGRelationTypes rel, MethodState methodState, boolean isIdent,
                                NodeWrapper currentClassDec, boolean isAttr, boolean isThis, boolean isInstance,
                                boolean isStatic) {
         if (rel == PDGRelationTypes.USED_BY)
-            addRelWithoutAnalysis(list, dec, concrete, rel, isAttr || isThis, isInstance, isStatic);
+            addRelWithoutAnalysis(dec, concrete, rel, isAttr || isThis, isInstance, isStatic);
         else
-            addNotUseRelWithAnalysis(lastAssignment, dec, rel, isIdent, methodState, list, currentClassDec, isAttr,
+            addNotUseRelWithAnalysis(lastAssignment, dec, rel, isIdent, methodState, currentClassDec, isAttr,
                     isThis, isInstance, isStatic);
 
     }
@@ -310,16 +346,16 @@ public class PDGProcessing {
     }
 
     private void addNotUseRelWithAnalysis(NodeWrapper concrete, NodeWrapper dec, PDGRelationTypes rel, boolean isIdent,
-                                          MethodState currentMethodState, List<Consumer<NodeWrapper>> toDoListForSymbol,
+                                          MethodState currentMethodState,
                                           NodeWrapper currentClassDec, boolean isAttr, boolean isThis,
                                           boolean isInstanceRel, boolean isStatic) {
 
-        if (dec == null)
-
-            toDoListForSymbol.add(
-                    decNode -> createRelsAndMutationAnalysis(concrete, decNode, rel, isIdent, currentMethodState,
-                            currentClassDec, isAttr, isThis, isInstanceRel, isStatic));
-        else
+//        if (dec == null)
+//
+//            toDoListForSymbol.add(
+//                    decNode -> createRelsAndMutationAnalysis(concrete, decNode, rel, isIdent, currentMethodState,
+//                            currentClassDec, isAttr, isThis, isInstanceRel, isStatic));
+//        else
             createRelsAndMutationAnalysis(concrete, dec, rel, isIdent, currentMethodState, currentClassDec, isAttr,
                     isThis, isInstanceRel, isStatic);
     }
@@ -334,13 +370,13 @@ public class PDGProcessing {
         currentMethodState.identificationForLeftAssignExprs.put(concrete, dec);
     }
 
-    private void addRelWithoutAnalysis(List<Consumer<NodeWrapper>> list, NodeWrapper start, NodeWrapper end,
+    private void addRelWithoutAnalysis(NodeWrapper start, NodeWrapper end,
                                        PDGRelationTypes rel, boolean isAttrOrThis, boolean isOwnAccess,
                                        boolean isStatic) {
-        if (list == null)
+//        if (list == null)
             createRel(start, end, rel, isAttrOrThis, isOwnAccess, isStatic);
-        else
-            futureCreateRelInToDoList(list, end, rel, isAttrOrThis, isOwnAccess, isStatic);
+//        else
+//            futureCreateRelInToDoList(list, end, rel, isAttrOrThis, isOwnAccess, isStatic);
     }
 
     private static NodeWrapper createRel(NodeWrapper start, NodeWrapper end, PDGRelationTypes rel,

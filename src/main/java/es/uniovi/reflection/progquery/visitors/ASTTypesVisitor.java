@@ -986,6 +986,7 @@ public class ASTTypesVisitor
             CFGVisitor.doCFGAnalysis(methodNode, methodTree, methodState.cfgNodeCache,
                     ast.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
                     methodState.finallyCache);
+        pdgUtils.clearLocalCache();
         insideConstructor = prev;
         isInAccessibleContext = prevIsInAccesibleCtxt;
         must = true;

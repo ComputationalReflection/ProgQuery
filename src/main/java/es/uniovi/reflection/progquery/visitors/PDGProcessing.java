@@ -43,7 +43,7 @@ public class PDGProcessing {
     public NodeWrapper lastAssignment;
     //    private Map<VarKey, NodeWrapper> definitionTable = new HashMap<>();
     //    private Map<FieldKey, List<Consumer<NodeWrapper>>> toDo = new HashMap<>();
-    private DefinitionCache<LocalScopeVarKey> localVarDefCache = new DefinitionCache<>();
+    private DefinitionCache<LocalScopeVarKey> localVarDefCache = new DefinitionCache<>(), previousLocalCache;
     private DefinitionCache<FieldKey> attrCache = new DefinitionCache<>();
     private DefinitionCache<ThisKey> thisCache = new DefinitionCache<>();
     private ASTAuxiliarStorage ast;
@@ -69,6 +69,11 @@ public class PDGProcessing {
     public void visitNewMethod() {
         parametersPreviouslyModified = new HashSet<>();
         parametersMaybePrevioslyModified = new HashSet<>();
+        //Should I save the previous params in case method/lambda/anonymous inside another method
+        previousLocalCache = localVarDefCache;
+        localVarDefCache = new DefinitionCache<>();
+        if(previousLocalCache != null)
+            localVarDefCache.addAllDefinitions(previousLocalCache);
     }
 
     public void enteringNewBranch() {
@@ -172,8 +177,8 @@ public class PDGProcessing {
         if (isThis) {
             varKey = new ThisKey(identSymbol.owner);
         } else {
-            isAttr = symbolKind == ElementKind.FIELD;
-            if (isAttr || symbolKind == ElementKind.ENUM_CONSTANT)
+            isAttr = symbolKind == ElementKind.FIELD || symbolKind == ElementKind.ENUM_CONSTANT;
+            if (isAttr)
                 varKey = new FieldKey(identSymbol);
             else
                 varKey = new LocalScopeVarKey(identSymbol);
@@ -223,8 +228,8 @@ public class PDGProcessing {
         }
     }
 
-    public void clearLocalCache() {
-        localVarDefCache = new DefinitionCache<>();
+    public void exitingCurrentMethod() {
+        localVarDefCache = previousLocalCache;
     }
 
     private static Map<PDGRelationTypes[], PDGRelationTypes[]> getMapToModify() {

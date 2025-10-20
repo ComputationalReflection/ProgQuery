@@ -101,6 +101,10 @@ public class DefinitionCache<TKEY> {
         definitionNodeCache.put(componentSymbol, updatedNode);
     }
 
+    public void addAllDefinitions(DefinitionCache<TKEY> otherCache) {
+        definitionNodeCache.putAll(otherCache.definitionNodeCache);
+    }
+
     private void putDefinition(TKEY k, NodeWrapper v, NodeWrapper previousNode) {
         if (previousNode != null) {
             for (RelationshipWrapper oldRel : previousNode.getRelationships(Direction.INCOMING)) {

@@ -226,6 +226,7 @@ public class ASTTypesVisitor
         lastBlockVisited = blockNode;
         if (isStaticInit) {
             methodState = prevState;
+            pdgUtils.exitingCurrentMethod();
             ast.endMethodDeclaration();
         }
 
@@ -986,7 +987,7 @@ public class ASTTypesVisitor
             CFGVisitor.doCFGAnalysis(methodNode, methodTree, methodState.cfgNodeCache,
                     ast.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
                     methodState.finallyCache);
-        pdgUtils.clearLocalCache();
+        pdgUtils.exitingCurrentMethod();
         insideConstructor = prev;
         isInAccessibleContext = prevIsInAccesibleCtxt;
         must = true;

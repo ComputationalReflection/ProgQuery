@@ -807,6 +807,13 @@ public class ASTTypesVisitor
         scanListWithPropertyIndex(lambdaExpressionTree.getParameters(), lambdaExpressionNode,
                 ASTRelationTypes.LAMBDA_PARAM, RelationProperties.PARAM_INDEX);
         scan(lambdaExpressionTree.getBody(), Pair.createPair(lambdaExpressionNode, ASTRelationTypes.LAMBDA_BODY));
+
+        if (lambdaExpressionTree.getBodyKind() == LambdaExpressionTree.BodyKind.STATEMENT)
+            CFGVisitor.doCFGAnalysis(lambdaExpressionNode, (BlockTree) lambdaExpressionTree.getBody(), methodState.cfgNodeCache,
+                    ASTAuxiliarStorage.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
+                    methodState.finallyCache);
+
+        pdgUtils.exitingCurrentMethod();
         inALambda = false;
         insideConstructor = prevInside;
         isInAccessibleContext = prevIsInAccesibleCtxt;
@@ -984,8 +991,8 @@ public class ASTTypesVisitor
         ast.addInfo(methodTree, methodNode, methodState,
                 methodSymbol.isVarArgs() ? methodTree.getParameters().size() : ASTAuxiliarStorage.NO_VARG_ARG);
         if (methodTree.getBody() != null)
-            CFGVisitor.doCFGAnalysis(methodNode, methodTree, methodState.cfgNodeCache,
-                    ast.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
+            CFGVisitor.doCFGAnalysis(methodNode, methodTree.getBody(), methodState.cfgNodeCache,
+                    ASTAuxiliarStorage.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
                     methodState.finallyCache);
         pdgUtils.exitingCurrentMethod();
         insideConstructor = prev;

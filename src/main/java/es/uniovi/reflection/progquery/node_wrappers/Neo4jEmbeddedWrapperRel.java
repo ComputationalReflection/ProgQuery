@@ -3,13 +3,8 @@ package es.uniovi.reflection.progquery.node_wrappers;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import es.uniovi.reflection.progquery.database.relations.*;
 import org.neo4j.graphdb.Relationship;
-
-import es.uniovi.reflection.progquery.database.relations.CDGRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.CGRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.RelationTypesInterface;
-import es.uniovi.reflection.progquery.database.relations.TypeRelations;
 
 public class Neo4jEmbeddedWrapperRel implements RelationshipWrapper {
 	private Relationship relationship;
@@ -55,7 +50,7 @@ public class Neo4jEmbeddedWrapperRel implements RelationshipWrapper {
 					return CDGRelationTypes.valueOf(name);
 				} catch (IllegalArgumentException e3) {
 
-					return CGRelationTypes.valueOf(name);
+					return PDGRelationTypes.valueOf(name);
 				}
 			}
 		}

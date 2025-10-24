@@ -740,7 +740,7 @@ public class CFGVisitor extends
         return lasts.getSecond();
     }
 
-    public static void doCFGAnalysis(NodeWrapper methodNode, MethodTree tree, SimpleTreeNodeCache<Tree> cfgCache,
+    public static void doCFGAnalysis(NodeWrapper methodNode, BlockTree blockTree, SimpleTreeNodeCache<Tree> cfgCache,
                                      Map<TryTree, Map<Type, List<PartialRelation<CFGRelationTypes>>>> triesMayThrowTypesToExPartialRels,
                                      Map<Tree, Pair<NodeWrapper, NodeWrapper>> finallyCache) {
         NodeWrapper lastStatementNode =
@@ -753,7 +753,7 @@ public class CFGVisitor extends
 
         CFGVisitor.linkLasts(
                 new CFGVisitor(lastStatementNode, exceptionalEnd, cfgCache, triesMayThrowTypesToExPartialRels,
-                        finallyCache).scan(tree.getBody(),
+                        finallyCache).scan(blockTree,
                         CFGVisitor.getNoNamePair(entryStatement, CFGRelationTypes.CFG_NEXT)), lastStatementNode);
         exceptionalEnd.createRelationshipTo(methodNode, CFGRelationTypes.CFG_END_OF);
         lastStatementNode.createRelationshipTo(methodNode, CFGRelationTypes.CFG_END_OF);

@@ -101,7 +101,7 @@ public class ASTAuxiliarStorage {
         exitTry();
     }
 
-    public Map<TryTree, Map<Type, List<PartialRelation<CFGRelationTypes>>>> getTrysToExceptionalPartialRelations(
+    public static Map<TryTree, Map<Type, List<PartialRelation<CFGRelationTypes>>>> getTrysToExceptionalPartialRelations(
             Map<TryTree, List<Pair<NodeWrapper, List<MethodSymbol>>>> invocationsInStatements) {
         Map<TryTree, Map<Type, List<PartialRelation<CFGRelationTypes>>>> throwsTypesInStatementsGrouped =
                 new HashMap<TryTree, Map<Type, List<PartialRelation<CFGRelationTypes>>>>();

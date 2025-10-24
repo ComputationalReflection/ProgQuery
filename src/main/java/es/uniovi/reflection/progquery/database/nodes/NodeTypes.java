@@ -98,7 +98,7 @@ public enum NodeTypes implements NodeLabel {
     LOCAL_VAR_DEC("Local Variable Declaration", NodeCategory.LOCAL_DEC, NodeCategory.STATEMENT),
     RETURN_STATEMENT("Return Statement", NodeCategory.STATEMENT),
     SWITCH_STATEMENT("Switch Statement", NodeCategory.STATEMENT, NodeCategory.SWITCH),
-    SYNCHRONIZED_STATEMENT("Synchronized Block", NodeCategory.STATEMENT),
+    SYNCHRONIZED_STATEMENT("Synchronized Statement", NodeCategory.STATEMENT),
     THROW_STATEMENT("Throw Statement", NodeCategory.STATEMENT),
     TRY_STATEMENT("Try Statement", NodeCategory.STATEMENT),
     WHILE_LOOP("While Loop", NodeCategory.LOOP),

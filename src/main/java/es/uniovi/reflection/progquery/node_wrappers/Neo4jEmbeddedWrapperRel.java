@@ -1,7 +1,9 @@
 package es.uniovi.reflection.progquery.node_wrappers;
 
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 
 import es.uniovi.reflection.progquery.database.relations.*;
 import org.neo4j.graphdb.Relationship;
@@ -40,20 +42,22 @@ public class Neo4jEmbeddedWrapperRel implements RelationshipWrapper {
 	}
 
 	static RelationTypesInterface nameToEnum(String name) {
-		try {
-			return ASTRelationTypes.valueOf(name);
-		} catch (IllegalArgumentException e) {
+		List<Function<String, RelationTypesInterface>> valueOfFuncs = List.of(
+				ASTRelationTypes::valueOf,
+				TypeRelations::valueOf,
+				PDGRelationTypes::valueOf,
+				CFGRelationTypes::valueOf,
+				CGRelationTypes::valueOf,
+				PGRelationTypes::valueOf,
+				CDGRelationTypes::valueOf
+		);
+		for(Function<String, RelationTypesInterface> valueOf : valueOfFuncs)
 			try {
-				return TypeRelations.valueOf(name);
-			} catch (IllegalArgumentException e2) {
-				try {
-					return CDGRelationTypes.valueOf(name);
-				} catch (IllegalArgumentException e3) {
-
-					return PDGRelationTypes.valueOf(name);
-				}
+				return valueOf.apply(name);
+			} catch (IllegalArgumentException e) {
+				continue;
 			}
-		}
+		throw new IllegalArgumentException("No enum constant for relation type name: " + name);
 	}
 
 	@Override

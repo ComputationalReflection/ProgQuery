@@ -85,7 +85,7 @@ public enum NodeTypes implements NodeLabel {
     BREAK_STATEMENT("Break Statement", NodeCategory.STATEMENT),
     CASE_COLON("Case Colon", NodeCategory.CASE),
     CASE_ARROW("Case Arrow", NodeCategory.CASE),
-    CATCH_CLAUSE("Catch Block", NodeCategory.AST_NODE),
+    CATCH_CLAUSE("Catch Clause", NodeCategory.AST_NODE),
     CONTINUE_STATEMENT("Continue Statement", NodeCategory.STATEMENT),
     DO_WHILE_LOOP("Do-While Loop", NodeCategory.LOOP),
     EMPTY_STATEMENT("Empty Statement", NodeCategory.STATEMENT),
@@ -123,7 +123,8 @@ public enum NodeTypes implements NodeLabel {
     RESERVED_SELECTION("Reserved Selection", NodeCategory.IDENTIFIER_SELECTION, NodeCategory.EXPRESSION),
     SWITCH_EXPRESSION("Switch Expression", NodeCategory.EXPRESSION, NodeCategory.SWITCH),
     TYPE_CAST("Type Cast", NodeCategory.EXPRESSION),
-    UNARY_OPERATION("Unary Operation", NodeCategory.EXPRESSION),
+    UNARY_ASSIGNMENT("Unary Assignment", NodeCategory.ANY_ASSIGNMENT, NodeCategory.UNARY_EXPRESSION),
+    UNARY_OPERATION("Unary Assignment", NodeCategory.UNARY_EXPRESSION),
     VARIABLE("Variable", NodeCategory.IDENTIFIER, NodeCategory.LVALUE),
     ;
 

@@ -1355,16 +1355,15 @@ public class ASTTypesVisitor
 
     @Override
     public ASTVisitorResult visitUnary(UnaryTree unaryTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
-        NodeWrapper unaryNode =
-                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(unaryTree, NodeTypes.UNARY_OPERATION);
-        unaryNode.setProperty(OPERATOR, unaryTree.getKind().toString());
         boolean impliesModification =
                 unaryTree.getKind() == Kind.POSTFIX_INCREMENT || unaryTree.getKind() == Kind.POSTFIX_DECREMENT ||
                         unaryTree.getKind() == Kind.PREFIX_INCREMENT || unaryTree.getKind() == Kind.PREFIX_DECREMENT;
+        NodeWrapper unaryNode =
+                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(unaryTree, impliesModification? NodeTypes.UNARY_ASSIGNMENT : NodeTypes.UNARY_OPERATION);
+        unaryNode.setProperty(OPERATOR, unaryTree.getKind().toString());
         GraphUtils.connectWithParent(unaryNode, t);
         attachTypeDirect(unaryNode, unaryTree);
         if (impliesModification) {
-            unaryNode.addLabel(NodeCategory.ANY_ASSIGNMENT);
             NodeWrapper lastAssignInfo = beforeScanAnyAssign(unaryNode, t);
             scan(unaryTree.getExpression(),
                     Pair.createPair(unaryNode, ASTRelationTypes.UNARY_OPERAND, PDGProcessing.getLefAssignmentArg(t)));

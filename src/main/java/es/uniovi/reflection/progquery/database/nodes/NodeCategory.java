@@ -40,7 +40,7 @@ public enum NodeCategory implements NodeLabel{
 	CALL("Call", EXPRESSION), //SUPERCLASS FOR METHOD_INV AND NEW_
 	LVALUE("L-Value", EXPRESSION),
 	ANY_ASSIGNMENT("Any Assignment", AST_NODE),
-	UNARY_EXPRESSION("Unary Operation", NodeCategory.EXPRESSION),
+	UNARY_EXPRESSION("Unary Expression", NodeCategory.EXPRESSION),
 	SWITCH("Switch", AST_NODE),
 
 	IDENTIFIER("Identifier", AST_NODE),

@@ -124,7 +124,7 @@ public enum NodeTypes implements NodeLabel {
     SWITCH_EXPRESSION("Switch Expression", NodeCategory.EXPRESSION, NodeCategory.SWITCH),
     TYPE_CAST("Type Cast", NodeCategory.EXPRESSION),
     UNARY_ASSIGNMENT("Unary Assignment", NodeCategory.ANY_ASSIGNMENT, NodeCategory.UNARY_EXPRESSION),
-    UNARY_OPERATION("Unary Assignment", NodeCategory.UNARY_EXPRESSION),
+    UNARY_OPERATION("Unary Operation", NodeCategory.UNARY_EXPRESSION),
     VARIABLE("Variable", NodeCategory.IDENTIFIER, NodeCategory.LVALUE),
     ;
 

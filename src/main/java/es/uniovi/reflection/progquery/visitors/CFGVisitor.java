@@ -18,6 +18,7 @@ import es.uniovi.reflection.progquery.utils.dataTransferClasses.MutablePair;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 
 import javax.lang.model.element.Name;
+import javax.lang.model.type.TypeMirror;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -97,7 +98,31 @@ public class CFGVisitor extends
                 triesMayThrowTypesToExPartialRels.get(null);
         linkThrowing(nonHandledTrowTypesToPartialrels == null ? new HashMap<>() : nonHandledTrowTypesToPartialrels);
     }
+private boolean isMustCatchType(Type throwType, Type catchType){
+        return switch (catchType){
+            case Type.UnionClassType  unionCatchType ->{
+                for(Type alternativeType: unionCatchType.getAlternativeTypes())
+                    if(JavacInfo.isSubtype(throwType, alternativeType)){
+                        yield true;
+                    }
+                yield false;
+            }
+            default -> JavacInfo.isSubtype(throwType, catchType);
+        };
+}
 
+    private boolean isMayCatchType(Type throwType, Type catchType){
+        return switch (catchType){
+            case Type.UnionClassType  unionCatchType ->{
+                for(Type alternativeType: unionCatchType.getAlternativeTypes())
+                    if(JavacInfo.isSubtype(alternativeType, throwType)){
+                        yield true;
+                    }
+                yield false;
+            }
+            default -> JavacInfo.isSubtype(catchType, throwType);
+        };
+    }
     private void linkThrowing(Map<Type, List<PartialRelation<CFGRelationTypes>>> typesToRelations) {
         boolean ended = false;
         outFor:
@@ -110,14 +135,14 @@ public class CFGVisitor extends
                             typesToRelations.entrySet().iterator();
                     while (iterator.hasNext()) {
                         Entry<Type, List<PartialRelation<CFGRelationTypes>>> typeToRelations = iterator.next();
-                        boolean inconditionalCatch = JavacInfo.isSubtype(typeToRelations.getKey(), catchType);
-                        if (inconditionalCatch) {
+                        boolean unconditionalCatch = isMustCatchType(typeToRelations.getKey(), catchType);
+                        if (unconditionalCatch) {
                             typeToRelations.getValue()
                                     .forEach(r -> r.createRelationship(CFGCache.get(catchTree.getParameter())));
                             iterator.remove();
                             if (ended = typesToRelations.size() == 0)
                                 break outFor;
-                        } else if (JavacInfo.isSubtype(catchType, typeToRelations.getKey())) {
+                        } else if (isMayCatchType(typeToRelations.getKey(),catchType)) {
 
                             NodeWrapper currentCatch = CFGCache.get(catchTree);
                             addUncaughtExRelToExEnd(typeToRelations, currentCatch, currentCatch);

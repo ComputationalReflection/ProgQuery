@@ -225,8 +225,11 @@ public class ASTTypesVisitor
         scan(blockTree.getStatements(), Pair.createPair(blockNode, ASTRelationTypes.BLOCK_ENCLOSES));
         lastBlockVisited = blockNode;
         if (isStaticInit) {
-            methodState = prevState;
+            CFGVisitor.doCFGAnalysis(blockNode, blockTree, methodState.cfgNodeCache,
+                    ASTAuxiliarStorage.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
+                    methodState.finallyCache);
             pdgUtils.exitingCurrentMethod();
+            methodState = prevState;
             ast.endMethodDeclaration();
         }
 

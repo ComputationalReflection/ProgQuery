@@ -1045,7 +1045,6 @@ public class ASTTypesVisitor
                 currentMethodInvocations.add(methodSymbol);
 
             decNode = getCallableDecFromCall(methodSymbol);
-            GraphUtils.attachType(decNode, methodSymbol.type, ast);
 
             methodInvocationNode = createInvocationNodeFromDec(methodInvocationTree, decNode);
             ast.checkIfTrustableInvocation(methodInvocationTree, methodSymbol, methodInvocationNode);
@@ -1159,7 +1158,6 @@ public class ASTTypesVisitor
             }
             MethodSymbol consSymbol = (MethodSymbol) newClassConstructor;
             constructorDef = getCallableDecFromCall(consSymbol);
-            GraphUtils.attachType(constructorDef, consSymbol.type, ast);
             if (consSymbol.getThrownTypes().size() > 0)
                 currentMethodInvocations.add(consSymbol);
         }
@@ -1500,7 +1498,7 @@ public class ASTTypesVisitor
     }
 
     static NodeWrapper getCallableDuringTypeCreation(MethodSymbol symbol, ASTAuxiliarStorage ast, NodeWrapper typeDec) {
-        return getNonDeclaredCallable(symbol, typeDec, ast);
+        return getNonDeclaredCallable(symbol, typeDec, ast, false);
     }
 
     private static NodeWrapper createInvocationNodeFromDec(MethodInvocationTree methodInvocationTree,
@@ -1510,8 +1508,10 @@ public class ASTTypesVisitor
     }
 
     private static NodeWrapper createAndLinkNonDeclaredCallable(NodeWrapper classNode, MethodSymbol symbol,
-                                                                ASTAuxiliarStorage ast) {
+                                                                ASTAuxiliarStorage ast, boolean needType) {
         NodeWrapper callable = createAndLinkNonDeclaredCallable(classNode, symbol.isConstructor());
+        if(needType)
+            GraphUtils.attachType(callable, symbol.type, ast);
         for (Symbol.TypeVariableSymbol typeSymbol : symbol.getTypeParameters()) {
             callable.createRelationshipTo(ast.getTypeVisitor().createTypeParameterNode((TypeVariable) typeSymbol.type),
                     ASTRelationTypes.GENERIC_TYPE_PARAM);
@@ -1526,16 +1526,20 @@ public class ASTTypesVisitor
     }
 
     private NodeWrapper getCallableDecFromCall(MethodSymbol symbol) {
-        return getNonDeclaredCallable(symbol, DefinitionCache.getOrCreateType(symbol.owner.type, ast), ast);
+        return getNonDeclaredCallable(symbol, DefinitionCache.getOrCreateType(symbol.owner.type, ast), ast, true);
     }
 
     private static NodeWrapper getNonDeclaredCallable(MethodSymbol symbol, NodeWrapper typeDec,
-                                                      ASTAuxiliarStorage ast) {
+                                                      ASTAuxiliarStorage ast, boolean needType) {
         CallableKey callableKey = new CallableKey(symbol);
-        if (DefinitionCache.CALLABLE_DEC_CACHE.get().containsKey(callableKey))
-            return DefinitionCache.CALLABLE_DEC_CACHE.get().get(callableKey);
-
-        NodeWrapper methodDecNode = createAndLinkNonDeclaredCallable(typeDec, symbol, ast);
+        NodeWrapper methodDecNode;
+        if (DefinitionCache.CALLABLE_DEC_CACHE.get().containsKey(callableKey)) {
+            methodDecNode = DefinitionCache.CALLABLE_DEC_CACHE.get().get(callableKey);
+            if(needType && !methodDecNode.hasRelationship(TypeRelations.ITS_TYPE_IS, Direction.OUTGOING))
+                GraphUtils.attachType(methodDecNode, symbol.type, ast);
+            return methodDecNode;
+        }
+        methodDecNode = createAndLinkNonDeclaredCallable(typeDec, symbol, ast, needType);
         setCallableMethodSymbolProps(symbol, methodDecNode);
         if (!symbol.isConstructor())
             ast.addAccessibleMethod(symbol, methodDecNode);

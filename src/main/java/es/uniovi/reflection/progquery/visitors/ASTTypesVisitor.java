@@ -812,7 +812,8 @@ public class ASTTypesVisitor
         scan(lambdaExpressionTree.getBody(), Pair.createPair(lambdaExpressionNode, ASTRelationTypes.LAMBDA_BODY));
 
         if (lambdaExpressionTree.getBodyKind() == LambdaExpressionTree.BodyKind.STATEMENT)
-            CFGVisitor.doCFGAnalysis(lambdaExpressionNode, (BlockTree) lambdaExpressionTree.getBody(), methodState.cfgNodeCache,
+            CFGVisitor.doCFGAnalysis(lambdaExpressionNode, (BlockTree) lambdaExpressionTree.getBody(),
+                    methodState.cfgNodeCache,
                     ASTAuxiliarStorage.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
                     methodState.finallyCache);
 
@@ -952,11 +953,11 @@ public class ASTTypesVisitor
         }
 
         methodNode.setProperty(IS_USER_CODE, isUserCode);
-
+        boolean alreadyHasType = false;
         if (DefinitionCache.CALLABLE_DEC_CACHE.get().containsKey(callableKey)) {
             ast.deleteAccessibleMethod(methodSymbol);
             DefinitionCache.CALLABLE_DEC_CACHE.get().putDefinition(callableKey, methodNode);
-
+            alreadyHasType = methodNode.hasRelationship(TypeRelations.ITS_TYPE_IS, Direction.OUTGOING);
             if (!methodNode.hasRelationship(rel, Direction.INCOMING))
                 GraphUtils.connectWithParent(methodNode, t, rel);
         } else {
@@ -975,8 +976,8 @@ public class ASTTypesVisitor
         ast.newMethodDeclaration(methodState);
         if (!isConstructor)
             scan(methodTree.getReturnType(), Pair.createPair(methodNode, ASTRelationTypes.METHOD_RETURN_TYPE));
-
-        GraphUtils.attachType(methodNode, ((JCMethodDecl) methodTree).type, ast);
+        if (!alreadyHasType)
+            GraphUtils.attachType(methodNode, ((JCMethodDecl) methodTree).type, ast);
 
         scanListWithPropertyIndex(methodTree.getTypeParameters(), methodNode, ASTRelationTypes.CALLABLE_TYPE_PARAM,
                 RelationProperties.PARAM_INDEX);
@@ -1044,7 +1045,7 @@ public class ASTTypesVisitor
                 currentMethodInvocations.add(methodSymbol);
 
             decNode = getCallableDecFromCall(methodSymbol);
-
+            GraphUtils.attachType(decNode, methodSymbol.type, ast);
 
             methodInvocationNode = createInvocationNodeFromDec(methodInvocationTree, decNode);
             ast.checkIfTrustableInvocation(methodInvocationTree, methodSymbol, methodInvocationNode);
@@ -1158,6 +1159,7 @@ public class ASTTypesVisitor
             }
             MethodSymbol consSymbol = (MethodSymbol) newClassConstructor;
             constructorDef = getCallableDecFromCall(consSymbol);
+            GraphUtils.attachType(constructorDef, consSymbol.type, ast);
             if (consSymbol.getThrownTypes().size() > 0)
                 currentMethodInvocations.add(consSymbol);
         }
@@ -1361,8 +1363,8 @@ public class ASTTypesVisitor
         boolean impliesModification =
                 unaryTree.getKind() == Kind.POSTFIX_INCREMENT || unaryTree.getKind() == Kind.POSTFIX_DECREMENT ||
                         unaryTree.getKind() == Kind.PREFIX_INCREMENT || unaryTree.getKind() == Kind.PREFIX_DECREMENT;
-        NodeWrapper unaryNode =
-                DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(unaryTree, impliesModification? NodeTypes.UNARY_ASSIGNMENT : NodeTypes.UNARY_OPERATION);
+        NodeWrapper unaryNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(unaryTree,
+                impliesModification ? NodeTypes.UNARY_ASSIGNMENT : NodeTypes.UNARY_OPERATION);
         unaryNode.setProperty(OPERATOR, unaryTree.getKind().toString());
         GraphUtils.connectWithParent(unaryNode, t);
         attachTypeDirect(unaryNode, unaryTree);
@@ -1600,9 +1602,10 @@ public class ASTTypesVisitor
         componentNode.addLabel(NodeCategory.AST_NODE);
         componentNode.setProperties(JavacInfo.getPosition(recordNode));
 
-//        PartialWithEnd componentTypeRel = new PartialWithEnd<>(componentNode, ASTRelationTypes.COMPONENT_TYPE);
-//        componentSymbol.declarationFor().getType().accept(this, Pair.createPair(componentTypeRel));
-//        componentTypeRel.getEndNode().setProperties(JavacInfo.getPosition(recordNode));
+        //        PartialWithEnd componentTypeRel = new PartialWithEnd<>(componentNode, ASTRelationTypes
+        //        .COMPONENT_TYPE);
+        //        componentSymbol.declarationFor().getType().accept(this, Pair.createPair(componentTypeRel));
+        //        componentTypeRel.getEndNode().setProperties(JavacInfo.getPosition(recordNode));
         DefinitionCache.COMPONENT_CACHE.get().updateToDefinition(new ComponentKey(componentSymbol), componentNode);
 
         componentNode.createRelationshipTo(fieldNode, ASTRelationTypes.COMPONENT_FIELD);

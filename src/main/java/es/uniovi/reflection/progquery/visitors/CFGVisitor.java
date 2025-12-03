@@ -18,7 +18,6 @@ import es.uniovi.reflection.progquery.utils.dataTransferClasses.MutablePair;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 
 import javax.lang.model.element.Name;
-import javax.lang.model.type.TypeMirror;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -102,12 +101,12 @@ private boolean isMustCatchType(Type throwType, Type catchType){
         return switch (catchType){
             case Type.UnionClassType  unionCatchType ->{
                 for(Type alternativeType: unionCatchType.getAlternativeTypes())
-                    if(JavacInfo.isSubtype(throwType, alternativeType)){
+                    if(JavacInfo.isSubType(throwType, alternativeType)){
                         yield true;
                     }
                 yield false;
             }
-            default -> JavacInfo.isSubtype(throwType, catchType);
+            default -> JavacInfo.isSubType(throwType, catchType);
         };
 }
 
@@ -115,12 +114,12 @@ private boolean isMustCatchType(Type throwType, Type catchType){
         return switch (catchType){
             case Type.UnionClassType  unionCatchType ->{
                 for(Type alternativeType: unionCatchType.getAlternativeTypes())
-                    if(JavacInfo.isSubtype(alternativeType, throwType)){
+                    if(JavacInfo.isSubType(alternativeType, throwType)){
                         yield true;
                     }
                 yield false;
             }
-            default -> JavacInfo.isSubtype(catchType, throwType);
+            default -> JavacInfo.isSubType(catchType, throwType);
         };
     }
     private void linkThrowing(Map<Type, List<PartialRelation<CFGRelationTypes>>> typesToRelations) {
@@ -189,13 +188,13 @@ private boolean isMustCatchType(Type throwType, Type catchType){
             if (trys.get(i).getSecond()) {
                 for (CatchTree catchTree : tryTree.getCatches()) {
                     Type catchType = JavacInfo.getTypeDirect(catchTree.getParameter());
-                    boolean inconditionalCatch = /* throwType != null && */ JavacInfo.isSubtype(throwType, catchType);
+                    boolean inconditionalCatch = /* throwType != null && */ JavacInfo.isSubType(throwType, catchType);
 
                     if (inconditionalCatch) {
                         futureRel.createRelationship(CFGCache.get(catchTree.getParameter()));
                         ended = true;
                         break outFor;
-                    } else if (JavacInfo.isSubtype(catchType, throwType)) {
+                    } else if (JavacInfo.isSubType(catchType, throwType)) {
                         NodeWrapper catchNode = CFGCache.get(catchTree);
                         futureRel.createRelationship(catchNode);
                         futureRel = new PartialRelationWithProperties<CFGRelationTypes>(catchNode,

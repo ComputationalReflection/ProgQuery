@@ -949,6 +949,7 @@ public class ASTTypesVisitor
         } else {
             methodNode = DatabaseFacade.CURRENT_DB_FACADE.get()
                     .createSkeletonNodeExplicitCats(methodTree, NodeTypes.METHOD_DEC, NodeCategory.AST_NODE);
+            ast.addMethodNodeSymbol(methodSymbol, methodNode);
             rel = ASTRelationTypes.DECLARES_METHOD;
         }
 
@@ -956,6 +957,7 @@ public class ASTTypesVisitor
         boolean alreadyHasType = false;
         if (DefinitionCache.CALLABLE_DEC_CACHE.get().containsKey(callableKey)) {
             ast.deleteAccessibleMethod(methodSymbol);
+            ast.removeMethodNodeSymbol(DefinitionCache.CALLABLE_DEC_CACHE.get().get(callableKey));
             DefinitionCache.CALLABLE_DEC_CACHE.get().putDefinition(callableKey, methodNode);
             alreadyHasType = methodNode.hasRelationship(TypeRelations.ITS_TYPE_IS, Direction.OUTGOING);
             if (!methodNode.hasRelationship(rel, Direction.INCOMING))
@@ -1510,6 +1512,8 @@ public class ASTTypesVisitor
     private static NodeWrapper createAndLinkNonDeclaredCallable(NodeWrapper classNode, MethodSymbol symbol,
                                                                 ASTAuxiliarStorage ast, boolean needType) {
         NodeWrapper callable = createAndLinkNonDeclaredCallable(classNode, symbol.isConstructor());
+        if(!symbol.isConstructor())
+            ast.addMethodNodeSymbol(symbol, callable);
         if(needType)
             GraphUtils.attachType(callable, symbol.type, ast);
         for (Symbol.TypeVariableSymbol typeSymbol : symbol.getTypeParameters()) {

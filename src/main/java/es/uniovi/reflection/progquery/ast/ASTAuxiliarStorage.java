@@ -35,6 +35,8 @@ public class ASTAuxiliarStorage {
             new Stack<List<Pair<NodeWrapper, List<MethodSymbol>>>>();
     private Map<NodeWrapper, MethodInfo> methodInfo = new HashMap<>();
     private final TypeVisitor typeVisitor = new TypeVisitor(this);
+private final Map<NodeWrapper, MethodSigInfo> methodToSigInfo = new HashMap<>();
+
 
     public TypeVisitor getTypeVisitor() {
         return typeVisitor;
@@ -152,7 +154,7 @@ public class ASTAuxiliarStorage {
     }
 
     public void doDynamicMethodCallAnalysis() {
-        HierarchyAnalysis dynMethodCallAnalysis = new HierarchyAnalysis(trustableInvocations);
+        HierarchyAnalysis dynMethodCallAnalysis = new HierarchyAnalysis(trustableInvocations, methodToSigInfo);
         for (NodeWrapper typeDec : typeDecNodes)
             dynMethodCallAnalysis.dynamicMethodCallAnalysis(typeDec);
     }
@@ -209,4 +211,12 @@ public class ASTAuxiliarStorage {
             }
 
     }
+
+    public void addMethodNodeSymbol(MethodSymbol ms, NodeWrapper methodNode){
+        methodToSigInfo.put(methodNode, new MethodSigInfo(ms));
+    }
+    public void removeMethodNodeSymbol(NodeWrapper methodNode){
+        methodToSigInfo.remove(methodNode);
+    }
+
 }

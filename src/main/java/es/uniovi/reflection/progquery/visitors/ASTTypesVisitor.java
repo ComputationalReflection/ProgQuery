@@ -978,8 +978,11 @@ public class ASTTypesVisitor
         ast.newMethodDeclaration(methodState);
         if (!isConstructor)
             scan(methodTree.getReturnType(), Pair.createPair(methodNode, ASTRelationTypes.METHOD_RETURN_TYPE));
-        if (!alreadyHasType)
-            GraphUtils.attachType(methodNode, ((JCMethodDecl) methodTree).type, ast);
+        Type methodType = ((JCMethodDecl) methodTree).type;
+        if (alreadyHasType)
+            GraphUtils.attachTypeProperties(methodNode, methodType);
+        else
+            GraphUtils.attachType(methodNode, methodType, ast);
 
         scanListWithPropertyIndex(methodTree.getTypeParameters(), methodNode, ASTRelationTypes.CALLABLE_TYPE_PARAM,
                 RelationProperties.PARAM_INDEX);

@@ -65,9 +65,16 @@ public class GraphUtils {
     }
 
     private static void attachTypeDirect(NodeWrapper node, NodeWrapper endNode, String actualType, String typeKind) {
+        attachTypeProperties(node, actualType, typeKind);
+        node.createRelationshipTo(endNode, TypeRelations.ITS_TYPE_IS);
+    }
+    public  static void attachTypeProperties(NodeWrapper node, Type type){
+        attachTypeProperties(node, type.toString(), type.getKind().toString());
+    }
+
+    private static void attachTypeProperties(NodeWrapper node, String actualType, String typeKind){
         node.setProperty(ACTUAL_TYPE, actualType);
         node.setProperty(TYPE_KIND, typeKind);
-        node.createRelationshipTo(endNode, TypeRelations.ITS_TYPE_IS);
     }
 
 }

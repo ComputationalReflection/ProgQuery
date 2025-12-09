@@ -1,5 +1,6 @@
 package es.uniovi.reflection.progquery.utils;
 
+import com.google.common.collect.Maps;
 import com.sun.source.tree.*;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
@@ -151,11 +152,19 @@ public class JavacInfo {
         com.sun.tools.javac.code.Types types = currentJavacInfo.get().types;
         for (int i = 0; i < sub.getParameterTypes().size(); i++) {
             Type supType = (Type) sup.getParameterTypes().get(i);
+            boolean subtyping = false;
+            if (supType instanceof TypeVariable) {
+                supType = types.erasure(supType).tsym.type;
+                subtyping = true;
+            }
             Type subType = (Type) sub.getParameterTypes().get(i);
-            if (supType instanceof TypeVariable || subType instanceof TypeVariable) {
-                if (!isSubTypeOwn(types.erasure(subType), types.erasure(supType)))
+            if (subType instanceof TypeVariable) {
+                subType = types.erasure(subType).tsym.type;
+                subtyping = true;
+            }
+            if (subtyping) {
+                if (!isSubTypeOwn(subType, supType))
                     return false;
-
             } else {
                 if (!isSameTypeOwn(subType, supType))
                     return false;

@@ -92,7 +92,9 @@ public class HierarchyAnalysis {
                     possibleOverridersForSignature.remove(overrider);
                     inheritedInfo.methodToTransitiveOverriders.putIfAbsent(declaredMethod, new HashSet<>());
                     inheritedInfo.methodToTransitiveOverriders.get(declaredMethod).add(overrider);
-                    inheritedInfo.methodToTransitiveOverriders.get(declaredMethod).addAll(inheritedInfo.methodToTransitiveOverriders.get(overrider));
+                    Set<NodeWrapper> transitiveOverriders = inheritedInfo.methodToTransitiveOverriders.get(overrider);
+                    if(transitiveOverriders!=null)
+                        inheritedInfo.methodToTransitiveOverriders.get(declaredMethod).addAll(transitiveOverriders);
                     inheritedInfo.methodToTransitiveOverriders.remove(overrider);
                 } else
                     subTypeInfo.getKey().createRelationshipTo(declaredMethod, TypeRelations.INHERITS_METHOD);
@@ -119,10 +121,7 @@ public class HierarchyAnalysis {
 
             Iterable<RelationshipWrapper> invocationRels =
                     declaredMethod.getRelationships(Direction.INCOMING, CGRelationTypes.REFERS_TO);
-            if (overriderMethods == null)
-                inheritedInfo.methodToTransitiveOverriders.put(declaredMethod, new HashSet<>());
-
-            else {
+            if (overriderMethods != null){
                 boolean mayRefer = !isAbstract || overriderMethods.size() > 1;
                 overriderMethods.forEach(ovMethod -> {
                     if (!(boolean) ovMethod.getProperty(IS_ABSTRACT_PROP))

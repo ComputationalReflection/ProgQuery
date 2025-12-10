@@ -141,6 +141,15 @@ public class ProgQueryParameters {
         }
         this.javac_options.add(parameter);
     }
+
+    protected boolean isOption(String parameter, String option) {
+        for (String optionAssignment : ProgQueryParameters.OPTIONS_ASSIGNMENT) {
+            if(parameter.startsWith(option.concat(optionAssignment)))
+                return true;
+        }
+        return false;
+    }
+
     protected boolean parseOption(String option) {
         final String lowerCaseOption = option.toLowerCase();
         for (String opString : ProgQueryParameters.HELP_OPTIONS) {
@@ -150,19 +159,19 @@ public class ProgQueryParameters {
             }
         }
         for (String opString : ProgQueryParameters.USER_OPTIONS) {
-            if (lowerCaseOption.startsWith(opString)) {
+            if (isOption(lowerCaseOption,opString)) {
                 this.userId = parseValue(lowerCaseOption.substring(opString.length()));
                 return true;
             }
         }
         for (String opString : ProgQueryParameters.PROGRAM_OPTIONS) {
-            if (lowerCaseOption.startsWith(opString)) {
+            if (isOption(lowerCaseOption, opString)) {
                 this.programId = parseValue(lowerCaseOption.substring(opString.length()));
                 return true;
             }
         }
         for (String opString : ProgQueryParameters.NEO4J_DATABASE_PATH_OPTIONS) {
-            if (lowerCaseOption.startsWith(opString)) {
+            if (isOption(lowerCaseOption,opString)) {
                 try {
                     this.neo4j_database_path =
                             Paths.get(new File(parseValue(option.substring(opString.length()))).getCanonicalPath()).toAbsolutePath().toString();
@@ -176,37 +185,37 @@ public class ProgQueryParameters {
             }
         }
         for (String opString : ProgQueryParameters.NEO4J_DATABASE_OPTIONS) {
-            if (lowerCaseOption.startsWith(opString)) {
+            if (isOption(lowerCaseOption,opString)) {
                 this.neo4j_database = parseValue(lowerCaseOption.substring(opString.length()));
                 return true;
             }
         }
         for (String opString : ProgQueryParameters.NEO4J_USER_OPTIONS) {
-            if (lowerCaseOption.startsWith(opString)) {
+            if (isOption(lowerCaseOption,opString)) {
                 this.neo4j_user = parseValue(option.substring(opString.length()));
                 return true;
             }
         }
         for (String opString : ProgQueryParameters.NEO4J_PASSWORD_OPTIONS) {
-            if (lowerCaseOption.startsWith(opString)) {
+            if (isOption(lowerCaseOption,opString)) {
                 this.neo4j_password = parseValue(option.substring(opString.length()));
                 return true;
             }
         }
         for (String opString : ProgQueryParameters.NEO4J_HOST_OPTIONS) {
-            if (lowerCaseOption.startsWith(opString)) {
+            if (isOption(lowerCaseOption,opString)) {
                 this.neo4j_host = parseValue(option.substring(opString.length()));
                 return true;
             }
         }
         for (String opString : ProgQueryParameters.NEO4J_PORT_NUMBER_OPTIONS) {
-            if (lowerCaseOption.startsWith(opString)) {
+            if (isOption(lowerCaseOption,opString)) {
                 this.neo4j_port_number = parseValue(option.substring(opString.length()));
                 return true;
             }
         }
         for (String opString : ProgQueryParameters.NEO4J_MODE_OPTIONS) {
-            if (lowerCaseOption.startsWith(opString)) {
+            if (isOption(lowerCaseOption,opString)) {
                 String modeOption = parseValue(option.substring(opString.length()));
                 if (!Arrays.asList(ProgQueryParameters.NEO4J_MODE_NAMES).contains(modeOption)) {
                     System.err.println(this.unknownNEO4JModeMessage);
@@ -217,7 +226,7 @@ public class ProgQueryParameters {
             }
         }
         for (String opString : ProgQueryParameters.MAX_OPERATIONS_TRANSACTION_OPTIONS) {
-            if (lowerCaseOption.startsWith(opString)) {
+            if (isOption(lowerCaseOption,opString)) {
                 this.max_operations_transaction = parseValue(option.substring(opString.length()));
                 return true;
             }

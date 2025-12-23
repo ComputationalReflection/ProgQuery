@@ -42,7 +42,7 @@ public enum NodeTypes implements NodeLabel {
     /*Polymorphic Declarations/Definitions AST Nodes or not */
     GENERIC_TYPE_DEC("Generic Type Declaration"),
     ANNOTATION_DEC("Annotation Declaration", NodeCategory.TYPE_DEC),
-    ATTR_DEC("Attribute Declaration", NodeCategory.VARIABLE_DEC),
+    FIELD_DEC("Field Declaration", NodeCategory.VARIABLE_DEC),
     CLASS_DEC("Class Declaration", NodeCategory.TYPE_DEC),
     CONSTRUCTOR_DEC("Constructor Declaration", NodeCategory.CALLABLE_DEC),
     ENUM_DEC("Enum Declaration", NodeCategory.TYPE_DEC),
@@ -83,8 +83,8 @@ public enum NodeTypes implements NodeLabel {
     ASSERT_STATEMENT("Assert Statement", NodeCategory.STATEMENT),
     BLOCK("Block", NodeCategory.STATEMENT),
     BREAK_STATEMENT("Break Statement", NodeCategory.STATEMENT),
-    CASE_COLON("Case Colon", NodeCategory.CASE),
-    CASE_ARROW("Case Arrow", NodeCategory.CASE),
+    CASE_FALL_THROUGH("Case Fall Through", NodeCategory.CASE),
+    CASE_EXCLUSIVE("Case Exclusive", NodeCategory.CASE),
     CATCH_CLAUSE("Catch Clause", NodeCategory.AST_NODE),
     CONTINUE_STATEMENT("Continue Statement", NodeCategory.STATEMENT),
     DO_WHILE_LOOP("Do-While Loop", NodeCategory.LOOP),
@@ -107,7 +107,7 @@ public enum NodeTypes implements NodeLabel {
     /*AST Expressions*/
     ARRAY_ACCESS("Array Access", NodeCategory.LVALUE),
     ASSIGNMENT("Assignment", NodeCategory.ANY_ASSIGNMENT, NodeCategory.EXPRESSION),
-    ATTR_SELECTION("Attribute Selection", NodeCategory.IDENTIFIER_SELECTION, NodeCategory.LVALUE),
+    FIELD_SELECTION("Field Selection", NodeCategory.IDENTIFIER_SELECTION, NodeCategory.LVALUE),
     BINARY_OPERATION("Binary Operation", NodeCategory.EXPRESSION),
     CALLABLE_REFERENCE("Callable Reference", NodeCategory.EXPRESSION),
     COMPOUND_ASSIGNMENT("Compound Assignment", NodeCategory.ANY_ASSIGNMENT, NodeCategory.EXPRESSION),

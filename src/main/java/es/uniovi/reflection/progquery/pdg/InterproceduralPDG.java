@@ -93,7 +93,7 @@ public class InterproceduralPDG {
                 RelationshipWrapper rel = decToInvPDGRel.getKey().getFirst()
                         .createRelationshipTo(decToInvPDGRel.getKey().getSecond().getFirst(),
                                 decToInvPDGRel.getValue());
-                if (decToInvPDGRel.getKey().getFirst().hasLabel(NodeTypes.ATTR_DEC)) {
+                if (decToInvPDGRel.getKey().getFirst().hasLabel(NodeTypes.FIELD_DEC)) {
                     rel.setProperty(IS_OWN_ACCESS, decToInvPDGRel.getKey().getSecond().getSecond());
                 } else if (decToInvPDGRel.getKey().getFirst().hasLabel(NodeTypes.THIS_REFERENCE))
                     rel.setProperty(IS_OWN_ACCESS, true);
@@ -141,7 +141,7 @@ public class InterproceduralPDG {
                                 null || !paramsSet.contains(varMayOrMustBeModified.dec)) && !isMay &&
                                 (Boolean) callRel.getProperty("mustBeExecuted"), paramRelsOnMethod,
                         varMayOrMustBeModified.dec);
-            else if (varMayOrMustBeModified.dec.hasLabel(NodeTypes.ATTR_DEC) &&
+            else if (varMayOrMustBeModified.dec.hasLabel(NodeTypes.FIELD_DEC) &&
                     varMayOrMustBeModified.isOuterMostImplicitThisOrP != IsInstance.NO &&
                     methodInfo.thisNodeIfNotStatic != null) {
                 addNewPDGRelFromParamToMethod(

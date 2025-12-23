@@ -159,7 +159,7 @@ public class ASTTypesVisitor
         scan(assertTree.getCondition(), Pair.createPair(assertNode, ASTRelationTypes.ASSERT_CONDITION));
         addInvocationInStatement(assertNode);
         methodState.putCfgNodeInCache(assertTree, assertNode);
-        scan(assertTree.getDetail(), Pair.createPair(assertNode, ASTRelationTypes.ASSERT_DETAIL));
+        scan(assertTree.getDetail(), Pair.createPair(assertNode, ASTRelationTypes.ASSERT_MESSAGE));
         return null;
     }
 
@@ -283,7 +283,7 @@ public class ASTTypesVisitor
     public ASTVisitorResult visitCase(CaseTree caseTree, Pair<PartialRelation<RelationTypesInterface>, Object> t) {
         boolean isArrow = caseTree.getCaseKind() == CaseTree.CaseKind.RULE;
         NodeWrapper caseNode = DatabaseFacade.CURRENT_DB_FACADE.get()
-                .createSkeletonNode(caseTree, isArrow ? NodeTypes.CASE_ARROW : NodeTypes.CASE_COLON);
+                .createSkeletonNode(caseTree, isArrow ? NodeTypes.CASE_EXCLUSIVE : NodeTypes.CASE_FALL_THROUGH);
         methodState.putCfgNodeInCache(caseTree, caseNode);
         GraphUtils.connectWithParent(caseNode, t);
         caseNode.setProperty(HAS_DEFAULT_LABEL, false);
@@ -879,7 +879,7 @@ public class ASTTypesVisitor
                     .createSkeletonNode(memberSelectTree, NodeTypes.TYPE_SELECTION);
             astTypeRefersTo(memberSelectNode, memberSymbol);
         } else {
-            NodeTypes nodeType = NodeTypes.ATTR_SELECTION;
+            NodeTypes nodeType = NodeTypes.FIELD_SELECTION;
             if (idKind == ElementKind.METHOD)
                 nodeType = NodeTypes.METHOD_SELECTION;
             else
@@ -1405,7 +1405,7 @@ public class ASTTypesVisitor
         if (isAttrOrEnum) {
             variableNode = DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNodeExplicitCats(variableTree,
                     (isEnum = varSymbol.getKind() == ElementKind.ENUM_CONSTANT) ? NodeTypes.ENUM_ELEMENT :
-                            NodeTypes.ATTR_DEC, NodeCategory.AST_NODE);
+                            NodeTypes.FIELD_DEC, NodeCategory.AST_NODE);
             ClassSymbol owner = (ClassSymbol) varSymbol.owner;
             if (isImplicitField = owner.isRecord() && !varSymbol.isStatic())
                 declaredRecordComponent(owner.getRecordComponent((Symbol.VarSymbol) varSymbol),

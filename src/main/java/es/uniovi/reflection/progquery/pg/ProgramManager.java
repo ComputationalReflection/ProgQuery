@@ -21,7 +21,7 @@ public class ProgramManager {
         currentProgram = DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.PROGRAM);
         currentProgram.setProperty("ID", programID);
         currentProgram.setProperty("USER_ID", userID);
-        currentProgram.setProperty("timestamp", ZonedDateTime.now().toString());
+        currentProgram.setProperty("timestamp", ZonedDateTime.now());
     }
 
 }

@@ -91,7 +91,7 @@ public class GetDeclarationFromExpression {
 		if (dec != null) {
 			List<PDGMutatedDecInfoInMethod> identInfo = new ArrayList<>();
 			identInfo.add(new PDGMutatedDecInfoInMethod(false,
-					dec.hasLabel(NodeTypes.ATTR_DEC) && !(Boolean) dec.getProperty(IS_STATIC_PROP) ||
+					dec.hasLabel(NodeTypes.FIELD_DEC) && !(Boolean) dec.getProperty(IS_STATIC_PROP) ||
 							dec.hasLabel(NodeTypes.THIS_REFERENCE)
 							? IsInstance.YES : IsInstance.NO, dec));
 			return Pair.create(identInfo, false);

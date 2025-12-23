@@ -53,7 +53,7 @@ public enum ASTRelationTypes implements RelationTypesInterface {
 	INSTANCE_OF_PATTERN,
 
 	/*Statement(Part?) to Expression*/
-	ASSERT_CONDITION, ASSERT_DETAIL,
+	ASSERT_CONDITION, ASSERT_MESSAGE,
 	CASE_GUARD,
 	CASE_CONSTANT_LABEL,
 	DO_WHILE_CONDITION,

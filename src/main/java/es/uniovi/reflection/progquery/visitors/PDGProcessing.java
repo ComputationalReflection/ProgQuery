@@ -108,7 +108,7 @@ public class PDGProcessing {
 
     public void setThisRefOfInstanceMethod(MethodState methodState, NodeWrapper currentClassDec) {
         NodeWrapper method = methodState.lastMethodDecVisited;
-        if (!method.hasLabel(NodeTypes.ATTR_DEC)) {
+        if (!method.hasLabel(NodeTypes.FIELD_DEC)) {
             boolean isStatic = (boolean) method.getProperty(IS_STATIC_PROP);
             if (!isStatic && methodState.thisNode == null)
                 methodState.thisNode = getOrCreateThisNode(currentClassDec).getEndNode();
@@ -426,7 +426,7 @@ public class PDGProcessing {
 
     private NodeWrapper createNotDeclaredAttr(VarSymbol symbol, ASTAuxiliarStorage ast) {
         NodeWrapper decNode =
-                createNotDeclaredFieldOrEnum(symbol, ast, NodeTypes.ATTR_DEC, ASTRelationTypes.DECLARES_FIELD);
+                createNotDeclaredFieldOrEnum(symbol, ast, NodeTypes.FIELD_DEC, ASTRelationTypes.DECLARES_FIELD);
         Set<Modifier> modifiers = Flags.asModifierSet(symbol.flags_field);
         ASTTypesVisitor.setAttrDecModifiers(symbol, modifiers, decNode);
         return decNode;

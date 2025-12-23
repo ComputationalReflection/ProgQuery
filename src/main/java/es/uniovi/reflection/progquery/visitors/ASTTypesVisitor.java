@@ -244,7 +244,7 @@ public class ASTTypesVisitor
         methodState.putCfgNodeInCache(breakTree, breakNode);
         must = false;
         if (breakTree.getLabel() != null) {
-            breakNode.setProperty("label", breakTree.getLabel().toString());
+            breakNode.setProperty(LABEL, breakTree.getLabel().toString());
             if (inADoWhile) {
                 gotoLabelsInDoWhile.add(breakTree.getLabel());
                 auxMust = prevMust;
@@ -510,7 +510,7 @@ public class ASTTypesVisitor
                 DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(continueTree, NodeTypes.CONTINUE_STATEMENT);
         methodState.putCfgNodeInCache(continueTree, continueNode);
         if (continueTree.getLabel() != null) {
-            continueNode.setProperty("label", continueTree.getLabel().toString());
+            continueNode.setProperty(LABEL, continueTree.getLabel().toString());
             if (inADoWhile) {
                 gotoLabelsInDoWhile.add(continueTree.getLabel());
                 auxMust = prevMust;
@@ -778,7 +778,7 @@ public class ASTTypesVisitor
 
         NodeWrapper labeledStatementNode = DatabaseFacade.CURRENT_DB_FACADE.get()
                 .createSkeletonNode(labeledStatementTree, NodeTypes.LABELED_STATEMENT);
-        labeledStatementNode.setProperty(NAME_PROP, labeledStatementTree.getLabel().toString());
+        labeledStatementNode.setProperty(LABEL, labeledStatementTree.getLabel().toString());
         GraphUtils.connectWithParent(labeledStatementNode, t);
         methodState.putCfgNodeInCache(labeledStatementTree, labeledStatementNode);
         scan(labeledStatementTree.getStatement(),

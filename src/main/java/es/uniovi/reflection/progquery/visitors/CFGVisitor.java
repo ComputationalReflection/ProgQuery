@@ -512,9 +512,9 @@ private boolean isMustCatchType(Type throwType, Type catchType){
         }
 
         lastLoopStatement = doWhileNode;
+        lasts = getNoNamePair(nextStatement(doWhileNode, lasts.getSecond()));
         lasts.getSecond()
-                .add(new SimplePartialRelation<CFGRelationTypes>(doWhileNode, CFGRelationTypes.CFG_TRUE_CONDITION));
-        lasts = getNoNamePair(lasts.getSecond());
+                .add(new SimplePartialRelation<>(doWhileNode, CFGRelationTypes.CFG_TRUE_CONDITION));
         linkLasts(scan(doWhileLoopTree.getStatement(), lasts), doWhileNode);
 
         lastLoopStatement = previousLoop;

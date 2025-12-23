@@ -35,4 +35,5 @@ public class NodeProperties {
     public static final String POSITION = "position";
 
     public static final String IS_INITIALIZER = "isInitializer";
+    public static final String LABEL = "label";
 }

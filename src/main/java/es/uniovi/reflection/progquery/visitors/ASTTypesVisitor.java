@@ -1808,7 +1808,7 @@ public class ASTTypesVisitor
         if (varDec.declaredUsingVar()) {
             addClassAndDep(type);
             NodeWrapper ASTVarType =
-                    DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(variableTree, NodeTypes.VAR_TYPE);
+                    DatabaseFacade.CURRENT_DB_FACADE.get().createSkeletonNode(variableTree, NodeTypes.ELIDED_TYPE);
             ASTVarType.createRelationshipTo(varTypeNode, TypeRelations.INFERRED_TYPE);
             varDecNode.createRelationshipTo(ASTVarType, ASTRelationTypes.VAR_DEC_TYPE);
             final String VAR_NAME = "var";

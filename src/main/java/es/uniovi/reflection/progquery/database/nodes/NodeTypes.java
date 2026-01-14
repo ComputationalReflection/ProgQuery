@@ -72,7 +72,7 @@ public enum NodeTypes implements NodeLabel {
     TYPE_IDENTIFIER("Type Identifier", NodeCategory.IDENTIFIER, NodeCategory.AST_TYPE),
     TYPE_SELECTION("Type Selection", NodeCategory.IDENTIFIER_SELECTION, NodeCategory.AST_TYPE),
     TYPE_PARAM("Type Parameter", NodeCategory.DECLARATION),
-    VAR_TYPE("Var Type", NodeCategory.AST_TYPE),
+    ELIDED_TYPE("Elided Type", NodeCategory.AST_TYPE),
 
     /* AST Patterns */
     TYPE_PATTERN("Type Pattern", NodeCategory.PATTERN, NodeCategory.LOCAL_DEC),

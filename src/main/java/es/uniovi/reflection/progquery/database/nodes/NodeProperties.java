@@ -23,6 +23,7 @@ public class NodeProperties {
     public static final String COMPLETE_NAME = "completeName";
     public static final String SIMPLE_NAME = "simpleName";
     public static final String NAME_PROP = "name";
+    public static final String PACKAGE_NAME = "packageName";
     public static final String SELECTED_NAME = "selectedName";
     public static final String OPERATOR = "operator";
 

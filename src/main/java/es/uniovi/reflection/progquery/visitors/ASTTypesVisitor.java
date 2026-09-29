@@ -226,7 +226,7 @@ public class ASTTypesVisitor
         lastBlockVisited = blockNode;
         if (isStaticInit) {
             CFGVisitor.doCFGAnalysis(blockNode, blockTree, methodState.cfgNodeCache,
-                    ASTAuxiliarStorage.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
+                    ast.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
                     methodState.finallyCache);
             pdgUtils.exitingCurrentMethod();
             methodState = prevState;
@@ -814,7 +814,7 @@ public class ASTTypesVisitor
         if (lambdaExpressionTree.getBodyKind() == LambdaExpressionTree.BodyKind.STATEMENT)
             CFGVisitor.doCFGAnalysis(lambdaExpressionNode, (BlockTree) lambdaExpressionTree.getBody(),
                     methodState.cfgNodeCache,
-                    ASTAuxiliarStorage.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
+                    ast.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
                     methodState.finallyCache);
 
         pdgUtils.exitingCurrentMethod();
@@ -1001,7 +1001,7 @@ public class ASTTypesVisitor
                 methodSymbol.isVarArgs() ? methodTree.getParameters().size() : ASTAuxiliarStorage.NO_VARG_ARG);
         if (methodTree.getBody() != null)
             CFGVisitor.doCFGAnalysis(methodNode, methodTree.getBody(), methodState.cfgNodeCache,
-                    ASTAuxiliarStorage.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
+                    ast.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
                     methodState.finallyCache);
         pdgUtils.exitingCurrentMethod();
         insideConstructor = prev;

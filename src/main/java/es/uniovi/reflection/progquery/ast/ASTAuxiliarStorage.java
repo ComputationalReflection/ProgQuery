@@ -4,6 +4,7 @@ import com.sun.source.tree.*;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
+import es.uniovi.reflection.progquery.cache.DefinitionCache;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
 import es.uniovi.reflection.progquery.database.relations.*;
 import es.uniovi.reflection.progquery.mig.HierarchyAnalysis;
@@ -12,6 +13,7 @@ import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.WrapperUtils;
 import es.uniovi.reflection.progquery.pdg.GetDeclarationFromExpression;
 import es.uniovi.reflection.progquery.pdg.InterproceduralPDG;
+import es.uniovi.reflection.progquery.typeInfo.keys.type.TypeDefinitionKey;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodInfo;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodState;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
@@ -103,7 +105,7 @@ private final Map<NodeWrapper, MethodSigInfo> methodToSigInfo = new HashMap<>();
         exitTry();
     }
 
-    public static Map<TryTree, Map<Type, List<PartialRelation<CFGRelationTypes>>>> getTrysToExceptionalPartialRelations(
+    public Map<TryTree, Map<Type, List<PartialRelation<CFGRelationTypes>>>> getTrysToExceptionalPartialRelations(
             Map<TryTree, List<Pair<NodeWrapper, List<MethodSymbol>>>> invocationsInStatements) {
         Map<TryTree, Map<Type, List<PartialRelation<CFGRelationTypes>>>> throwsTypesInStatementsGrouped =
                 new HashMap<TryTree, Map<Type, List<PartialRelation<CFGRelationTypes>>>>();
@@ -124,6 +126,7 @@ private final Map<NodeWrapper, MethodSigInfo> methodToSigInfo = new HashMap<>();
                                 Pair.create("methodName", WrapperUtils.stringToNeo4jQueryString(methodName)),
                                 Pair.create("exceptionType",
                                         WrapperUtils.stringToNeo4jQueryString(excType.toString()))));
+                        invocationsInStatement.getFirst().createRelationshipTo(DefinitionCache.getOrCreateType(excType, this), TypeRelations.MAY_THROW_TYPE);
                     }
             }
             throwsTypesInStatementsGrouped.put(entry.getKey(), typesToRelations);

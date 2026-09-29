@@ -227,7 +227,7 @@ public class ASTTypesVisitor
         if (isStaticInit) {
             CFGVisitor.doCFGAnalysis(blockNode, blockTree, methodState.cfgNodeCache,
                     ast.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
-                    methodState.finallyCache);
+                    methodState.finallyCache, ast);
             pdgUtils.exitingCurrentMethod();
             methodState = prevState;
             ast.endMethodDeclaration();
@@ -815,7 +815,7 @@ public class ASTTypesVisitor
             CFGVisitor.doCFGAnalysis(lambdaExpressionNode, (BlockTree) lambdaExpressionTree.getBody(),
                     methodState.cfgNodeCache,
                     ast.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
-                    methodState.finallyCache);
+                    methodState.finallyCache, ast);
 
         pdgUtils.exitingCurrentMethod();
         inALambda = false;
@@ -1002,7 +1002,7 @@ public class ASTTypesVisitor
         if (methodTree.getBody() != null)
             CFGVisitor.doCFGAnalysis(methodNode, methodTree.getBody(), methodState.cfgNodeCache,
                     ast.getTrysToExceptionalPartialRelations(methodState.invocationsInStatements),
-                    methodState.finallyCache);
+                    methodState.finallyCache, ast);
         pdgUtils.exitingCurrentMethod();
         insideConstructor = prev;
         isInAccessibleContext = prevIsInAccesibleCtxt;

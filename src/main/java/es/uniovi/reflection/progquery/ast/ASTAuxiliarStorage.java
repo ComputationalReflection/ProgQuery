@@ -13,7 +13,6 @@ import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.WrapperUtils;
 import es.uniovi.reflection.progquery.pdg.GetDeclarationFromExpression;
 import es.uniovi.reflection.progquery.pdg.InterproceduralPDG;
-import es.uniovi.reflection.progquery.typeInfo.keys.type.TypeDefinitionKey;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodInfo;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.MethodState;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
@@ -124,9 +123,9 @@ private final Map<NodeWrapper, MethodSigInfo> methodToSigInfo = new HashMap<>();
                         typesToRelations.get(excType).add(new PartialRelationWithProperties<CFGRelationTypes>(
                                 invocationsInStatement.getFirst(), CFGRelationTypes.CFG_MAY_THROW,
                                 Pair.create("methodName", WrapperUtils.stringToNeo4jQueryString(methodName)),
-                                Pair.create("exceptionType",
+                                Pair.create(RelationProperties.EXCEPTION_TYPE,
                                         WrapperUtils.stringToNeo4jQueryString(excType.toString()))));
-                        invocationsInStatement.getFirst().createRelationshipTo(DefinitionCache.getOrCreateType(excType, this), TypeRelations.MAY_THROW_TYPE);
+                        invocationsInStatement.getFirst().createRelationshipTo(DefinitionCache.getOrCreateType(excType, this), TypeRelations.EXCEPTION_TYPE);
                     }
             }
             throwsTypesInStatementsGrouped.put(entry.getKey(), typesToRelations);

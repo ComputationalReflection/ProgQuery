@@ -3,14 +3,13 @@ package es.uniovi.reflection.progquery.visitors;
 import com.sun.source.tree.*;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.code.Type;
+import es.uniovi.reflection.progquery.ast.ASTAuxiliarStorage;
+import es.uniovi.reflection.progquery.cache.DefinitionCache;
 import es.uniovi.reflection.progquery.cache.SimpleTreeNodeCache;
 import es.uniovi.reflection.progquery.database.DatabaseFacade;
 import es.uniovi.reflection.progquery.database.nodes.NodeProperties;
 import es.uniovi.reflection.progquery.database.nodes.NodeTypes;
-import es.uniovi.reflection.progquery.database.relations.CFGRelationTypes;
-import es.uniovi.reflection.progquery.database.relations.PartialRelation;
-import es.uniovi.reflection.progquery.database.relations.PartialRelationWithProperties;
-import es.uniovi.reflection.progquery.database.relations.SimplePartialRelation;
+import es.uniovi.reflection.progquery.database.relations.*;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.WrapperUtils;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
@@ -34,7 +33,7 @@ public class CFGVisitor extends
     private Map<Name, Integer> loopTryIndexes = new HashMap<Name, Integer>();
     private Map<Name, NodeWrapper> nodesToContinue = new HashMap<Name, NodeWrapper>();
     private List<MutablePair<TryTree, Boolean>> trys = new ArrayList<MutablePair<TryTree, Boolean>>();
-
+    private ASTAuxiliarStorage ast;
     private static Pair<Name, List<PartialRelation<CFGRelationTypes>>> getEmptyListPair(Name n) {
         return Pair.create(n, new ArrayList<PartialRelation<CFGRelationTypes>>());
     }
@@ -87,7 +86,7 @@ public class CFGVisitor extends
 
     public CFGVisitor(NodeWrapper lastStatementNode, NodeWrapper exceptionalEnd, SimpleTreeNodeCache<Tree> CFGCache,
                       Map<TryTree, Map<Type, List<PartialRelation<CFGRelationTypes>>>> triesMayThrowTypesToExPartialRels,
-                      Map<Tree, Pair<NodeWrapper, NodeWrapper>> finallyCache) {
+                      Map<Tree, Pair<NodeWrapper, NodeWrapper>> finallyCache, ASTAuxiliarStorage ast) {
         this.finallyCache = finallyCache;
         this.CFGCache = CFGCache;
         this.lastStatementNode = lastStatementNode;
@@ -96,6 +95,7 @@ public class CFGVisitor extends
         Map<Type, List<PartialRelation<CFGRelationTypes>>> nonHandledTrowTypesToPartialrels =
                 triesMayThrowTypesToExPartialRels.get(null);
         linkThrowing(nonHandledTrowTypesToPartialrels == null ? new HashMap<>() : nonHandledTrowTypesToPartialrels);
+        this.ast = ast;
     }
 private boolean isMustCatchType(Type throwType, Type catchType){
         return switch (catchType){
@@ -171,13 +171,15 @@ private boolean isMustCatchType(Type throwType, Type catchType){
         exRelsOfType.getValue().forEach(r -> r.createRelationship(uncaughtExEnd));
         exRelsOfType.getValue().clear();
         exRelsOfType.getValue().add(new PartialRelationWithProperties(uncaughtExPropagationStart,
-                CFGRelationTypes.CFG_IF_UNCAUGHT_EXCEPTION, "exceptionType",
+                CFGRelationTypes.CFG_IF_UNCAUGHT_EXCEPTION, RelationProperties.EXCEPTION_TYPE,
                 WrapperUtils.stringToNeo4jQueryString(exRelsOfType.getKey().toString())));
+        uncaughtExPropagationStart.createRelationshipTo(DefinitionCache.getOrCreateType(exRelsOfType.getKey(), ast), TypeRelations.EXCEPTION_TYPE);
     }
 
     private void linkThrowing(NodeWrapper n, CFGRelationTypes rel, Type throwType) {
         linkThrowing(new PartialRelationWithProperties<CFGRelationTypes>(n, rel,
-                Pair.create("exceptionType", WrapperUtils.stringToNeo4jQueryString(throwType.toString()))), throwType);
+                Pair.create(RelationProperties.EXCEPTION_TYPE, WrapperUtils.stringToNeo4jQueryString(throwType.toString()))), throwType);
+        n.createRelationshipTo(DefinitionCache.getOrCreateType(throwType, ast), TypeRelations.EXCEPTION_TYPE);
     }
 
     private void linkThrowing(PartialRelation<CFGRelationTypes> futureRel, Type throwType) {
@@ -287,11 +289,14 @@ private boolean isMustCatchType(Type throwType, Type catchType){
     @Override
     public List<PartialRelation<CFGRelationTypes>> visitAssert(AssertTree assertTree,
                                                                Pair<Name, List<PartialRelation<CFGRelationTypes>>> lasts) {
-        NodeWrapper n = CFGCache.get(assertTree);
+        NodeWrapper assertNode = CFGCache.get(assertTree);
 
-        linkLasts(lasts.getSecond(), n);
-        linkThrowing(n, CFGRelationTypes.CFG_MAY_THROW, JavacInfo.getSymtab().assertionErrorType);
-        return getPairList(n, CFGRelationTypes.CFG_TRUE_CONDITION);
+        linkLasts(lasts.getSecond(), assertNode);
+        linkThrowing(assertNode, CFGRelationTypes.CFG_MAY_THROW, JavacInfo.getSymtab().assertionErrorType);
+
+        assertNode.createRelationshipTo(
+                DefinitionCache.getOrCreateType(JavacInfo.getSymtab().assertionErrorType, ast), TypeRelations.EXCEPTION_TYPE);
+        return getPairList(assertNode, CFGRelationTypes.CFG_TRUE_CONDITION);
     }
 
     @Override
@@ -766,7 +771,7 @@ private boolean isMustCatchType(Type throwType, Type catchType){
 
     public static void doCFGAnalysis(NodeWrapper methodNode, BlockTree blockTree, SimpleTreeNodeCache<Tree> cfgCache,
                                      Map<TryTree, Map<Type, List<PartialRelation<CFGRelationTypes>>>> triesMayThrowTypesToExPartialRels,
-                                     Map<Tree, Pair<NodeWrapper, NodeWrapper>> finallyCache) {
+                                     Map<Tree, Pair<NodeWrapper, NodeWrapper>> finallyCache, ASTAuxiliarStorage ast) {
         NodeWrapper lastStatementNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.CFG_NORMAL_END),
                 entryStatement =
@@ -777,7 +782,7 @@ private boolean isMustCatchType(Type throwType, Type catchType){
 
         CFGVisitor.linkLasts(
                 new CFGVisitor(lastStatementNode, exceptionalEnd, cfgCache, triesMayThrowTypesToExPartialRels,
-                        finallyCache).scan(blockTree,
+                        finallyCache, ast).scan(blockTree,
                         CFGVisitor.getNoNamePair(entryStatement, CFGRelationTypes.CFG_NEXT)), lastStatementNode);
         exceptionalEnd.createRelationshipTo(methodNode, CFGRelationTypes.CFG_END_OF);
         lastStatementNode.createRelationshipTo(methodNode, CFGRelationTypes.CFG_END_OF);

@@ -9,7 +9,7 @@ import org.neo4j.graphdb.Label;
 import es.uniovi.reflection.progquery.database.relations.RelationTypesInterface;
 
 public interface NodeWrapper extends Propertiable{
-	Long getId();
+	String getId();
 	RelationshipWrapper createRelationshipTo(NodeWrapper end, RelationTypesInterface relType);
 	List<RelationshipWrapper> getRelationships();
 	RelationshipWrapper getSingleRelationship(Direction direction, RelationTypesInterface relTypes);
@@ -21,7 +21,7 @@ public interface NodeWrapper extends Propertiable{
 	void removeLabel(Label label);
 	void addLabel(Label label);
 	void delete();
-	void setId(long id);
+	void setId(String id);
 	default void addLabels(Label... labels) {
 		for (Label label : labels)
 			addLabel(label);

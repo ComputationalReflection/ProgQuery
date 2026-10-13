@@ -36,6 +36,7 @@ public class InfoToInsert {
 	public void deleteRel(Neo4jLazyRelationship rel) {
 		relSet.remove(rel);
 	}
+
 	public List<Pair<String, Object[]>> getNodeQueriesInfo() {
 		final List<Pair<String, Object[]>> nodeQueries = new ArrayList<>();
 		for (NodeWrapper n : nodeSet)

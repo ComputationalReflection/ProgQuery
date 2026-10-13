@@ -9,7 +9,7 @@ import java.util.Set;
 
 public class Neo4jDriverQueriedNode extends Neo4jLazyNode implements NodeWrapper {
 
-    public Neo4jDriverQueriedNode(long id) {
+    public Neo4jDriverQueriedNode(String id) {
         super(id);
     }
 
@@ -63,7 +63,7 @@ public class Neo4jDriverQueriedNode extends Neo4jLazyNode implements NodeWrapper
     }
 
     @Override
-    public void setId(long id) {
+    public void setId(String id) {
         throw new IllegalStateException("ID of queried nodes cannot be set.");
     }
 

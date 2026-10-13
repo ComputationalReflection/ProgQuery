@@ -79,11 +79,8 @@ public class CompilationScheduler {
         try {
             ProgQuery.LOGGER.info(String.format("New Compilation Task: %s", javac_options));
             List<String> options = parseOptions(javac_options);
-            List<String> unsupportedErrorProneOptions = Arrays.asList(
-                    "-XepDisableAllChecks",
-                    "-XepDisableWarningsInGeneratedCode");
-            options.removeIf(option -> unsupportedErrorProneOptions.contains(option)
-                    || option.startsWith("-XepExcludedPaths"));
+            options.removeIf(option -> option.startsWith("-Xep")
+                    || option.startsWith("-Xplugin:ErrorProne"));
 
             String javac_version = getOptionValue(options,"-release");
             if (javac_version.isEmpty())

@@ -147,9 +147,8 @@ public class JavacInfo {
         this.currCompilationUnit = currCompilationUnit;
     }
 
-    public static boolean isSubSignatureOwn(ExecutableType sub, ExecutableType sup) {
+    public boolean isSubSignatureOwn(ExecutableType sub, ExecutableType sup) {
 
-        com.sun.tools.javac.code.Types types = currentJavacInfo.get().types;
         for (int i = 0; i < sub.getParameterTypes().size(); i++) {
             Type supType = (Type) sup.getParameterTypes().get(i);
             boolean subtyping = false;
@@ -175,18 +174,21 @@ public class JavacInfo {
         //		return sub.overrides(sup, (Symbol.TypeSymbol)sub.owner,currentJavacInfo.get().types, true);
     }
 
-    private static boolean isSubTypeOwn(Type sub, Type sup) {
+    private boolean isSubTypeOwn(Type sub, Type sup) {
         if (sub instanceof Type.ClassType && sup instanceof Type.ClassType)
             return isSubTypeRec((Type.ClassType) sub, (Type.ClassType) sup);
         return false;
     }
 
-    private static boolean isSubTypeRec(Type.ClassType sub, Type.ClassType sup) {
+    private boolean isSubTypeRec(Type.ClassType sub, Type.ClassType sup) {
         if (sub == null)
             return false;
         if (isSameTypeOwn(sub, sup))
             return true;
-        if (sub.toString().contentEquals("java.lang.Object"))
+        if (isSameTypeOwn(sub, symTab.objectType))
+            return false;
+
+        if(!(sub.supertype_field instanceof Type.ClassType))
             return false;
         if (isSubTypeRec((Type.ClassType) sub.supertype_field, sup))
             return true;
@@ -197,8 +199,19 @@ public class JavacInfo {
         return false;
     }
 
-    private static boolean isSameTypeOwn(Type t1, Type t2) {
-        return t1.toString().contentEquals(t2.toString());
+    private boolean isSameTypeOwn(Type t1, Type t2) {
+        if(t1==null)
+            throw new NullPointerException("First type is null");
+        if(t2==null)
+            throw new NullPointerException("Second type is null");
+
+        try {
+            return t1.toString().contentEquals(t2.toString());
+        }catch(NullPointerException n){
+            if(!n.getMessage().contains("Cannot load from object array because \"this.hashes\" is null"))
+                throw n;
+            return t1.equals(t2);
+        }
     }
 
     private static Object[] getPosition(Object line, Object column, Object position) {

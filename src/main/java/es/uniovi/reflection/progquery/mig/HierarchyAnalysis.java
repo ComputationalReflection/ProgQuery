@@ -81,7 +81,7 @@ public class HierarchyAnalysis {
                         MethodSigInfo possibleOverriderSigInfo = methodNodeToSigInfo.get(possibleOverrider);
                         if(possibleOverriderSigInfo==null)
                             continue;
-                        if (JavacInfo.isSubSignatureOwn(possibleOverriderSigInfo.getExecutableType(),
+                        if (JavacInfo.currentJavacInfo.get().isSubSignatureOwn(possibleOverriderSigInfo.getExecutableType(),
                                 methodSigInfo.getExecutableType())) {
                             overrider = possibleOverrider;
                             break;

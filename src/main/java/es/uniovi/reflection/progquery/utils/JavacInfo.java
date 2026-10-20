@@ -1,6 +1,5 @@
 package es.uniovi.reflection.progquery.utils;
 
-import com.google.common.collect.Maps;
 import com.sun.source.tree.*;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
@@ -188,7 +187,7 @@ public class JavacInfo {
         if (isSameTypeOwn(sub, symTab.objectType))
             return false;
 
-        if(!(sub.supertype_field instanceof Type.ClassType))
+        if (!(sub.supertype_field instanceof Type.ClassType))
             return false;
         if (isSubTypeRec((Type.ClassType) sub.supertype_field, sup))
             return true;
@@ -200,17 +199,20 @@ public class JavacInfo {
     }
 
     private boolean isSameTypeOwn(Type t1, Type t2) {
-        if(t1==null)
+        if (t1 == null)
             throw new NullPointerException("First type is null");
-        if(t2==null)
+        if (t2 == null)
             throw new NullPointerException("Second type is null");
 
         try {
             return t1.toString().contentEquals(t2.toString());
-        }catch(NullPointerException n){
-            if(!n.getMessage().contains("Cannot load from object array because \"this.hashes\" is null"))
+        } catch (NullPointerException n) {
+            if (n.getMessage() == null ||
+                    n.getMessage().contains("Cannot load from object array because \"this.hashes\" is null"))
+
+                return t1.equals(t2);
+            else
                 throw n;
-            return t1.equals(t2);
         }
     }
 

@@ -80,7 +80,9 @@ public class CompilationScheduler {
             ProgQuery.LOGGER.info(String.format("New Compilation Task: %s", javac_options));
             List<String> options = parseOptions(javac_options);
             options.removeIf(option -> option.startsWith("-Xep")
-                    || option.startsWith("-Xplugin:ErrorProne"));
+                    || option.startsWith("-Xplugin:ErrorProne")
+                    || option.startsWith("-AGeneratedDocumentationPath=")
+                    || option.startsWith("-ADocumentation."));
 
             String javac_version = getOptionValue(options,"-release");
             if (javac_version.isEmpty())

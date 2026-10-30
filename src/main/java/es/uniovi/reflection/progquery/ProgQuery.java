@@ -85,8 +85,8 @@ public class ProgQuery {
                     + "\n\tSuccess: " + result.isSuccess()
                     + "\n\tCompilation Tasks: " + result.getCompilationResults().size()
                     + "\n\tJavac Version: " + result.getJavacVersion()
-                    + "\n\tTotal Files Compiled: " + result.getTotalCompiledFiles()
-                    + "\n\tTotal Number of Diagnostics: " + result.getAllDiagnostics().size()
+                    + "\n\tTotal Number of Files Compiled: " + result.getTotalCompiledFiles()
+                    + "\n\tTotal Number of Diagnostics: " + result.getTotalDiagnostics()
                     + "\n\tHas Warnings: " + result.hasWarnings()
                     + "\n\tTotal Elapsed Time (millis): " + result.getElapsedTime()
                     + "\n");

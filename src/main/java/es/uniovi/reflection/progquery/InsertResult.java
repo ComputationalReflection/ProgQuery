@@ -1,5 +1,6 @@
 package es.uniovi.reflection.progquery;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,12 +29,21 @@ public class InsertResult {
     }
 
     public int getTotalCompiledFiles() {
-        return compilationResults.stream().mapToInt(CompilationResult::getCompiledFiles).sum();
+        return compilationResults.stream().mapToInt(result -> result.getCompiledFiles().size()).sum();
+    }
+
+    public List<File> getAllCompiledFiles() {
+        return compilationResults.stream().flatMap(result -> result.getCompiledFiles().stream()).toList();
+    }
+
+    public int getTotalDiagnostics() {
+        return compilationResults.stream().mapToInt(result -> result.getDiagnostics().size()).sum();
     }
 
     public List<String> getAllDiagnostics() {
         return compilationResults.stream().flatMap(result -> result.getDiagnostics().stream()).toList();
     }
+
     public void setElapsedTime(long elapsedTime) { this.elapsedTime = elapsedTime;}
     public long getElapsedTime() { return elapsedTime; }
 

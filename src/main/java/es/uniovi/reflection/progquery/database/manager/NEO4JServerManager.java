@@ -1,6 +1,7 @@
 package es.uniovi.reflection.progquery.database.manager;
 
 import es.uniovi.reflection.progquery.ProgQuery;
+import es.uniovi.reflection.progquery.node_wrappers.Neo4jDriverQueriedNode;
 import es.uniovi.reflection.progquery.node_wrappers.Neo4jLazyNode;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import org.neo4j.driver.*;
@@ -20,9 +21,11 @@ public class NEO4JServerManager implements NEO4JManager {
             List<Record> programsIfAny = executeQuery(String.format("MATCH (p:PROGRAM) WHERE p.ID='%s' AND p.USER_ID='%s' RETURN ID(p)", programId, userId));
             if (programsIfAny.size() == 0)
                 return null;
-            return new Neo4jLazyNode(programsIfAny.get(0).get(0).asLong());
+            ProgQuery.LOGGER.info("Program " + userId + ":" + programId + " found in database.");
+            return new Neo4jDriverQueriedNode(programsIfAny.get(0).get(0).asString());
         } catch (Exception e) {
-            System.err.println("Error getting program " + userId + ":" + programId + " from database.");
+            System.err.println("Error getting program " + userId + ":" + programId + " from database. Error: " +  e);
+            e.printStackTrace();
             return null;
         }
     }

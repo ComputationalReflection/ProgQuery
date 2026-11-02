@@ -12,6 +12,8 @@ public interface Propertiable {
 	}
 
 	default void setProperties(Object[] props) {
+		if (props == null || props.length % 2 != 0)
+			throw new IllegalArgumentException("Properties must be supplied as name-value pairs.");
 		for (int i = 0; i < props.length; i += 2)
 			setProperty(props[i].toString(), props[i + 1]);
 	}

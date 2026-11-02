@@ -53,6 +53,8 @@ public class EmbeddedInsertion implements InsertionStrategy {
     }
 
     private void addProps(Neo4jEmbeddedWrapperNode wrapper, Object[] props) {
+        if (props == null || props.length % 2 != 0)
+            throw new IllegalArgumentException("Properties must be supplied as name-value pairs.");
 
         Node n = wrapper.getNode();
         for (int i = 0; i < props.length; i = i + 2)

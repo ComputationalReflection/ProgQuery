@@ -10,6 +10,8 @@ abstract class AbstractNeo4jLazyServerDriverElement implements Propertiable {
 	Map<String, Object> properties = new HashMap<String, Object>();
 
 	public AbstractNeo4jLazyServerDriverElement(Object... props) {
+		if (props == null || props.length % 2 != 0)
+			throw new IllegalArgumentException("Properties must be supplied as name-value pairs.");
 		for (int i = 0; i < props.length; i = i + 2)
 			properties.put(props[i].toString(), props[i + 1]);
 	}

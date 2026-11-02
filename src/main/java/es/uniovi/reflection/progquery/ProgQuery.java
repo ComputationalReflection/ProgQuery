@@ -72,28 +72,32 @@ public class ProgQuery {
         InsertResult result = new InsertResult();
         ProgQuery.LOGGER.info("Insertion started ...");
         Instant buildStart = Instant.now();
-        for (String javac_options : javac_options_list)
-            result.addCompilationResult(compilationScheduler.newCompilationTask(javac_options));
-        if (result.isSuccess()) {
-            compilationScheduler.finalizeInsertion();
-            result.setElapsedTime(Duration.between(buildStart, Instant.now()).toMillis());
-            if ((result.hasWarnings()))
-                ProgQuery.LOGGER.info("Insertion completed with warnings.");
-            else
-                ProgQuery.LOGGER.info("Insertion completed without errors.");
-            ProgQuery.LOGGER.info("Insertion Summary"
-                    + "\n\tSuccess: " + result.isSuccess()
-                    + "\n\tCompilation Tasks: " + result.getCompilationResults().size()
-                    + "\n\tJavac Version: " + result.getJavacVersion()
-                    + "\n\tTotal Number of Files Compiled: " + result.getTotalCompiledFiles()
-                    + "\n\tTotal Number of Diagnostics: " + result.getTotalDiagnostics()
-                    + "\n\tHas Warnings: " + result.hasWarnings()
-                    + "\n\tTotal Elapsed Time (millis): " + result.getElapsedTime()
-                    + "\n");
-        } else
-            ProgQuery.LOGGER.info("Insertion aborted, errors found.");
-        resetCaches();
-        return result;
+        try {
+            for (String javac_options : javac_options_list)
+                result.addCompilationResult(compilationScheduler.newCompilationTask(javac_options));
+            if (result.isSuccess()) {
+                compilationScheduler.finalizeInsertion();
+                result.setElapsedTime(Duration.between(buildStart, Instant.now()).toMillis());
+                if ((result.hasWarnings()))
+                    ProgQuery.LOGGER.info("Insertion completed with warnings.");
+                else
+                    ProgQuery.LOGGER.info("Insertion completed without errors.");
+                ProgQuery.LOGGER.info("Insertion Summary"
+                        + "\n\tSuccess: " + result.isSuccess()
+                        + "\n\tCompilation Tasks: " + result.getCompilationResults().size()
+                        + "\n\tJavac Version: " + result.getJavacVersion()
+                        + "\n\tTotal Number of Files Compiled: " + result.getTotalCompiledFiles()
+                        + "\n\tTotal Number of Diagnostics: " + result.getTotalDiagnostics()
+                        + "\n\tHas Warnings: " + result.hasWarnings()
+                        + "\n\tTotal Elapsed Time (millis): " + result.getElapsedTime()
+                        + "\n");
+            } else
+                ProgQuery.LOGGER.info("Insertion aborted, errors found.");
+            return result;
+        } finally {
+            compilationScheduler.closeFileManagers();
+            resetCaches();
+        }
     }
 
     public static void resetCaches() {

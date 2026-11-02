@@ -16,6 +16,7 @@ import es.uniovi.reflection.progquery.visitors.PDGProcessing;
 import javax.tools.*;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,6 +36,7 @@ public class CompilationScheduler {
     private PDGProcessing pdgUtils;
     private ASTAuxiliarStorage ast;
     private JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    private final List<StandardJavaFileManager> fileManagers = new ArrayList<>();
 
     private CompilationScheduler(ASTAuxiliarStorage ast) {
         this.ast = ast;
@@ -107,6 +109,7 @@ public class CompilationScheduler {
 
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
             StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, Charset.forName("UTF-8"));
+            fileManagers.add(fileManager);
             Iterable<? extends JavaFileObject> sources = fileManager.getJavaFileObjectsFromFiles(files);
             result.setCompiledFiles(files);
             if (files.isEmpty()) {
@@ -114,7 +117,7 @@ public class CompilationScheduler {
                 return result;
             }
 
-            JavacTaskImpl compilerTask = (JavacTaskImpl) compiler.getTask(null, null, diagnostics, task_options, null, sources);
+            JavacTaskImpl compilerTask = (JavacTaskImpl) compiler.getTask(null, fileManager, diagnostics, task_options, null, sources);
             JavacInfo.currentJavacInfo.set(new JavacInfo(compilerTask));
             addListener(compilerTask, StreamSupport.stream(sources.spliterator(), false).collect(Collectors.toSet()));
             runPQCompilationTask(compilerTask);
@@ -185,6 +188,21 @@ public class CompilationScheduler {
 
     public void shutdownDatabase() {
         DatabaseFacade.CURRENT_INSERTION_STRATEGY.endAnalysis();
+    }
+
+    public void closeFileManagers() {
+        UncheckedIOException closeFailure = null;
+        for (StandardJavaFileManager fileManager : fileManagers) {
+            try {
+                fileManager.close();
+            } catch (IOException exception) {
+                if (closeFailure == null)
+                    closeFailure = new UncheckedIOException("Unable to close the Java file manager", exception);
+            }
+        }
+        fileManagers.clear();
+        if (closeFailure != null)
+            throw closeFailure;
     }
 
     private void setCurrentProgram(String programID, String userID) {

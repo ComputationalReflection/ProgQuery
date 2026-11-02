@@ -5,6 +5,7 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
+import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
@@ -199,20 +200,21 @@ public class JavacInfo {
     }
 
     private boolean isSameTypeOwn(Type t1, Type t2) {
-        if (t1 == null)
+        if (t1 == null) {
             throw new NullPointerException("First type is null");
-        if (t2 == null)
+        }
+        if (t2 == null) {
             throw new NullPointerException("Second type is null");
-
+        }
         try {
-            return t1.toString().contentEquals(t2.toString());
-        } catch (NullPointerException n) {
-            if (n.getMessage() == null ||
-                    n.getMessage().contains("Cannot load from object array because \"this.hashes\" is null"))
-
+            return types.isSameType(t1, t2);
+        } catch (ClassFinder.BadClassFile exception) {
+            return t1.equals(t2);
+        } catch (NullPointerException exception) {
+            String message = exception.getMessage();
+            if (message == null || message.contains("Cannot load from object array because \"this.hashes\" is null"))
                 return t1.equals(t2);
-            else
-                throw n;
+            throw exception;
         }
     }
 

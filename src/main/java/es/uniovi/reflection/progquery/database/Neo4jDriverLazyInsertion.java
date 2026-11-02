@@ -7,14 +7,17 @@ import es.uniovi.reflection.progquery.database.manager.NEO4JServerManager;
 
 public class Neo4jDriverLazyInsertion extends NotPersistentLazyInsertion{
 	private final int MAX_OPERATIONS_PER_TRANSACTION;
+	private final int MAX_CONCURRENT_WRITE_TRANSACTIONS;
 	private final String ADDRESS, USER, PASS, DB_NAME;
 	private static final int DEFAULT_MAX = 80_000;
+	private static final int DEFAULT_MAX_CONCURRENT_WRITE_TRANSACTIONS = 4;
 	public Neo4jDriverLazyInsertion(String connectionString) {
 		this(DEFAULT_MAX, connectionString);
 	}
 	public Neo4jDriverLazyInsertion(int maxNodes, String connectionString) {
 		super();
 		MAX_OPERATIONS_PER_TRANSACTION = maxNodes;
+		MAX_CONCURRENT_WRITE_TRANSACTIONS = DEFAULT_MAX_CONCURRENT_WRITE_TRANSACTIONS;
 		String[] connectionData = connectionString.split(";");
 		ADDRESS = connectionData[2];
 		USER = connectionData[0];
@@ -23,8 +26,15 @@ public class Neo4jDriverLazyInsertion extends NotPersistentLazyInsertion{
 	}
 	
 	public Neo4jDriverLazyInsertion(String host, String port, String user, String password, String database, String max_operations_transaction) {
+		this(host, port, user, password, database, max_operations_transaction,
+				String.valueOf(DEFAULT_MAX_CONCURRENT_WRITE_TRANSACTIONS));
+	}
+
+	public Neo4jDriverLazyInsertion(String host, String port, String user, String password, String database,
+								String max_operations_transaction, String max_concurrent_write_transactions) {
 		super();
-		MAX_OPERATIONS_PER_TRANSACTION = Integer.parseInt(max_operations_transaction);		
+		MAX_OPERATIONS_PER_TRANSACTION = Integer.parseInt(max_operations_transaction);
+		MAX_CONCURRENT_WRITE_TRANSACTIONS = Integer.parseInt(max_concurrent_write_transactions);
 		ADDRESS = host + ":" + port;
 		USER = user;
 		PASS = password;
@@ -35,10 +45,10 @@ public class Neo4jDriverLazyInsertion extends NotPersistentLazyInsertion{
 	public void endAnalysis() {
 		if (DB_NAME == null)
 			DriverLazyInsertionService.defaultDBInsertion(InfoToInsert.INFO_TO_INSERT.get(), ADDRESS, USER, PASS,
-					MAX_OPERATIONS_PER_TRANSACTION);
+					MAX_OPERATIONS_PER_TRANSACTION, MAX_CONCURRENT_WRITE_TRANSACTIONS);
 		else
 			DriverLazyInsertionService.insertToSpecificDB(InfoToInsert.INFO_TO_INSERT.get(), ADDRESS, USER, PASS,
-					MAX_OPERATIONS_PER_TRANSACTION, DB_NAME);
+					MAX_OPERATIONS_PER_TRANSACTION, MAX_CONCURRENT_WRITE_TRANSACTIONS, DB_NAME);
 	}
 
 	@Override

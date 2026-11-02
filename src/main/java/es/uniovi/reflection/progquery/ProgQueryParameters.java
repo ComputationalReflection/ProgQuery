@@ -24,6 +24,7 @@ public class ProgQueryParameters {
             "\t-neo4j_database=<database_name>\n\t\tNEO4J Database name. (Default value is the -user parameter value, short form:-ndb=<database_name>)\n" +
             "\t-neo4j_database_path=<database_path>\n\t\tNEO4J Database path, when Local mode is used. (Short form:-ndbp=<database_path>)\n" +
             "\t-max_operations_transaction=<number>\n\t\tMaximum number of operations per transaction. (Default value is 80000, short form:-mot=<number>)\n" +
+            "\t-max_concurrent_write_transactions=<number>\n\t\tMaximum concurrent write transactions. (Default value is 4, short form:-mcwt=<number>)\n" +
             "\t\"javac_options_1\" ... \"javac_options_n\"\n\t\tA list of sets of options between \" separated by white spaces used to run the Java compiler several times.\n" +
             "\t-verbose\n\t\tShows log info (Default value is false).\n" +
             "\n";
@@ -45,6 +46,7 @@ public class ProgQueryParameters {
     protected static final String DEFAULT_NEO4J_PORT_NUMBER = "7687";
     protected static final String DEFAULT_NEO4J_USER = "neo4j";
     protected static final String DEFAULT_MAX_OPERATIONS_TRANSACTION = "80000";
+    protected static final String DEFAULT_MAX_CONCURRENT_WRITE_TRANSACTIONS = "4";
     protected static final String[] HELP_OPTIONS = { "help" , "?" };
     protected static final String[] USER_OPTIONS = { "user","u" };
     protected static final String[] PROGRAM_OPTIONS = { "program","p" };
@@ -57,6 +59,7 @@ public class ProgQueryParameters {
     protected static final String[] NEO4J_HOST_OPTIONS = { "neo4j_host","nh" };
     protected static final String[] NEO4J_PORT_NUMBER_OPTIONS = { "neo4j_port_number","npn" };
     protected static final String[] MAX_OPERATIONS_TRANSACTION_OPTIONS = { "max_operations_transaction","mot" };
+    protected static final String[] MAX_CONCURRENT_WRITE_TRANSACTIONS_OPTIONS = { "max_concurrent_write_transactions", "mcwt" };
     protected static final String[] VERBOSE_OPTIONS = { "verbose" };
     protected static final String[] OPTIONS_PREFIX = { "-" };
     protected static final String[] OPTIONS_ASSIGNMENT = { "=" };
@@ -70,6 +73,7 @@ public class ProgQueryParameters {
     public String neo4j_host = "";
     public String neo4j_port_number = DEFAULT_NEO4J_PORT_NUMBER;
     public String max_operations_transaction = DEFAULT_MAX_OPERATIONS_TRANSACTION;
+    public String max_concurrent_write_transactions = DEFAULT_MAX_CONCURRENT_WRITE_TRANSACTIONS;
     public boolean verbose = DEFAULT_VERBOSE;
     public List<String> javac_options = new ArrayList<>();
 
@@ -228,6 +232,12 @@ public class ProgQueryParameters {
         for (String opString : ProgQueryParameters.MAX_OPERATIONS_TRANSACTION_OPTIONS) {
             if (isOption(lowerCaseOption,opString)) {
                 this.max_operations_transaction = parseValue(option.substring(opString.length()));
+                return true;
+            }
+        }
+        for (String opString : ProgQueryParameters.MAX_CONCURRENT_WRITE_TRANSACTIONS_OPTIONS) {
+            if (isOption(lowerCaseOption, opString)) {
+                this.max_concurrent_write_transactions = parseValue(option.substring(opString.length()));
                 return true;
             }
         }

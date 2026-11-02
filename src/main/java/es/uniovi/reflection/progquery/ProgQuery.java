@@ -25,12 +25,21 @@ public class ProgQuery {
     private String neo4j_password;
     private String neo4j_database;
     private String max_operations_transaction;
+    private String max_concurrent_write_transactions;
     private String neo4j_database_path;
     private boolean neo4j_server_mode;
 
 
     public ProgQuery(String neo4j_host, String neo4j_port, String neo4j_user, String neo4j_password,
                      String neo4j_database, String max_operations_transaction, String userId, String programId,
+                     boolean verbose) {
+        this(neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_database, max_operations_transaction, "4",
+                userId, programId, verbose);
+    }
+
+    public ProgQuery(String neo4j_host, String neo4j_port, String neo4j_user, String neo4j_password,
+                     String neo4j_database, String max_operations_transaction, String max_concurrent_write_transactions,
+                     String userId, String programId,
                      boolean verbose) {
         this.userId = userId;
         this.programId = programId;
@@ -40,6 +49,7 @@ public class ProgQuery {
         this.neo4j_password = neo4j_password;
         this.neo4j_database = neo4j_database;
         this.max_operations_transaction = max_operations_transaction;
+        this.max_concurrent_write_transactions = max_concurrent_write_transactions;
         this.neo4j_server_mode = true;
 
         if (!verbose)
@@ -65,7 +75,7 @@ public class ProgQuery {
         if (neo4j_server_mode)
             compilationScheduler =
                     new CompilationScheduler(ast, neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_database,
-                            max_operations_transaction, programId, userId);
+                            max_operations_transaction, max_concurrent_write_transactions, programId, userId);
         else
             compilationScheduler =
                     new CompilationScheduler(ast, neo4j_database_path, neo4j_database, programId, userId);

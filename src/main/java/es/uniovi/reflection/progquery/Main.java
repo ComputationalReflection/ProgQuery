@@ -14,7 +14,7 @@ public class Main {
     public static void main(String[] args) {
         ProgQueryParameters parameters = ProgQueryParameters.parseArguments(args);
         ProgQuery progquery = parameters.neo4j_mode.equals(ProgQueryParameters.NEO4J_MODE_SERVER) ?
-                new ProgQuery(parameters.neo4j_host,parameters.neo4j_port_number,parameters.neo4j_user,parameters.neo4j_password,parameters.neo4j_database,parameters.max_operations_transaction,parameters.userId,parameters.programId, parameters.verbose):
+                new ProgQuery(parameters.neo4j_host,parameters.neo4j_port_number,parameters.neo4j_user,parameters.neo4j_password,parameters.neo4j_database,parameters.max_operations_transaction,parameters.max_concurrent_write_transactions,parameters.userId,parameters.programId, parameters.verbose):
                 new ProgQuery(parameters.neo4j_database_path, parameters.neo4j_database, parameters.userId,parameters.programId,parameters.verbose);
 
         System.out.print("\nBuilding " + parameters.userId + ":" + parameters.programId + "... ");

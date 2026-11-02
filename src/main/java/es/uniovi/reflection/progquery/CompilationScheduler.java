@@ -45,14 +45,14 @@ public class CompilationScheduler {
 
     public CompilationScheduler(ASTAuxiliarStorage ast, String neo4j_host, String neo4j_port, String neo4j_user,
                                 String neo4j_password, String neo4j_database, String max_operations_transaction,
-                                String programID, String userID) {
+                                String max_concurrent_write_transactions, String programID, String userID) {
         this(ast);
         ProgQuery.LOGGER.info(
                 String.format("New Compilation Scheduler: %s:%s:%s:%s:%s:%s", neo4j_host, neo4j_port, neo4j_user,
                         neo4j_database, userID, programID));
         DatabaseFacade.init(
                 new Neo4jDriverLazyInsertion(neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_database,
-                        max_operations_transaction));
+                        max_operations_transaction, max_concurrent_write_transactions));
         setCurrentProgram(programID, userID);
     }
 

@@ -11,6 +11,7 @@ import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.type.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
@@ -100,10 +101,17 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
 
     @Override
     public TypeKey visitTypeVariable(TypeVariable t, Object param) {
-        ElementKind ownerKind = ((TypeVar) t).tsym.owner.getKind();
-        return ownerKind == ElementKind.METHOD || ownerKind == ElementKind.CONSTRUCTOR ||
-                ownerKind == ElementKind.STATIC_INIT || ownerKind == ElementKind.INSTANCE_INIT ?
-                new TypeVariableKey(t) : new TypeVariableKey(t, ((TypeVar) t).tsym.owner.type.accept(this, null));
+        final Pattern CAPTURE_IDENTIFIER = Pattern.compile("capture#\\d+");
+        String typeName = t.toString();
+        if (!CAPTURE_IDENTIFIER.matcher(typeName).find()) {
+            ElementKind ownerKind = ((TypeVar) t).tsym.owner.getKind();
+            return ownerKind == ElementKind.METHOD || ownerKind == ElementKind.CONSTRUCTOR ||
+                    ownerKind == ElementKind.STATIC_INIT || ownerKind == ElementKind.INSTANCE_INIT ?
+                    new TypeVariableKey(t) : new TypeVariableKey(t, ((TypeVar) t).tsym.owner.type.accept(this, null));
+        }
+        Type.CapturedType capturedType = (Type.CapturedType) t;
+
+        return new CapturedTypeKey((WildcardKey) capturedType.wildcard.accept(this, null), capturedType.getUpperBound().accept(this, null), capturedType.lower.accept(this, null));
     }
 
     @Override

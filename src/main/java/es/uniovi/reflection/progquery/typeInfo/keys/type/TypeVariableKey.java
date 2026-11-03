@@ -13,31 +13,19 @@ import java.util.regex.Pattern;
 
 
 public class TypeVariableKey implements TypeKey {
-
-    private static final Pattern CAPTURE_IDENTIFIER = Pattern.compile("capture#\\d+");
-
     private String name;
     private ElementKey ownerKey;
 
     public TypeVariableKey(TypeVariable typeVar) {
-        name = stableName(typeVar);
+        name = typeVar.toString();
 
         ownerKey =
                 new CallableKey((Symbol.MethodSymbol) ((Type.TypeVar) typeVar).tsym.owner);
     }
 
     public TypeVariableKey(TypeVariable typeVar, TypeKey ownerKey) {
-        name = stableName(typeVar);
+        name = typeVar.toString();
         this.ownerKey = ownerKey;
-    }
-
-    private static String stableName(TypeVariable typeVar) {
-        String typeName = typeVar.toString();
-        if (!CAPTURE_IDENTIFIER.matcher(typeName).find())
-            return typeName;
-        String sourceLocation = JavacInfo.getCurrentTreeLocation();
-        String normalizedTypeName = CAPTURE_IDENTIFIER.matcher(typeName).replaceAll("capture");
-        return sourceLocation == null ? normalizedTypeName : sourceLocation + ':' + normalizedTypeName;
     }
 
     @Override

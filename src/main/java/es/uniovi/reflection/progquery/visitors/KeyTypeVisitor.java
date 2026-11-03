@@ -2,22 +2,24 @@ package es.uniovi.reflection.progquery.visitors;
 
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.TypeVar;
+import es.uniovi.reflection.progquery.typeInfo.keys.TypeKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.type.*;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
-import es.uniovi.reflection.progquery.typeInfo.keys.TypeKey;
 
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.type.*;
+import javax.lang.model.type.TypeVisitor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
+    public static final KeyTypeVisitor INSTANCE = new KeyTypeVisitor();
+
     public KeyTypeVisitor() {
     }
-    public static final KeyTypeVisitor INSTANCE = new KeyTypeVisitor();
+
     @Override
     public TypeKey visit(TypeMirror t) {
         throw new IllegalStateException(t.getClass().toString());
@@ -36,7 +38,7 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
 
     @Override
     public TypeKey visitDeclared(DeclaredType declaredType, Object param) {
-        if (declaredType.getTypeArguments().stream().filter(argType -> !(argType instanceof TypeVar) ||
+        if (param==null && declaredType.getTypeArguments().stream().filter(argType -> !(argType instanceof TypeVar) ||
                 !((TypeVar) argType).tsym.owner.type.equals(declaredType)).count() > 0)
             return new ParameterizedTypeKey(
                     declaredType.getTypeArguments().stream().map(argT -> argT.accept(this, null))
@@ -78,8 +80,7 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
         if (t.getKind() == TypeKind.PACKAGE)
             throw new IllegalStateException(
                     "Type %s is package type which is not longer supported. A package type key should never be " +
-                            "visited " +
-                            "here.".formatted(t));
+                            "visited " + "here.".formatted(t));
 
         if (t.getKind() == TypeKind.NONE)
             return NoneTypeKey.NONE_TYPE_KEY;
@@ -110,8 +111,8 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
                     new TypeVariableKey(t) : new TypeVariableKey(t, ((TypeVar) t).tsym.owner.type.accept(this, null));
         }
         Type.CapturedType capturedType = (Type.CapturedType) t;
-
-        return new CapturedTypeKey((WildcardKey) capturedType.wildcard.accept(this, null), capturedType.getUpperBound().accept(this, null), capturedType.lower.accept(this, null));
+        return new CapturedTypeKey((WildcardKey) capturedType.wildcard.accept(this, null),
+                capturedType.getUpperBound().accept(this, capturedType), capturedType.lower.accept(this, capturedType));
     }
 
     @Override

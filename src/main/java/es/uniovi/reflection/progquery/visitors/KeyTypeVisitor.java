@@ -111,7 +111,7 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
                     new TypeVariableKey(t) : new TypeVariableKey(t, ((TypeVar) t).tsym.owner.type.accept(this, null));
         }
         Type.CapturedType capturedType = (Type.CapturedType) t;
-        return new CapturedTypeKey((WildcardKey) capturedType.wildcard.accept(this, null),
+        return new CapturedTypeKey((WildcardKey) capturedType.wildcard.accept(this, capturedType),
                 capturedType.getUpperBound().accept(this, capturedType), capturedType.lower.accept(this, capturedType));
     }
 
@@ -129,8 +129,8 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
     @Override
     public TypeKey visitWildcard(WildcardType t, Object param) {
         return new WildcardKey(
-                (t.getSuperBound() == null ? JavacInfo.getSymtab().botType : t.getSuperBound()).accept(this, null),
+                (t.getSuperBound() == null ? JavacInfo.getSymtab().botType : t.getSuperBound()).accept(this, param),
                 (t.getExtendsBound() == null ? JavacInfo.getSymtab().objectType : t.getExtendsBound()).accept(this,
-                        null));
+                        param));
     }
 }

@@ -180,12 +180,17 @@ public class CompilationScheduler {
 
     public void finalizeInsertion() {
         ProgQuery.LOGGER.info("Finishing insertion ...");
-//        pdgUtils.createNotDeclaredAttrRels(ast);
+        ProgQuery.LOGGER.info("Creating StoredPackageDeps ...");
         createStoredPackageDeps();
+        ProgQuery.LOGGER.info("Dynamic Method Call Analysis ...");
         dynamicMethodCallAnalysis();
+        ProgQuery.LOGGER.info("Interprocedural PDG Analysis ...");
         interproceduralPDGAnalysis();
+        ProgQuery.LOGGER.info("Finalizing Analysis ...");
         initializationAnalysis();
+        ProgQuery.LOGGER.info("Writing graph in database...");
         shutdownDatabase();
+        ProgQuery.LOGGER.info("... insertion completed!!");
     }
 
     public void shutdownDatabase() {

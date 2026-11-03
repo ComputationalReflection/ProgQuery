@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 
 import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_ABSTRACT_PROP;
 import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_STATIC_PROP;
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.FULL_NAME;
 
 public class HierarchyAnalysis {
     private Map<NodeWrapper, InfoFromSubtypes> typeToInheritedInfo = new HashMap<>();
@@ -46,7 +47,8 @@ public class HierarchyAnalysis {
                 subtypeRels.addAll(parameterizesType.getStartNode().getRelationships(Direction.INCOMING, TypeRelations.EXTENDS_CLASS,
                         TypeRelations.IMPLEMENTS_INTERFACE));
 
-        for (RelationshipWrapper subTypeRel : subtypeRels) {
+        for (RelationshipWrapper subTypeRel : subtypeRels.stream()
+                .sorted(Comparator.comparing(rel -> (String) rel.getStartNode().getProperty(FULL_NAME))).toList()) {
             NodeWrapper subType = subTypeRel.getStartNode();
             InfoFromSubtypes infoFromSubtype = dynamicMethodCallAnalysis(subType);
             inheritedInfo.subtypesToPossibleOverriders.putAll(infoFromSubtype.subtypesToPossibleOverriders);
@@ -64,7 +66,8 @@ public class HierarchyAnalysis {
                 typeDec.getRelationships(Direction.OUTGOING, ASTRelationTypes.DECLARES_FIELD), declaredMethods =
                 typeDec.getRelationships(Direction.OUTGOING, ASTRelationTypes.DECLARES_METHOD);
         for (Entry<NodeWrapper, Map<MethodSigInfo, Set<NodeWrapper>>> subTypeInfo :
-                inheritedInfo.subtypesToPossibleOverriders.entrySet()) {
+                inheritedInfo.subtypesToPossibleOverriders.entrySet().stream()
+                        .sorted(Comparator.comparing(entry -> (String) entry.getKey().getProperty(FULL_NAME))).toList()) {
             fieldAnalysis(subTypeInfo.getKey(), declaredFields);
             for (RelationshipWrapper declaredMethodRel : declaredMethods) {
                 NodeWrapper declaredMethod = declaredMethodRel.getEndNode();
@@ -77,7 +80,9 @@ public class HierarchyAnalysis {
                 Set<NodeWrapper> possibleOverridersForSignature = subTypeInfo.getValue().get(methodSigInfo);
                 NodeWrapper overrider = null;
                 if (possibleOverridersForSignature != null)
-                    for (NodeWrapper possibleOverrider : possibleOverridersForSignature) {
+                    for (NodeWrapper possibleOverrider : possibleOverridersForSignature.stream()
+                            .sorted(Comparator.comparing(node -> (String) node.getProperty(FULL_NAME)))
+                            .toList()) {
                         MethodSigInfo possibleOverriderSigInfo = methodNodeToSigInfo.get(possibleOverrider);
                         if(possibleOverriderSigInfo==null)
                             continue;

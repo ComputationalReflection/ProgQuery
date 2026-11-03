@@ -102,6 +102,8 @@ public class CompilationScheduler {
                     .collect(Collectors.toList()))
                 files.add(Paths.get(new File(sourceFile).getCanonicalPath()).toAbsolutePath().toFile());
 
+            files.sort(java.util.Comparator.comparing(File::getAbsolutePath));
+
             List<String> task_options = new ArrayList<>();
             for (String option : options.stream().filter(o -> o.startsWith("-") && !o.startsWith("-sourcepath"))
                     .collect(Collectors.toList()))

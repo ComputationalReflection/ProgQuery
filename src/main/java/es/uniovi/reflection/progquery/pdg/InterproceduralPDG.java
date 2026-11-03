@@ -15,8 +15,10 @@ import org.neo4j.graphdb.Direction;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.StreamSupport;
 
 import static es.uniovi.reflection.progquery.database.relations.RelationProperties.IS_OWN_ACCESS;
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.FULL_NAME;
 
 public class InterproceduralPDG {
 
@@ -40,9 +42,14 @@ public class InterproceduralPDG {
         NodeWrapper methodDec = methodInfo.methodNode;
         methodDecsAnalyzed.add(methodDec);
         if (methodDecToCalls.containsKey(methodDec))
-            for (RelationshipWrapper callRel : methodDecToCalls.get(methodDec)) {
-                Iterable<RelationshipWrapper> possibleMethodDecsForCalls = callRel.getEndNode()
-                        .getRelationships(Direction.OUTGOING, CGRelationTypes.REFERS_TO, CGRelationTypes.MAY_REFER_TO);
+            for (RelationshipWrapper callRel : StreamSupport.stream(methodDecToCalls.get(methodDec).spliterator(), false)
+                    .sorted(Comparator.comparing(rel -> (String) rel.getEndNode().getProperty(FULL_NAME),
+                            Comparator.nullsLast(Comparator.naturalOrder()))).toList()) {
+                List<RelationshipWrapper> possibleMethodDecsForCalls = callRel.getEndNode()
+                        .getRelationships(Direction.OUTGOING, CGRelationTypes.REFERS_TO, CGRelationTypes.MAY_REFER_TO)
+                        .stream().sorted(Comparator.comparing(rel -> (String) rel.getEndNode().getProperty(FULL_NAME),
+                                Comparator.nullsLast(Comparator.naturalOrder())))
+                        .toList();
                 possibleMethodDecsForCalls.forEach(possibleMethodDecForCall -> {
                     if (!methodDecsAnalyzed.contains(possibleMethodDecForCall.getEndNode())) {
                         doInterproceduralPDGAnalysis(

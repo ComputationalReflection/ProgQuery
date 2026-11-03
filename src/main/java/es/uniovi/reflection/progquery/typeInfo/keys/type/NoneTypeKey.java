@@ -7,4 +7,9 @@ public class NoneTypeKey implements TypeKey {
 
     private NoneTypeKey(){ }
 
+    @Override
+    public String toString() {
+        return "NONE";
+    }
+
 }

@@ -82,6 +82,16 @@ public class ASTTypesVisitor
     }
 
     @Override
+    public ASTVisitorResult scan(Tree tree, Pair<PartialRelation<RelationTypesInterface>, Object> parameter) {
+        Tree previousTree = JavacInfo.setCurrentTree(tree);
+        try {
+            return super.scan(tree, parameter);
+        } finally {
+            JavacInfo.setCurrentTree(previousTree);
+        }
+    }
+
+    @Override
     public ASTVisitorResult reduce(ASTVisitorResult n1, ASTVisitorResult n2) {
         return n2;
     }

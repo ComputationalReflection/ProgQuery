@@ -34,6 +34,7 @@ public class JavacInfo {
     private final Symtab symTab;
 
     private CompilationUnitTree currCompilationUnit;
+    private final ThreadLocal<Tree> currentTree = new ThreadLocal<>();
 
     public JavacInfo(JavacTask task) {
         this.trees = Trees.instance(task);
@@ -68,6 +69,27 @@ public class JavacInfo {
 
         return getPosition(line, column, position);
 
+    }
+
+    public static String getCurrentTreeLocation() {
+        JavacInfo javacInfo = currentJavacInfo.get();
+        Tree tree = javacInfo.currentTree.get();
+        if (tree == null || javacInfo.currCompilationUnit == null)
+            return null;
+        long position = javacInfo.sourcePositions.getStartPosition(javacInfo.currCompilationUnit, tree);
+        if (position < 0)
+            return null;
+        return javacInfo.currCompilationUnit.getSourceFile().getName() + ':' + position;
+    }
+
+    public static Tree setCurrentTree(Tree tree) {
+        JavacInfo javacInfo = currentJavacInfo.get();
+        Tree previous = javacInfo.currentTree.get();
+        if (tree == null)
+            javacInfo.currentTree.remove();
+        else
+            javacInfo.currentTree.set(tree);
+        return previous;
     }
 
     public static Object[] getPosition(NodeWrapper node) {

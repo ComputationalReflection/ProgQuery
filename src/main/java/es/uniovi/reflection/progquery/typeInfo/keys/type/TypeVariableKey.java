@@ -5,26 +5,39 @@ import com.sun.tools.javac.code.Type;
 import es.uniovi.reflection.progquery.typeInfo.keys.CallableKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.ElementKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.TypeKey;
+import es.uniovi.reflection.progquery.utils.JavacInfo;
 
 import javax.lang.model.type.TypeVariable;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 
 public class TypeVariableKey implements TypeKey {
+
+    private static final Pattern CAPTURE_IDENTIFIER = Pattern.compile("capture#\\d+");
 
     private String name;
     private ElementKey ownerKey;
 
     public TypeVariableKey(TypeVariable typeVar) {
-        name = typeVar.toString();
+        name = stableName(typeVar);
 
         ownerKey =
                 new CallableKey((Symbol.MethodSymbol) ((Type.TypeVar) typeVar).tsym.owner);
     }
 
     public TypeVariableKey(TypeVariable typeVar, TypeKey ownerKey) {
-        name = typeVar.toString();
+        name = stableName(typeVar);
         this.ownerKey = ownerKey;
+    }
+
+    private static String stableName(TypeVariable typeVar) {
+        String typeName = typeVar.toString();
+        if (!CAPTURE_IDENTIFIER.matcher(typeName).find())
+            return typeName;
+        String sourceLocation = JavacInfo.getCurrentTreeLocation();
+        String normalizedTypeName = CAPTURE_IDENTIFIER.matcher(typeName).replaceAll("capture");
+        return sourceLocation == null ? normalizedTypeName : sourceLocation + ':' + normalizedTypeName;
     }
 
     @Override

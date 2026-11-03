@@ -23,6 +23,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.FULL_NAME;
+
 import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_INITIALIZER;
 import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_USER_CODE;
 
@@ -152,12 +154,16 @@ private final Map<NodeWrapper, MethodSigInfo> methodToSigInfo = new HashMap<>();
         });
         InterproceduralPDG pdgAnalysis =
                 new InterproceduralPDG(methodDecToCalls, getDecs.getInvocationsMayModifyVars(), methodInfo);
-        methodInfo.values().forEach(mInfo -> pdgAnalysis.doInterproceduralPDGAnalysis(mInfo));
+        methodInfo.values().stream()
+                .sorted(Comparator.comparing(method -> (String) method.methodNode.getProperty(FULL_NAME),
+                        Comparator.nullsLast(Comparator.naturalOrder())))
+                .forEach(pdgAnalysis::doInterproceduralPDGAnalysis);
     }
 
     public void doDynamicMethodCallAnalysis() {
         HierarchyAnalysis dynMethodCallAnalysis = new HierarchyAnalysis(trustableInvocations, methodToSigInfo);
-        for (NodeWrapper typeDec : typeDecNodes)
+        for (NodeWrapper typeDec : typeDecNodes.stream()
+                .sorted(Comparator.comparing(node -> (String) node.getProperty(FULL_NAME))).toList())
             dynMethodCallAnalysis.dynamicMethodCallAnalysis(typeDec);
     }
 

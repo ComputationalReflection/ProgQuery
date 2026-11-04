@@ -5,6 +5,7 @@ import es.uniovi.reflection.progquery.database.manager.NEO4JServerManager;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import org.neo4j.driver.*;
+import org.neo4j.driver.exceptions.TransientException;
 import org.neo4j.graphdb.Label;
 
 import java.util.HashMap;
@@ -55,11 +56,11 @@ public class DriverLazyInsertionService {
                                                 int maxConcurrentWriteTransactions, Supplier<Session> sessionSupplier) {
         logPendingElements(info);
         for (int i = 0; i < REPETITIONS; i++) {
-            actionByPartsInParallel(info.nodeSet.size(), maxOperationsPerTransaction, maxConcurrentWriteTransactions,
-                    sessionSupplier, (session, start, end) ->
+            actionByPartsInParallel("node", info.nodeSet.size(), maxOperationsPerTransaction,
+                    maxConcurrentWriteTransactions, false, sessionSupplier, (session, start, end) ->
                             executeNodeListOneQuery(session, info.nodeSet, start, end));
-            actionByPartsInParallel(info.relSet.size(), maxOperationsPerTransaction, maxConcurrentWriteTransactions,
-                    sessionSupplier, (session, start, end) ->
+            actionByPartsInParallel("relationship", info.relSet.size(), maxOperationsPerTransaction,
+                    maxConcurrentWriteTransactions, true, sessionSupplier, (session, start, end) ->
                             executeRelListOneQuery(session, info.relSet, start, end));
         }
     }
@@ -73,13 +74,16 @@ public class DriverLazyInsertionService {
         action.accept(i * numberPerPart, listSize);
     }
 
-    private static void actionByPartsInParallel(int listSize, int numberPerPart, int maxConcurrentWriteTransactions,
+    private static void actionByPartsInParallel(String elementType, int listSize, int numberPerPart,
+                                                int maxConcurrentWriteTransactions,
+                                                boolean replayDeadlockedBatchesSequentially,
                                                 Supplier<Session> sessionSupplier, SessionBatchAction action) {
         if (numberPerPart <= 0)
             throw new IllegalArgumentException("numberPerPart must be positive.");
         if (maxConcurrentWriteTransactions <= 0)
             throw new IllegalArgumentException("maxConcurrentWriteTransactions must be positive.");
         if (listSize == 0) {
+            ProgQuery.LOGGER.info("No " + elementType + " write transaction batches to execute.");
             try (Session session = sessionSupplier.get()) {
                 action.accept(session, 0, 0);
             }
@@ -88,48 +92,77 @@ public class DriverLazyInsertionService {
 
         int batchCount = (listSize + numberPerPart - 1) / numberPerPart;
         if (batchCount == 1) {
-            ProgQuery.LOGGER.info("Executing one write transaction batch on the calling thread.");
-            try (Session session = sessionSupplier.get()) {
-                action.accept(session, 0, listSize);
-            }
+            executeBatch(elementType, new Batch(1, 0, listSize), batchCount, "calling thread", sessionSupplier, action);
             return;
         }
 
         int workerCount = Math.min(maxConcurrentWriteTransactions, batchCount);
-        ProgQuery.LOGGER.info("Executing " + batchCount + " write transaction batches with " + workerCount +
-                " concurrent worker threads.");
+        ProgQuery.LOGGER.info("Executing " + batchCount + " " + elementType + " write transaction batches with " +
+                workerCount + " concurrent worker threads.");
         ExecutorService executor = Executors.newFixedThreadPool(workerCount);
-        List<Future<?>> futures = new java.util.ArrayList<>(batchCount);
+        List<BatchFuture> futures = new java.util.ArrayList<>(batchCount);
+        List<Batch> deadlockedBatches = new java.util.ArrayList<>();
         boolean completed = false;
         try {
+            int batchNumber = 1;
             for (int start = 0; start < listSize; start += numberPerPart) {
-                int batchStart = start;
-                int batchEnd = Math.min(start + numberPerPart, listSize);
-                futures.add(executor.submit(() -> {
-                    try (Session session = sessionSupplier.get()) {
-                        action.accept(session, batchStart, batchEnd);
-                    }
-                }));
+                Batch batch = new Batch(batchNumber++, start, Math.min(start + numberPerPart, listSize));
+                futures.add(new BatchFuture(batch, executor.submit(() ->
+                        executeBatch(elementType, batch, batchCount, "parallel worker", sessionSupplier, action))));
             }
-            for (Future<?> future : futures)
-                future.get();
+            for (BatchFuture batchFuture : futures) {
+                try {
+                    batchFuture.future().get();
+                } catch (ExecutionException exception) {
+                    Throwable cause = exception.getCause();
+                    if (replayDeadlockedBatchesSequentially && isDeadlock(cause)) {
+                        deadlockedBatches.add(batchFuture.batch());
+                        ProgQuery.LOGGER.warning("Relationship batch " + batchFuture.batch().number() + "/" + batchCount +
+                                " deadlocked and will be replayed sequentially after parallel batches complete.");
+                    } else {
+                        throw propagateBatchFailure(cause);
+                    }
+                }
+            }
+            for (Batch batch : deadlockedBatches) {
+                ProgQuery.LOGGER.info("Replaying deadlocked relationship batch " + batch.number() + "/" + batchCount +
+                        " sequentially.");
+                executeBatch(elementType, batch, batchCount, "sequential retry", sessionSupplier, action);
+            }
             completed = true;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Insertion interrupted while waiting for transaction batches.", exception);
-        } catch (ExecutionException exception) {
-            Throwable cause = exception.getCause();
-            if (cause instanceof RuntimeException runtimeException)
-                throw runtimeException;
-            throw new IllegalStateException("A transaction batch failed.", cause);
         } finally {
             if (completed)
                 executor.shutdown();
             else {
-                futures.forEach(future -> future.cancel(true));
+                futures.forEach(batchFuture -> batchFuture.future().cancel(true));
                 executor.shutdownNow();
             }
         }
+    }
+
+    private static void executeBatch(String elementType, Batch batch, int batchCount, String executionMode,
+                                     Supplier<Session> sessionSupplier, SessionBatchAction action) {
+        ProgQuery.LOGGER.info("Starting " + elementType + " batch " + batch.number() + "/" + batchCount + " [" +
+                batch.start() + ", " + batch.end() + ") on " + executionMode + ".");
+        try (Session session = sessionSupplier.get()) {
+            action.accept(session, batch.start(), batch.end());
+        }
+        ProgQuery.LOGGER.info("Completed " + elementType + " batch " + batch.number() + "/" + batchCount + " [" +
+                batch.start() + ", " + batch.end() + ") on " + executionMode + ".");
+    }
+
+    private static boolean isDeadlock(Throwable throwable) {
+        return throwable instanceof TransientException exception &&
+                "Neo.TransientError.Transaction.DeadlockDetected".equals(exception.code());
+    }
+
+    private static RuntimeException propagateBatchFailure(Throwable cause) {
+        if (cause instanceof RuntimeException runtimeException)
+            return runtimeException;
+        return new IllegalStateException("A transaction batch failed.", cause);
     }
 
     private static Void executeNodeListOneQuery(Session session, List<NodeWrapper> nodes, int start, int end) {
@@ -188,5 +221,9 @@ public class DriverLazyInsertionService {
     private interface SessionBatchAction {
         void accept(Session session, int start, int end);
     }
+
+    private record Batch(int number, int start, int end) {}
+
+    private record BatchFuture(Batch batch, Future<?> future) {}
 
 }

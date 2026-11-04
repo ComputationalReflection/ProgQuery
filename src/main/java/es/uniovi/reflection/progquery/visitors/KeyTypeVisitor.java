@@ -69,7 +69,7 @@ public class KeyTypeVisitor implements TypeVisitor<TypeKey, Object> {
     @Override
     public TypeKey visitIntersection(IntersectionType t, Object param) {
         return new CompoundTypeKey(true,
-                t.getBounds().stream().map(otherType -> otherType.accept(this, null)).collect(Collectors.toList()));
+                t.getBounds().stream().map(otherType -> otherType.accept(this, param)).collect(Collectors.toList()));
     }
 
     @Override

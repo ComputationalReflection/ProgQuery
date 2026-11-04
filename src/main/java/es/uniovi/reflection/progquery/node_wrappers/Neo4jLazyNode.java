@@ -21,13 +21,13 @@ public class Neo4jLazyNode extends AbstractNeo4jLazyServerDriverElement implemen
 	List<RelationshipWrapper> allRels = new ArrayList<>();
 
 	Set<Label> labels = new HashSet<>();
-	String id;
+	long id;
 
-	public Neo4jLazyNode(String id) {
+	public Neo4jLazyNode(long id) {
 		this.id = id;
 	}
 	public Neo4jLazyNode() {
-		id = null;
+		id = -1;
 		InfoToInsert.INFO_TO_INSERT.get().addNewNode(this);
 	}
 
@@ -48,7 +48,7 @@ public class Neo4jLazyNode extends AbstractNeo4jLazyServerDriverElement implemen
 	}
 
 	@Override
-	public String getId() {
+	public long getId() {
 		return id;
 	}
 
@@ -140,7 +140,7 @@ public class Neo4jLazyNode extends AbstractNeo4jLazyServerDriverElement implemen
 	}
 
 	@Override
-	public void setId(String id) {
+	public void setId(long id) {
 		this.id = id;
 	}
 

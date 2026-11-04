@@ -8,10 +8,8 @@ import org.neo4j.driver.*;
 import org.neo4j.graphdb.Label;
 
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,19 +22,11 @@ import static org.neo4j.driver.Values.parameters;
 
 public class DriverLazyInsertionService {
     private static final int REPETITIONS = 1;
-    private static final String IMPORT_NODE_LABEL = "PQImportNode";
-    private static final String IMPORT_ID_PROPERTY = "__pqImportId";
-    private static final String IMPORT_NODE_ID_CONSTRAINT = "pq_import_node_id_unique";
-    private static final String CREATE_IMPORT_NODE_ID_CONSTRAINT =
-            "CREATE CONSTRAINT " + IMPORT_NODE_ID_CONSTRAINT + " IF NOT EXISTS " +
-                    "FOR (n:" + IMPORT_NODE_LABEL + ") REQUIRE n." + IMPORT_ID_PROPERTY + " IS UNIQUE";
     private static final String NODES_QUERY =
-            "UNWIND $instances AS item\n" + "CREATE (n:" + IMPORT_NODE_LABEL + ":$(item.labels))\n" +
-                    "SET n = item.props\n" + "SET n." + IMPORT_ID_PROPERTY + " = item.import_id\n" +
-                    "RETURN elementId(n)";
-    private static final String RELS_QUERY = "UNWIND $rels AS rel\n" +
-            "MATCH (a:" + IMPORT_NODE_LABEL + " {" + IMPORT_ID_PROPERTY + ": rel.source_id})\n" +
-            "MATCH (b:" + IMPORT_NODE_LABEL + " {" + IMPORT_ID_PROPERTY + ": rel.target_id})\n" +
+            "UNWIND $instances AS item\n" + "CREATE (n:$(item.labels))\n" + "SET n = item.props\n" +
+                    "RETURN ID(n)";
+    private static final String RELS_QUERY = "UNWIND $rels AS rel\n" + "MATCH (a), (b)\n" +
+            "WHERE ID(a) = rel.source_id AND ID(b) = rel.target_id\n" +
             "CREATE (a)-[r:$(rel.type)]->(b)\n" + "SET r = rel.properties"
             + "\nRETURN COUNT(r) AS created";
 
@@ -64,17 +54,13 @@ public class DriverLazyInsertionService {
     private static void insertByPartsInParallel(InfoToInsert info, int maxOperationsPerTransaction,
                                                 int maxConcurrentWriteTransactions, Supplier<Session> sessionSupplier) {
         logPendingElements(info);
-        Map<NodeWrapper, String> importIds = createImportIds(info.nodeSet);
-        try (Session session = sessionSupplier.get()) {
-            createImportNodeIdConstraint(session);
-        }
         for (int i = 0; i < REPETITIONS; i++) {
             actionByPartsInParallel(info.nodeSet.size(), maxOperationsPerTransaction, maxConcurrentWriteTransactions,
                     sessionSupplier, (session, start, end) ->
-                            executeNodeListOneQuery(session, info.nodeSet, importIds, start, end));
+                            executeNodeListOneQuery(session, info.nodeSet, start, end));
             actionByPartsInParallel(info.relSet.size(), maxOperationsPerTransaction, maxConcurrentWriteTransactions,
                     sessionSupplier, (session, start, end) ->
-                            executeRelListOneQuery(session, info.relSet, importIds, start, end));
+                            executeRelListOneQuery(session, info.relSet, start, end));
         }
     }
 
@@ -146,8 +132,7 @@ public class DriverLazyInsertionService {
         }
     }
 
-    private static Void executeNodeListOneQuery(Session session, List<NodeWrapper> nodes,
-                                                Map<NodeWrapper, String> importIds, int start, int end) {
+    private static Void executeNodeListOneQuery(Session session, List<NodeWrapper> nodes, int start, int end) {
         return session.writeTransaction(tx -> {
             List<NodeWrapper> subList = nodes.subList(start, end);
             List<Map<String, Object>> labelsAndPropsList = new java.util.ArrayList<>(subList.size());
@@ -157,12 +142,11 @@ public class DriverLazyInsertionService {
                 map.put("props", n.getAllProperties().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
                 map.put("labels", n.getLabels().stream().map(Label::name).collect(Collectors.toList()));
-                map.put("import_id", getImportId(importIds, n, "node"));
                 labelsAndPropsList.add(map);
             }
             Result result = tx.run(NODES_QUERY, parameters("instances", labelsAndPropsList));
             for (int i = 0; i < subList.size(); i++) {
-                subList.get(i).setId(result.next().values().get(0).asString());
+                subList.get(i).setId(result.next().values().get(0).asLong());
             }
             if (result.hasNext()) {
                 throw new IllegalStateException("Not all nodes were created successfully.");
@@ -172,13 +156,13 @@ public class DriverLazyInsertionService {
     }
 
     private static Void executeRelListOneQuery(Session session, List<RelationshipWrapper> relationships,
-                                               Map<NodeWrapper, String> importIds, int start, int end) {
+                                               int start, int end) {
         return session.writeTransaction(tx -> {
             List<RelationshipWrapper> subList = relationships.subList(start, end);
             List<Map<String, Object>> relsDataList = subList.stream().map(rel -> {
                 HashMap<String, Object> map = new HashMap<>();
-                map.put("source_id", getImportId(importIds, rel.getStartNode(), "source"));
-                map.put("target_id", getImportId(importIds, rel.getEndNode(), "target"));
+                map.put("source_id", rel.getStartNode().getId());
+                map.put("target_id", rel.getEndNode().getId());
                 map.put("type", rel.getTypeString());
                 map.put("properties", rel.getAllProperties().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
@@ -193,25 +177,6 @@ public class DriverLazyInsertionService {
             }
             return null;
         });
-    }
-
-    private static Map<NodeWrapper, String> createImportIds(List<NodeWrapper> nodes) {
-        String importPrefix = UUID.randomUUID().toString();
-        Map<NodeWrapper, String> importIds = new IdentityHashMap<>();
-        for (int i = 0; i < nodes.size(); i++)
-            importIds.put(nodes.get(i), importPrefix + ':' + i);
-        return importIds;
-    }
-
-    private static String getImportId(Map<NodeWrapper, String> importIds, NodeWrapper node, String endpoint) {
-        String importId = importIds.get(node);
-        if (importId == null)
-            throw new IllegalStateException("Relationship " + endpoint + " node is not part of this import.");
-        return importId;
-    }
-
-    private static void createImportNodeIdConstraint(Session session) {
-        session.run(CREATE_IMPORT_NODE_ID_CONSTRAINT).consume();
     }
 
     private static void logPendingElements(InfoToInsert info) {

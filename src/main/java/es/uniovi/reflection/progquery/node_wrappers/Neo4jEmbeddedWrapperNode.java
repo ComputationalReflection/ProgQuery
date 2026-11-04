@@ -46,8 +46,8 @@ public class Neo4jEmbeddedWrapperNode implements NodeWrapper {
 	}
 
 	@Override
-	public String getId() {
-		return node.getElementId();
+	public long getId() {
+		return node.getId();
 	}
 
 	@Override
@@ -113,7 +113,7 @@ public class Neo4jEmbeddedWrapperNode implements NodeWrapper {
 	}
 
 	@Override
-	public void setId(String id) {
+	public void setId(long id) {
 		throw new IllegalStateException("The id cannot be set for embedded JIT nodes.");
 	}
 

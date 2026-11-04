@@ -22,7 +22,7 @@ public class NEO4JServerManager implements NEO4JManager {
             if (programsIfAny.size() == 0)
                 return null;
             ProgQuery.LOGGER.info("Program " + userId + ":" + programId + " found in database.");
-            return new Neo4jDriverQueriedNode(String.valueOf(programsIfAny.get(0).get(0).asLong()));
+            return new Neo4jDriverQueriedNode(programsIfAny.get(0).get(0).asLong());
         } catch (Exception e) {
             System.err.println("Error getting program " + userId + ":" + programId + " from database. Error: " +  e);
             e.printStackTrace();

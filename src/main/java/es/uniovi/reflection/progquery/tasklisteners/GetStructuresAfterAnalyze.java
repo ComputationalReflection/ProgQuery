@@ -48,6 +48,14 @@ public class GetStructuresAfterAnalyze implements TaskListener {
         return sourcesToCompile == null || sourcesToCompile.contains(cu.getSourceFile());
     }
 
+    public boolean handlesCompilationUnit(CompilationUnitTree unit) {
+        return mustBeCompiled(unit);
+    }
+
+    public boolean isGraphComplete() {
+        return sourcesToCompile.isEmpty() && classCounter.isEmpty();
+    }
+
     @Override
     public void finished(TaskEvent arg0) {
         if (arg0.getKind() == Kind.PARSE || arg0.getKind() == Kind.ANALYZE) {

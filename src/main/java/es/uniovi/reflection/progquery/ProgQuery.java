@@ -26,6 +26,7 @@ public class ProgQuery {
     private String neo4j_database;
     private String max_operations_transaction;
     private String max_concurrent_write_transactions;
+    private final int maxConcurrentCompilations;
     private String neo4j_database_path;
     private boolean neo4j_server_mode;
 
@@ -41,6 +42,15 @@ public class ProgQuery {
                      String neo4j_database, String max_operations_transaction, String max_concurrent_write_transactions,
                      String userId, String programId,
                      boolean verbose) {
+        this(neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_database, max_operations_transaction,
+                max_concurrent_write_transactions, ProgQueryParameters.DEFAULT_MAX_CONCURRENT_COMPILATIONS,
+                userId, programId, verbose);
+    }
+
+    public ProgQuery(String neo4j_host, String neo4j_port, String neo4j_user, String neo4j_password,
+                     String neo4j_database, String max_operations_transaction, String max_concurrent_write_transactions,
+                     String max_concurrent_compilations, String userId, String programId, boolean verbose) {
+        this.maxConcurrentCompilations = ProgQueryParameters.parseMaxConcurrentCompilations(max_concurrent_compilations);
         this.userId = userId;
         this.programId = programId;
         this.neo4j_host = neo4j_host;
@@ -58,6 +68,7 @@ public class ProgQuery {
 
     public ProgQuery(String neo4j_database_path, String neo4j_database, String userId, String programId,
                      boolean verbose) {
+        this.maxConcurrentCompilations = 1;
         this.userId = userId;
         this.programId = programId;
 
@@ -83,8 +94,17 @@ public class ProgQuery {
         ProgQuery.LOGGER.info("Insertion started ...");
         Instant buildStart = Instant.now();
         try {
-            for (String javac_options : javac_options_list)
-                result.addCompilationResult(compilationScheduler.newCompilationTask(javac_options));
+            int workers = compilationWorkers(javac_options_list.size());
+            ProgQuery.LOGGER.info("Compiling " + javac_options_list.size() + " tasks with " + workers + " worker(s).");
+            if (workers > 1) {
+                ParallelCompilation parallel = new ParallelCompilation(javac_options_list.size());
+                for (CompilationResult compilation : parallel.run(compilationScheduler, javac_options_list,
+                        workers))
+                    result.addCompilationResult(compilation);
+            } else {
+                for (String javac_options : javac_options_list)
+                    result.addCompilationResult(compilationScheduler.newCompilationTask(javac_options));
+            }
             if (result.isSuccess()) {
                 compilationScheduler.finalizeInsertion();
                 result.setElapsedTime(Duration.between(buildStart, Instant.now()).toMillis());
@@ -105,9 +125,16 @@ public class ProgQuery {
                 ProgQuery.LOGGER.info("Insertion aborted, errors found.");
             return result;
         } finally {
-            compilationScheduler.closeFileManagers();
-            resetCaches();
+            try {
+                compilationScheduler.closeFileManagers();
+            } finally {
+                resetCaches();
+            }
         }
+    }
+
+    int compilationWorkers(int taskCount) {
+        return Math.min(maxConcurrentCompilations, taskCount);
     }
 
     public static void resetCaches() {

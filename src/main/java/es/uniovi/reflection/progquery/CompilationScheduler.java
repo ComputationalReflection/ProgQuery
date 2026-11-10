@@ -14,6 +14,8 @@ import es.uniovi.reflection.progquery.utils.JavacInfo;
 import es.uniovi.reflection.progquery.visitors.PDGProcessing;
 
 import javax.tools.*;
+import com.sun.source.util.TaskEvent;
+import com.sun.source.util.TaskListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -35,8 +38,8 @@ public class CompilationScheduler {
     private static final boolean MERGING_ALLOWED = true;
     private PDGProcessing pdgUtils;
     private ASTAuxiliarStorage ast;
-    private JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-    private final List<StandardJavaFileManager> fileManagers = new ArrayList<>();
+    private final ConcurrentLinkedQueue<StandardJavaFileManager> fileManagers = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<Path> temporaryOutputs = new ConcurrentLinkedQueue<>();
 
     private CompilationScheduler(ASTAuxiliarStorage ast) {
         this.ast = ast;
@@ -77,6 +80,10 @@ public class CompilationScheduler {
     }
 
     public CompilationResult newCompilationTask(String javac_options) {
+        return newCompilationTask(javac_options, null, -1);
+    }
+
+    CompilationResult newCompilationTask(String javac_options, ParallelCompilation parallel, int taskIndex) {
         CompilationResult result = new CompilationResult(javac_options);
         try {
             ProgQuery.LOGGER.info(String.format("New Compilation Task: %s", javac_options));
@@ -109,6 +116,7 @@ public class CompilationScheduler {
                     .collect(Collectors.toList()))
                 task_options.addAll(Arrays.asList(option.split(" ")));
 
+            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
             StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, Charset.forName("UTF-8"));
             fileManagers.add(fileManager);
@@ -119,16 +127,63 @@ public class CompilationScheduler {
                 return result;
             }
 
+            // Keep dependency outputs produced by Maven immutable during analysis.
+            // Retain the standard file manager: wrapping it changes javac's
+            // platform-option diagnostics (including the source-8 bootstrap warning).
+            if (parallel != null) {
+                Path output = Files.createTempDirectory("progquery-compile-");
+                temporaryOutputs.add(output);
+                int outputOption = task_options.indexOf("-d");
+                if (outputOption >= 0) {
+                    Path originalOutput = Path.of(task_options.get(outputOption + 1));
+                    // Annotation processors (e.g. NetBeans @Messages) read
+                    // resources from CLASS_OUTPUT. Preserve that input, while
+                    // keeping generated classes/resources private to this task.
+                    if (Files.isDirectory(originalOutput)) {
+                        try (Stream<Path> walk = Files.walk(originalOutput)) {
+                            for (Path resource : walk.filter(Files::isRegularFile)
+                                    .filter(path -> !path.toString().endsWith(".class")).toList()) {
+                                Path destination = output.resolve(originalOutput.relativize(resource));
+                                Files.createDirectories(destination.getParent());
+                                Files.copy(resource, destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                            }
+                        }
+                    }
+                    task_options.set(outputOption + 1, output.toString());
+                } else {
+                    task_options.add("-d");
+                    task_options.add(output.toString());
+                }
+            }
             JavacTaskImpl compilerTask = (JavacTaskImpl) compiler.getTask(null, fileManager, diagnostics, task_options, null, sources);
             JavacInfo.currentJavacInfo.set(new JavacInfo(compilerTask));
-            addListener(compilerTask, StreamSupport.stream(sources.spliterator(), false).collect(Collectors.toSet()));
+            GetStructuresAfterAnalyze listener = new GetStructuresAfterAnalyze(compilerTask, this,
+                    StreamSupport.stream(sources.spliterator(), false).collect(Collectors.toSet()));
+            compilerTask.addTaskListener(parallel == null ? listener : new TaskListener() {
+                @Override
+                public void finished(TaskEvent event) {
+                    if (event.getKind() == TaskEvent.Kind.ANALYZE
+                            && listener.handlesCompilationUnit(event.getCompilationUnit()))
+                        parallel.visitGraph(taskIndex, () -> {
+                            listener.finished(event);
+                            // Later desugaring/generation does not modify the graph.
+                            if (listener.isGraphComplete())
+                                parallel.complete(taskIndex);
+                        });
+                    else
+                        listener.finished(event);
+                }
+
+                @Override
+                public void started(TaskEvent event) {
+                    listener.started(event);
+                }
+            });
             runPQCompilationTask(compilerTask);
             result.addDiagnostics(showErrors(diagnostics));
             return result;
         } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-            return result;
+            throw new UncheckedIOException("Unable to prepare compilation", e);
         }
     }
 
@@ -208,6 +263,20 @@ public class CompilationScheduler {
             }
         }
         fileManagers.clear();
+        for (Path output : temporaryOutputs) {
+            try {
+                List<Path> paths;
+                try (Stream<Path> walk = Files.walk(output)) {
+                    paths = walk.sorted(java.util.Comparator.reverseOrder()).toList();
+                }
+                for (Path path : paths)
+                    Files.deleteIfExists(path);
+            } catch (IOException exception) {
+                if (closeFailure == null)
+                    closeFailure = new UncheckedIOException("Unable to delete compilation output " + output, exception);
+            }
+        }
+        temporaryOutputs.clear();
         if (closeFailure != null)
             throw closeFailure;
     }

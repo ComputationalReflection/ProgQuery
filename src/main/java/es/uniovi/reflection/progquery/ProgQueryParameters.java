@@ -25,6 +25,7 @@ public class ProgQueryParameters {
             "\t-neo4j_database_path=<database_path>\n\t\tNEO4J Database path, when Local mode is used. (Short form:-ndbp=<database_path>)\n" +
             "\t-max_operations_transaction=<number>\n\t\tMaximum number of operations per transaction. (Default value is 80000, short form:-mot=<number>)\n" +
             "\t-max_concurrent_write_transactions=<number>\n\t\tMaximum concurrent write transactions. (Default value is 4, short form:-mcwt=<number>)\n" +
+            "\t-max_concurrent_compilations=<number>\n\t\tMaximum concurrent compilations in server mode; local mode is sequential. (Default value is 8, short form:-mcc=<number>)\n" +
             "\t\"javac_options_1\" ... \"javac_options_n\"\n\t\tA list of sets of options between \" separated by white spaces used to run the Java compiler several times.\n" +
             "\t-verbose\n\t\tShows log info (Default value is false).\n" +
             "\n";
@@ -47,6 +48,7 @@ public class ProgQueryParameters {
     protected static final String DEFAULT_NEO4J_USER = "neo4j";
     protected static final String DEFAULT_MAX_OPERATIONS_TRANSACTION = "80000";
     protected static final String DEFAULT_MAX_CONCURRENT_WRITE_TRANSACTIONS = "4";
+    public static final String DEFAULT_MAX_CONCURRENT_COMPILATIONS = "8";
     protected static final String[] HELP_OPTIONS = { "help" , "?" };
     protected static final String[] USER_OPTIONS = { "user","u" };
     protected static final String[] PROGRAM_OPTIONS = { "program","p" };
@@ -60,6 +62,7 @@ public class ProgQueryParameters {
     protected static final String[] NEO4J_PORT_NUMBER_OPTIONS = { "neo4j_port_number","npn" };
     protected static final String[] MAX_OPERATIONS_TRANSACTION_OPTIONS = { "max_operations_transaction","mot" };
     protected static final String[] MAX_CONCURRENT_WRITE_TRANSACTIONS_OPTIONS = { "max_concurrent_write_transactions", "mcwt" };
+    protected static final String[] MAX_CONCURRENT_COMPILATIONS_OPTIONS = { "max_concurrent_compilations", "mcc" };
     protected static final String[] VERBOSE_OPTIONS = { "verbose" };
     protected static final String[] OPTIONS_PREFIX = { "-" };
     protected static final String[] OPTIONS_ASSIGNMENT = { "=" };
@@ -74,6 +77,7 @@ public class ProgQueryParameters {
     public String neo4j_port_number = DEFAULT_NEO4J_PORT_NUMBER;
     public String max_operations_transaction = DEFAULT_MAX_OPERATIONS_TRANSACTION;
     public String max_concurrent_write_transactions = DEFAULT_MAX_CONCURRENT_WRITE_TRANSACTIONS;
+    public String max_concurrent_compilations = DEFAULT_MAX_CONCURRENT_COMPILATIONS;
     public boolean verbose = DEFAULT_VERBOSE;
     public List<String> javac_options = new ArrayList<>();
 
@@ -241,6 +245,13 @@ public class ProgQueryParameters {
                 return true;
             }
         }
+        for (String opString : ProgQueryParameters.MAX_CONCURRENT_COMPILATIONS_OPTIONS) {
+            if (isOption(lowerCaseOption, opString)) {
+                String value = parseValue(option.substring(opString.length()));
+                this.max_concurrent_compilations = Integer.toString(parseMaxConcurrentCompilations(value));
+                return true;
+            }
+        }
         for (String opString : ProgQueryParameters.VERBOSE_OPTIONS) {
             if (lowerCaseOption.equals(opString)) {
                 this.verbose = true;
@@ -248,6 +259,17 @@ public class ProgQueryParameters {
             }
         }
         return false;
+    }
+
+    public static int parseMaxConcurrentCompilations(String value) {
+        try {
+            int workers = Integer.parseInt(value);
+            if (workers > 0)
+                return workers;
+        } catch (NumberFormatException ignored) {
+            // Report the same error for malformed values and nonpositive limits.
+        }
+        throw new IllegalArgumentException("max_concurrent_compilations must be a positive integer");
     }
 
     protected String parseValue(String value) {

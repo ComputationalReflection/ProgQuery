@@ -5,7 +5,6 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
-import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
@@ -15,12 +14,18 @@ import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeInfo;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
+import es.uniovi.reflection.progquery.typeInfo.keys.TypeKey;
+import es.uniovi.reflection.progquery.typeInfo.keys.type.ParameterizedTypeKey;
+import es.uniovi.reflection.progquery.typeInfo.keys.type.TypeDefinitionKey;
+import es.uniovi.reflection.progquery.typeInfo.keys.type.TypeVariableKey;
+import es.uniovi.reflection.progquery.visitors.KeyTypeVisitor;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.type.ExecutableType;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.*;
 import javax.lang.model.util.Types;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.*;
 
@@ -149,75 +154,90 @@ public class JavacInfo {
     }
 
     public boolean isSubSignatureOwn(ExecutableType sub, ExecutableType sup) {
-
-        for (int i = 0; i < sub.getParameterTypes().size(); i++) {
-            Type supType = (Type) sup.getParameterTypes().get(i);
-            boolean subtyping = false;
-            if (supType instanceof TypeVariable) {
-                supType = types.erasure(supType).tsym.type;
-                subtyping = true;
-            }
-            Type subType = (Type) sub.getParameterTypes().get(i);
-            if (subType instanceof TypeVariable) {
-                subType = types.erasure(subType).tsym.type;
-                subtyping = true;
-            }
-            if (subtyping) {
-                if (!isSubTypeOwn(subType, supType))
-                    return false;
-            } else {
-                if (!isSameTypeOwn(subType, supType))
-                    return false;
-            }
-        }
-        return true;
-        //	return	currentJavacInfo.get().elements.overrides(sub, sup, (TypeElement) sub.getEnclosingElement());
-        //		return sub.overrides(sup, (Symbol.TypeSymbol)sub.owner,currentJavacInfo.get().types, true);
+        return isSubSignatureOwn(signatureOf(sub), signatureOf(sup));
     }
 
-    private boolean isSubTypeOwn(Type sub, Type sup) {
-        if (sub instanceof Type.ClassType && sup instanceof Type.ClassType)
-            return isSubTypeRec((Type.ClassType) sub, (Type.ClassType) sup);
-        return false;
-    }
-
-    private boolean isSubTypeRec(Type.ClassType sub, Type.ClassType sup) {
-        if (sub == null)
-            return false;
-        if (isSameTypeOwn(sub, sup))
+    public boolean isSubSignatureOwn(MethodSignature sub, MethodSignature sup) {
+        // Names are checked by MethodSigInfo before reaching this method.
+        if (sub.parameterTypes().equals(sup.parameterTypes())
+                && sub.typeParameterBounds().equals(sup.typeParameterBounds()))
             return true;
-        if (isSameTypeOwn(sub, symTab.objectType))
-            return false;
 
-        if (!(sub.supertype_field instanceof Type.ClassType))
-            return false;
-        if (isSubTypeRec((Type.ClassType) sub.supertype_field, sup))
-            return true;
-        if (sub.interfaces_field != null)
-            for (Type iface : sub.interfaces_field)
-                if (isSubTypeRec((Type.ClassType) iface, sup))
-                    return true;
-        return false;
+        // JLS 8.4.2: a non-generic signature may match the erasure of the
+        // super signature. Erasing both sides would also accept name clashes.
+        return sub.typeParameterBounds().isEmpty()
+                && sub.parameterTypes().equals(sup.erasedParameterTypes());
     }
 
-    private boolean isSameTypeOwn(Type t1, Type t2) {
-        if (t1 == null) {
-            throw new NullPointerException("First type is null");
-        }
-        if (t2 == null) {
-            throw new NullPointerException("Second type is null");
-        }
-        try {
-            return types.isSameType(t1, t2);
-        } catch (ClassFinder.BadClassFile exception) {
-            return t1.equals(t2);
-        } catch (NullPointerException exception) {
-            String message = exception.getMessage();
-            if (message == null || message.contains("Cannot load from object array because \"this.hashes\" is null"))
-                return t1.equals(t2);
-            throw exception;
+    /** Capture while the originating javac task is alive; keys may complete symbols. */
+    public static MethodSignature signatureOf(ExecutableType signature) {
+        SignatureKeyVisitor keys = new SignatureKeyVisitor(signature, false);
+        SignatureKeyVisitor erasedKeys = new SignatureKeyVisitor(signature, true);
+        return new MethodSignature(
+                signature.getParameterTypes().stream().map(keys::key).toList(),
+                signature.getTypeVariables().stream().map(variable -> keys.key(variable.getUpperBound())).toList(),
+                signature.getParameterTypes().stream().map(erasedKeys::key).toList());
+    }
+
+    public record MethodSignature(List<TypeKey> parameterTypes, List<TypeKey> typeParameterBounds,
+                                  List<TypeKey> erasedParameterTypes) {
+        public MethodSignature {
+            parameterTypes = List.copyOf(parameterTypes);
+            typeParameterBounds = List.copyOf(typeParameterBounds);
+            erasedParameterTypes = List.copyOf(erasedParameterTypes);
         }
     }
+
+    private static final class SignatureKeyVisitor extends KeyTypeVisitor {
+        private final Map<Element, TypeKey> methodVariables = new IdentityHashMap<>();
+        private final boolean erase;
+
+        SignatureKeyVisitor(ExecutableType signature, boolean erase) {
+            this.erase = erase;
+            for (int i = 0; i < signature.getTypeVariables().size(); i++)
+                methodVariables.put(signature.getTypeVariables().get(i).asElement(), new SignatureVariableKey(i));
+        }
+
+        TypeKey key(TypeMirror type) {
+            return type.accept(this, null);
+        }
+
+        @Override
+        public TypeKey visitDeclared(DeclaredType type, Object param) {
+            TypeKey definition = new TypeDefinitionKey(((Type) type).tsym);
+            if (erase)
+                return definition;
+            TypeKey result = type.getTypeArguments().isEmpty() ? definition
+                    : new ParameterizedTypeKey(type.getTypeArguments().stream().map(this::key).toList(), definition);
+            return type.getEnclosingType().getKind() == TypeKind.NONE ? result
+                    : new SignatureMemberTypeKey(key(type.getEnclosingType()), result);
+        }
+
+        @Override
+        public TypeKey visitTypeVariable(TypeVariable type, Object param) {
+            if (erase)
+                return key(type.getUpperBound());
+            TypeKey variable = methodVariables.get(type.asElement());
+            if (variable != null)
+                return variable;
+            // The owner is a declaration, not its parameterized type: visiting
+            // Class<T> again here would recurse through T indefinitely.
+            Symbol owner = ((Type) type).tsym.owner;
+            if (!(type instanceof Type.CapturedType) && owner instanceof Symbol.ClassSymbol)
+                return new TypeVariableKey(type, new TypeDefinitionKey(owner));
+            return super.visitTypeVariable(type, param);
+        }
+
+        @Override
+        public TypeKey visitIntersection(IntersectionType type, Object param) {
+            return erase ? key(type.getBounds().getFirst()) : super.visitIntersection(type, param);
+        }
+    }
+
+    // These keys are local to signature comparison; declaration/cache identity is unchanged.
+    private record SignatureVariableKey(int position) implements TypeKey {}
+
+    private record SignatureMemberTypeKey(TypeKey enclosing, TypeKey member) implements TypeKey {}
 
     private static Object[] getPosition(Object line, Object column, Object position) {
         return new Object[]{LINE_NUMBER, line, COLUMN, column, POSITION, position};

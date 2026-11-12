@@ -38,6 +38,13 @@ public class MethodTypeKey implements TypeKey{
 		return receiverType;
 	}
 
+    @Override
+    public String toString() {
+        return "method(constructor=" + isCons + ",typeVars=" + typeVars
+                + ",receiver=" + (receiverType == null ? "<absent>" : receiverType)
+                + ",params=" + paramTypes + ",returns=" + returnType + ",throws=" + thrownTypes + ")";
+    }
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o)

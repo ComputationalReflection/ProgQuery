@@ -8,4 +8,6 @@ public class NullTypeKey implements TypeKey {
 
     private NullTypeKey(){    }
 
+    @Override public String toString() { return "null"; }
+
 }

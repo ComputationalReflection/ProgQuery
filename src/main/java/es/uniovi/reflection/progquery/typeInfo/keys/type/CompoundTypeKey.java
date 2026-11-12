@@ -20,6 +20,11 @@ private boolean isIntersection;
 		this.types = types;
 	}
 
+    @Override
+    public String toString() {
+        return (isIntersection ? "intersection" : "union") + "(types=" + types + ")";
+    }
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;

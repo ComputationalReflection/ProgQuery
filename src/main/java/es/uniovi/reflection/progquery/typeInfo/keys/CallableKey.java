@@ -2,6 +2,7 @@ package es.uniovi.reflection.progquery.typeInfo.keys;
 
 import com.sun.tools.javac.code.Symbol;
 import es.uniovi.reflection.progquery.typeInfo.keys.type.TypeDefinitionKey;
+import es.uniovi.reflection.progquery.utils.TypeNames;
 
 import java.util.Objects;
 
@@ -14,11 +15,11 @@ public class CallableKey implements ElementKey {
     }
 
     public String getCompleteName() {
-        return completeName;
+        return TypeNames.stable(completeName);
     }
 
     public String getFullyQualifiedName() {
-        return completeName + methodType;
+        return TypeNames.stable(completeName + methodType);
     }
 
     public CallableKey(Symbol.MethodSymbol methodSymbol) {
@@ -56,6 +57,11 @@ public class CallableKey implements ElementKey {
 
     public TypeDefinitionKey getOwnerKey() {
         return ownerKey;
+    }
+
+    @Override
+    public String toString() {
+        return getFullyQualifiedName();
     }
 
     @Override

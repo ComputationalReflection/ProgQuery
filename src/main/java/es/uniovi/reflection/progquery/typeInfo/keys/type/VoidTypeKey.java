@@ -6,4 +6,6 @@ public class VoidTypeKey implements TypeKey {
     public static final VoidTypeKey VOID_TYPE_KEY =new VoidTypeKey();
     private VoidTypeKey(){  }
 
+    @Override public String toString() { return "void"; }
+
 }

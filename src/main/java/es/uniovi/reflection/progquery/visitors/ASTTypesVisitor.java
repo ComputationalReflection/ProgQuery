@@ -28,6 +28,7 @@ import es.uniovi.reflection.progquery.typeInfo.keys.var.FieldKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.var.LocalScopeVarKey;
 import es.uniovi.reflection.progquery.utils.GraphUtils;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
+import es.uniovi.reflection.progquery.utils.TypeNames;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.*;
 import org.neo4j.graphdb.Direction;
 
@@ -141,7 +142,7 @@ public class ASTTypesVisitor
                 .createSkeletonNodeExplicitCats(arrayTypeTree, NodeTypes.ARRAY_TYPE, NodeCategory.AST_TYPE,
                         NodeCategory.AST_NODE);
         GraphUtils.connectWithParent(arrayTypeNode, t);
-        String fullyName = ((JCArrayTypeTree) arrayTypeTree).type.toString();
+        String fullyName = TypeNames.stable(((JCArrayTypeTree) arrayTypeTree).type.toString());
         arrayTypeNode.setProperty(FULL_NAME, fullyName);
         String[] splittedName = fullyName.split(".");
         arrayTypeNode.setProperty(SIMPLE_NAME,

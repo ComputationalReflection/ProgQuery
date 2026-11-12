@@ -19,6 +19,11 @@ public class WildcardKey implements TypeKey {
 		this.extendsBound = extendsBound;
 	}
 
+    @Override
+    public String toString() {
+        return "wildcard(super=" + superBound + ",extends=" + extendsBound + ")";
+    }
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;

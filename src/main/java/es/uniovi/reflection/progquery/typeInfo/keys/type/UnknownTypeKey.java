@@ -6,4 +6,6 @@ public class UnknownTypeKey implements TypeKey {
     public static final UnknownTypeKey UNKNOWN_TYPE_KEY =new UnknownTypeKey();
     private UnknownTypeKey(){   }
 
+    @Override public String toString() { return "<unknown>"; }
+
 }

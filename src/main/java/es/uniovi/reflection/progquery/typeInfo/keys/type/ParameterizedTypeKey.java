@@ -55,7 +55,10 @@ public class ParameterizedTypeKey implements TypeKey{
 
 	@Override
 	public String toString() {
-		return "ParameterizedTypeKey [typeArgs=" + typeArgs + ", parameterizedType=" + genericType + "]";
+		String arguments = typeArgs == null ? "<absent>" : typeArgs.stream()
+                .map(type -> type == null ? "<absent>" : type.toString())
+                .collect(java.util.stream.Collectors.joining(","));
+        return (genericType == null ? "<absent>" : genericType) + "<" + arguments + ">";
 	}
 
 }

@@ -6,6 +6,7 @@ import es.uniovi.reflection.progquery.database.relations.ASTRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.CDGRelationTypes;
 import es.uniovi.reflection.progquery.database.relations.TypeRelations;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
+import es.uniovi.reflection.progquery.node_wrappers.Neo4jLazyNode;
 import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 import es.uniovi.reflection.progquery.typeInfo.keys.CallableKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.ComponentKey;
@@ -107,15 +108,19 @@ public class DefinitionCache<TKEY> {
 
     private void putDefinition(TKEY k, NodeWrapper v, NodeWrapper previousNode) {
         if (previousNode != null) {
-            for (RelationshipWrapper oldRel : previousNode.getRelationships(Direction.INCOMING)) {
-                RelationshipWrapper newRel = oldRel.getStartNode().createRelationshipTo(v, oldRel.getType());
-                oldRel.getAllProperties().forEach(prop -> newRel.setProperty(prop.getKey(), prop.getValue()));
-                oldRel.delete();
-            }
-            for (RelationshipWrapper oldRel : previousNode.getRelationships(Direction.OUTGOING)) {
-                RelationshipWrapper newRel = v.createRelationshipTo(oldRel.getEndNode(), oldRel.getType());
-                oldRel.getAllProperties().forEach(prop -> newRel.setProperty(prop.getKey(), prop.getValue()));
-                oldRel.delete();
+            if (previousNode instanceof Neo4jLazyNode previous && v instanceof Neo4jLazyNode replacement) {
+                previous.transferRelationshipsTo(replacement);
+            } else {
+                for (RelationshipWrapper oldRel : previousNode.getRelationships(Direction.INCOMING)) {
+                    RelationshipWrapper newRel = oldRel.getStartNode().createRelationshipTo(v, oldRel.getType());
+                    oldRel.getAllProperties().forEach(prop -> newRel.setProperty(prop.getKey(), prop.getValue()));
+                    oldRel.delete();
+                }
+                for (RelationshipWrapper oldRel : previousNode.getRelationships(Direction.OUTGOING)) {
+                    RelationshipWrapper newRel = v.createRelationshipTo(oldRel.getEndNode(), oldRel.getType());
+                    oldRel.getAllProperties().forEach(prop -> newRel.setProperty(prop.getKey(), prop.getValue()));
+                    oldRel.delete();
+                }
             }
             auxNodeCache.remove(k);
             previousNode.delete();

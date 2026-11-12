@@ -48,6 +48,18 @@ public class Neo4jLazyRelationship extends AbstractNeo4jLazyServerDriverElement
 		return rType.toString();
 	}
 
+    /** The old node clears its adjacency lists after all its edges are moved. */
+    void replaceEndpoint(Neo4jLazyNode previous, Neo4jLazyNode replacement) {
+        if (start == previous) {
+            start = replacement;
+            replacement.addOutgoingRel(this);
+        }
+        if (end == previous) {
+            end = replacement;
+            replacement.addIncomingRel(this);
+        }
+    }
+
 	@Override
 	public String toString() {
 		return NodeUtils.nodeToStringNoRels(start) + "--[" + rType.name() + "]-->" + NodeUtils.nodeToStringNoRels(end);

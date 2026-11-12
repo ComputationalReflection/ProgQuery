@@ -13,6 +13,11 @@ public class PrimitiveTypeKey implements TypeKey {
     }
 
     @Override
+    public String toString() {
+        return kind;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;

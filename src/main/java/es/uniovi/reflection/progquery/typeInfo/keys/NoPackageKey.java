@@ -12,4 +12,9 @@ public class NoPackageKey implements PackageKeyI{
     public String getPackageName() {
         return ROOT_PACKAGE_NAME;
     }
+
+    @Override
+    public String toString() {
+        return getPackageName();
+    }
 }

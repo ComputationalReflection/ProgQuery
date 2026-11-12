@@ -31,4 +31,9 @@ public class ArrayTypeKey implements TypeKey {
         return typeOf;
     }
 
+    @Override
+    public String toString() {
+        return typeOf + "[]";
+    }
+
 }

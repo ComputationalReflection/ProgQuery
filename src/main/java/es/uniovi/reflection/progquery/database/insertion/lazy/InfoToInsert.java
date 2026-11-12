@@ -3,6 +3,7 @@ package es.uniovi.reflection.progquery.database.insertion.lazy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -17,10 +18,27 @@ import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 public class InfoToInsert {
 	final List<NodeWrapper> nodeSet = new ArrayList<>();
 	final List<RelationshipWrapper> relSet = new ArrayList<>();
+    private final Set<NodeWrapper> deletedNodes = new HashSet<>();
+    private final Set<RelationshipWrapper> deletedRelationships = new HashSet<>();
+
+    /** Single graph writer; compact before publishing the lists to insertion workers. */
+    public void prepareInsertion() {
+        if (!deletedNodes.isEmpty()) {
+            nodeSet.removeIf(deletedNodes::contains);
+            deletedNodes.clear();
+        }
+        if (!deletedRelationships.isEmpty()) {
+            relSet.removeIf(deletedRelationships::contains);
+            deletedRelationships.clear();
+        }
+    }
+
 	public List<NodeWrapper> getNodeSet() {
+		prepareInsertion();
 		return Collections.unmodifiableList(nodeSet);
 	}
 	public List<RelationshipWrapper> getRelSet() {
+		prepareInsertion();
 		return Collections.unmodifiableList(relSet);
 	}
 	public static ThreadLocal<InfoToInsert> INFO_TO_INSERT  = new ThreadLocal<>();
@@ -28,22 +46,24 @@ public class InfoToInsert {
 		nodeSet.add(newNode);
 	}
 	public void deleteNode(Neo4jLazyNode node) {
-		nodeSet.remove(node);
+		deletedNodes.add(node);
 	}
 	public void addNewRel(Neo4jLazyRelationship newRel) {
 		relSet.add(newRel);
 	}
 	public void deleteRel(Neo4jLazyRelationship rel) {
-		relSet.remove(rel);
+		deletedRelationships.add(rel);
 	}
 
 	public List<Pair<String, Object[]>> getNodeQueriesInfo() {
+		prepareInsertion();
 		final List<Pair<String, Object[]>> nodeQueries = new ArrayList<>();
 		for (NodeWrapper n : nodeSet)
 			nodeQueries.add(createParameterizedQueryFor(n));
 		return nodeQueries;
 	}
 	public List<Pair<String, Object[]>> getRelQueriesInfo() {
+		prepareInsertion();
 		final List<Pair<String, Object[]>> relQueries = new ArrayList<>();
 		for (RelationshipWrapper r : relSet)
 			relQueries.add(createParameterizedQueryFor(r));

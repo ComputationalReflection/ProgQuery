@@ -16,6 +16,11 @@ public class CapturedTypeKey implements TypeKey {
     }
 
     @Override
+    public String toString() {
+        return "capture(wildcard=" + wildcardTypeKey + ",upper=" + bound + ",lower=" + lower + ")";
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof CapturedTypeKey that))
             return false;

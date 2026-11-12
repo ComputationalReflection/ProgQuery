@@ -15,6 +15,7 @@ import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.node_wrappers.WrapperUtils;
 import es.uniovi.reflection.progquery.utils.GraphUtils;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
+import es.uniovi.reflection.progquery.utils.TypeNames;
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 import es.uniovi.reflection.progquery.visitors.ASTTypesVisitor;
 
@@ -85,12 +86,12 @@ public class DatabaseFacade {
     }
 
     public static Object[] getTypeProperties(String fullyQualifiedType) {
-        return new Object[]{NodeProperties.FULL_NAME, WrapperUtils.stringToNeo4jQueryString(fullyQualifiedType)};
+        return new Object[]{NodeProperties.FULL_NAME, WrapperUtils.stringToNeo4jQueryString(TypeNames.stable(fullyQualifiedType))};
     }
 
     public static Object[] getTypeProperties(String simpleName, String fullyQualifiedType) {
         return join(getTypeProperties(fullyQualifiedType),
-                new Object[]{SIMPLE_NAME, WrapperUtils.stringToNeo4jQueryString(simpleName)});
+                new Object[]{SIMPLE_NAME, WrapperUtils.stringToNeo4jQueryString(TypeNames.stable(simpleName))});
     }
 
     public static Object[] getTypeDecProperties(String simpleName, String fullyQualifiedType, boolean isUserCode) {

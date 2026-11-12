@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -160,6 +161,29 @@ public class Neo4jLazyNode extends AbstractNeo4jLazyServerDriverElement implemen
 		allRels.remove(rel);
 		incomingRels.get(rel.getType()).remove(rel);
 	}
+
+    /** Single graph writer: keep edge identities/properties and move their endpoints. */
+    public void transferRelationshipsTo(Neo4jLazyNode replacement) {
+        if (replacement == this)
+            return;
+        // A self-loop occurs twice in allRels, but must be redirected only once.
+        for (RelationshipWrapper rel : new LinkedHashSet<>(allRels))
+            ((Neo4jLazyRelationship) rel).replaceEndpoint(this, replacement);
+        // Clear once instead of repeatedly removing from the old adjacency lists.
+        incomingRels.values().forEach(List::clear);
+        outgoingRels.values().forEach(List::clear);
+        allRels.clear();
+    }
+
+    void addIncomingRel(RelationshipWrapper rel) {
+        incomingRels.computeIfAbsent(rel.getType(), ignored -> new ArrayList<>()).add(rel);
+        allRels.add(rel);
+    }
+
+    void addOutgoingRel(RelationshipWrapper rel) {
+        outgoingRels.computeIfAbsent(rel.getType(), ignored -> new ArrayList<>()).add(rel);
+        allRels.add(rel);
+    }
 
 	public void removeOutgoingRel(RelationshipWrapper rel) {
 		allRels.remove(rel);

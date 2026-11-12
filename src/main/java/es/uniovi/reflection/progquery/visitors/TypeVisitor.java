@@ -17,6 +17,7 @@ import es.uniovi.reflection.progquery.typeInfo.TypeHierarchy;
 import es.uniovi.reflection.progquery.typeInfo.keys.TypeKey;
 import es.uniovi.reflection.progquery.typeInfo.keys.type.*;
 import es.uniovi.reflection.progquery.utils.JavacInfo;
+import es.uniovi.reflection.progquery.utils.TypeNames;
 
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.*;
@@ -218,7 +219,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
         }
         union.setProperty(FULL_NAME, fullName.substring(1));
         union.setProperty(SIMPLE_NAME, simpleName.substring(1));
-        union.setProperty("resultingType", t.toString());
+        union.setProperty("resultingType", TypeNames.stable(t.toString()));
         return union;
     }
 
@@ -260,7 +261,7 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
         NodeWrapper typeParameterNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.TYPE_PARAM);
         typeParameterNode.setProperty(IS_USER_CODE, false);
-        typeParameterNode.setProperty(NAME_PROP, typeVariable.toString());
+        typeParameterNode.setProperty(NAME_PROP, TypeNames.stable(typeVariable.toString()));
         if (typeVariable.getUpperBound() != null)
             typeParameterNode.createRelationshipTo(DefinitionCache.getOrCreateType(typeVariable.getUpperBound(), ast),
                     TypeRelations.TYPE_PARAM_EXTENDS);

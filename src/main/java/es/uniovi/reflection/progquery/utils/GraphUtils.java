@@ -73,7 +73,7 @@ public class GraphUtils {
     }
 
     private static void attachTypeProperties(NodeWrapper node, String actualType, String typeKind){
-        node.setProperty(ACTUAL_TYPE, actualType);
+        node.setProperty(ACTUAL_TYPE, TypeNames.stable(actualType));
         node.setProperty(TYPE_KIND, typeKind);
     }
 

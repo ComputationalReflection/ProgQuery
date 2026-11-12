@@ -22,6 +22,7 @@ import org.neo4j.graphdb.Direction;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.FULL_NAME;
 
@@ -30,15 +31,17 @@ import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.IS_US
 
 public class ASTAuxiliarStorage {
     public static final int NO_VARG_ARG = -1;
-    public final Set<NodeWrapper> typeDecNodes = new HashSet<NodeWrapper>();
-    private final Set<NodeWrapper> trustableInvocations = new HashSet<NodeWrapper>();
-    private final Map<MethodSymbol, NodeWrapper> accessibleMethods = new HashMap<>();
+    public final Set<NodeWrapper> typeDecNodes = ConcurrentHashMap.newKeySet();
+    private final Set<NodeWrapper> trustableInvocations = ConcurrentHashMap.newKeySet();
+    private final Map<MethodSymbol, NodeWrapper> accessibleMethods = new ConcurrentHashMap<>();
     private final Map<NodeWrapper, Set<NodeWrapper>> callGraph = new HashMap<>();
-    private Stack<List<Pair<NodeWrapper, List<MethodSymbol>>>> lastInvocationInStatementLists =
-            new Stack<List<Pair<NodeWrapper, List<MethodSymbol>>>>();
-    private Map<NodeWrapper, MethodInfo> methodInfo = new HashMap<>();
+    private final ThreadLocal<Deque<List<Pair<NodeWrapper, List<MethodSymbol>>>>> invocationStack =
+            ThreadLocal.withInitial(ArrayDeque::new);
+    private Map<NodeWrapper, MethodInfo> methodInfo = new ConcurrentHashMap<>();
     private final TypeVisitor typeVisitor = new TypeVisitor(this);
-private final Map<NodeWrapper, MethodSigInfo> methodToSigInfo = new HashMap<>();
+    private final Map<NodeWrapper, MethodSigInfo> methodToSigInfo = new ConcurrentHashMap<>();
+
+    public void releaseTaskState() { invocationStack.remove(); }
 
 
     public TypeVisitor getTypeVisitor() {
@@ -85,17 +88,17 @@ private final Map<NodeWrapper, MethodSigInfo> methodToSigInfo = new HashMap<>();
     }
 
     public void enterInNewTry(TryTree tryTree, MethodState m) {
-        lastInvocationInStatementLists.push(new ArrayList<>());
-        m.invocationsInStatements.put(tryTree, lastInvocationInStatementLists.peek());
+        invocationStack.get().push(new ArrayList<>());
+        m.invocationsInStatements.put(tryTree, invocationStack.get().peek());
     }
 
     public void exitTry() {
-        lastInvocationInStatementLists.pop();
+        invocationStack.get().pop();
     }
 
     public void addInvocationInStatement(NodeWrapper statement, List<MethodSymbol> methodNames) {
         if (methodNames.size() > 0)
-            lastInvocationInStatementLists.peek().add(Pair.create(statement, methodNames));
+            invocationStack.get().peek().add(Pair.create(statement, methodNames));
     }
 
     public void newMethodDeclaration(MethodState s) {

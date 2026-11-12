@@ -54,13 +54,16 @@ public class TypeVisitor implements javax.lang.model.type.TypeVisitor<NodeWrappe
 
     public static NodeWrapper generatedClassType(TypeDefinitionKey typeDefKey, ClassSymbol classSymbol,
                                                  ASTAuxiliarStorage ast) {
-        if (DefinitionCache.TYPE_CACHE.get().containsKey(typeDefKey))
-            return DefinitionCache.TYPE_CACHE.get().get(typeDefKey);
+        synchronized (DefinitionCache.declarationLock()) {
+            if (DefinitionCache.TYPE_CACHE.get().containsKey(typeDefKey))
+                return DefinitionCache.TYPE_CACHE.get().get(typeDefKey);
 
-        NodeWrapper generatedTypeDec = DatabaseFacade.CURRENT_DB_FACADE.get().createExternalTypeDecNode(classSymbol);
-        putInCache(typeDefKey, generatedTypeDec);
-        ast.typeDecNodes.add(generatedTypeDec);
-        return generatedTypeDec;
+            NodeWrapper generatedTypeDec = DatabaseFacade.CURRENT_DB_FACADE.get().createExternalTypeDecNode(classSymbol);
+            putInCache(typeDefKey, generatedTypeDec);
+            ast.typeDecNodes.add(generatedTypeDec);
+            return generatedTypeDec;
+
+        }
     }
 
     @Override

@@ -12,12 +12,13 @@ import es.uniovi.reflection.progquery.utils.JavacInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 
 /**
- * Runs independent javac contexts concurrently. Graph visits retain input order:
- * the existing declaration replacement protocol cannot safely interleave writers.
- * No monitor is held while javac or a graph visitor is executing.
+ * Runs independent javac contexts concurrently. Concurrent graph visits remain
+ * experimental: cache population also depends on module discovery order, beyond
+ * the data-race protection provided by the shared stores.
  */
 final class ParallelCompilation {
     private final DefinitionCache<TypeKey> types = DefinitionCache.TYPE_CACHE.get();
@@ -29,14 +30,23 @@ final class ParallelCompilation {
     private final boolean[] completed;
     private final JavacInfo[] javacInfos;
     private int graphOwner;
-    private Throwable failure;
+    private volatile Throwable failure;
+    private final boolean ordered;
+    private final AtomicInteger activeVisitors = new AtomicInteger();
+    private final AtomicInteger peakVisitors = new AtomicInteger();
 
     ParallelCompilation(int taskCount) {
+        this(taskCount, Boolean.getBoolean("progquery.concurrentVisitors"));
+    }
+
+    ParallelCompilation(int taskCount, boolean concurrentVisitors) {
+        ordered = !concurrentVisitors;
         completed = new boolean[taskCount];
         javacInfos = new JavacInfo[taskCount];
     }
 
     void visitGraph(int index, Runnable action) {
+        if (ordered) {
         synchronized (this) {
             while (index != graphOwner && failure == null) {
                 try {
@@ -49,8 +59,14 @@ final class ParallelCompilation {
             if (failure != null)
                 throw new CancellationException("A compilation failed");
         }
-        action.run();
+        }
+        if (failure != null) throw new CancellationException("A compilation failed");
+        int active = activeVisitors.incrementAndGet();
+        peakVisitors.accumulateAndGet(active, Math::max);
+        try { action.run(); } finally { activeVisitors.decrementAndGet(); }
     }
+
+    int peakVisitors() { return peakVisitors.get(); }
 
     synchronized void complete(int index) {
         completed[index] = true;
@@ -65,16 +81,19 @@ final class ParallelCompilation {
         notifyAll();
     }
 
-    private void attach() {
+    private void attach(int index) {
         DefinitionCache.TYPE_CACHE.set(types);
         DefinitionCache.CALLABLE_DEC_CACHE.set(callables);
         DefinitionCache.COMPONENT_CACHE.set(components);
         PackageManager.PACKAGE_MANAGER.set(packages);
         InfoToInsert.INFO_TO_INSERT.set(pending);
+        pending.enterTask(index);
         DatabaseFacade.CURRENT_DB_FACADE.set(database);
     }
 
     private void detach() {
+        pending.leaveTask();
+        packages.releaseTaskState();
         DefinitionCache.TYPE_CACHE.remove();
         DefinitionCache.CALLABLE_DEC_CACHE.remove();
         DefinitionCache.COMPONENT_CACHE.remove();
@@ -95,11 +114,12 @@ final class ParallelCompilation {
             return thread;
         });
         List<Future<CompilationResult>> futures = new ArrayList<>();
+        long started = System.nanoTime();
         try {
             for (int i = 0; i < taskCount; i++) {
                 final int index = i;
                 futures.add(executor.submit(() -> {
-                    attach();
+                    attach(index);
                     try {
                         return compilation.apply(index);
                     } catch (Throwable exception) {
@@ -115,6 +135,7 @@ final class ParallelCompilation {
             List<CompilationResult> results = new ArrayList<>();
             for (Future<CompilationResult> future : futures)
                 results.add(future.get());
+            pending.beginFinalization();
             for (int i = javacInfos.length - 1; i >= 0; i--)
                 if (javacInfos[i] != null) {
                     JavacInfo.setJavacInfo(javacInfos[i]);
@@ -146,6 +167,9 @@ final class ParallelCompilation {
             }
             if (interrupted)
                 Thread.currentThread().interrupt();
+            ProgQuery.LOGGER.info("Compilation visitors: mode=" + (ordered ? "ordered" : "concurrent")
+                    + ", peak=" + peakVisitors.get() + ", wallMs="
+                    + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
         }
     }
 }

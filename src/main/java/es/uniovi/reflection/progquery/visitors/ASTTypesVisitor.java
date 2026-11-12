@@ -355,21 +355,27 @@ public class ASTTypesVisitor
 
     public static void setNonDeclaredRecordMembers(ClassSymbol classSymbol, NodeWrapper recordNode,
                                                    ASTAuxiliarStorage ast) {
-        classSymbol.getRecordComponents().forEach(componentSymbol -> {
-            NodeWrapper componentNode = recordComponent(componentSymbol, recordNode, ast);
-            DefinitionCache.COMPONENT_CACHE.get().put(new ComponentKey(componentSymbol), componentNode);
-            componentNode.setProperty(IS_USER_CODE, false);
-        });
+        synchronized (DefinitionCache.declarationLock()) {
+            classSymbol.getRecordComponents().forEach(componentSymbol -> {
+                NodeWrapper componentNode = recordComponent(componentSymbol, recordNode, ast);
+                DefinitionCache.COMPONENT_CACHE.get().put(new ComponentKey(componentSymbol), componentNode);
+                componentNode.setProperty(IS_USER_CODE, false);
+            });
+
+        }
     }
 
     public void setDeclaredRecord(ClassSymbol classSymbol, NodeWrapper recordNode, ClassTree classTree) {
-        if (!DefinitionCache.TYPE_CACHE.get().containsKey(classSymbol.type.accept(KeyTypeVisitor.INSTANCE, null)))
-            classSymbol.getEnclosedElements().stream().filter(symbol -> symbol.getKind() == ElementKind.METHOD &&
-                    (symbol.name.toString().contentEquals("toString") ||
-                            symbol.name.toString().contentEquals("equals") ||
-                            symbol.name.toString().contentEquals("hashCode"))).forEach(
-                    elementSymbol -> getCallableDuringTypeCreation((Symbol.MethodSymbol) elementSymbol, ast,
-                            recordNode));
+        synchronized (DefinitionCache.declarationLock()) {
+            if (!DefinitionCache.TYPE_CACHE.get().containsKey(classSymbol.type.accept(KeyTypeVisitor.INSTANCE, null)))
+                classSymbol.getEnclosedElements().stream().filter(symbol -> symbol.getKind() == ElementKind.METHOD &&
+                        (symbol.name.toString().contentEquals("toString") ||
+                                symbol.name.toString().contentEquals("equals") ||
+                                symbol.name.toString().contentEquals("hashCode"))).forEach(
+                        elementSymbol -> getCallableDuringTypeCreation((Symbol.MethodSymbol) elementSymbol, ast,
+                                recordNode));
+
+        }
     }
 
     @Override
@@ -380,8 +386,6 @@ public class ASTTypesVisitor
         currentTypeDecSymbol = ((JCClassDecl) classTree).sym;
         NodeWrapper typeNode =
                 DatabaseFacade.CURRENT_DB_FACADE.get().createUserTypeDecNode(classTree, currentTypeDecSymbol);
-        if (currentTypeDecSymbol.isRecord())
-            setDeclaredRecord(currentTypeDecSymbol, typeNode, classTree);
         ast.typeDecNodes.add(typeNode);
 
         ClassState previousClassState = classState;
@@ -398,7 +402,11 @@ public class ASTTypesVisitor
             currentCU.createRelationshipTo(typeNode, CDGRelationTypes.HAS_NESTED_TYPE);
 
         setUserTypeParent(currentTypeDecSymbol.getNestingKind(), typeNode, pair);
-        DefinitionCache.putClassDefinition(currentTypeDecSymbol, typeNode, ast.typeDecNodes, typeDecUses);
+        typeSymbolPropsAndNestingLabels(currentTypeDecSymbol, classTree.getModifiers().getFlags(), typeNode);
+        synchronized (DefinitionCache.declarationLock()) {
+            if (currentTypeDecSymbol.isRecord()) setDeclaredRecord(currentTypeDecSymbol, typeNode, classTree);
+            DefinitionCache.putClassDefinition(currentTypeDecSymbol, typeNode, ast.typeDecNodes, typeDecUses);
+        }
 
         TypeHierarchy.addTypeHierarchy(currentTypeDecSymbol, typeNode, this, ast);
         boolean prevIsInAccessibleContext = isInAccessibleContext;
@@ -914,7 +922,7 @@ public class ASTTypesVisitor
 
     public void addToTypeDependencies(NodeWrapper newTypeDec, Symbol.PackageSymbol newPackageSymbol) {
         addToTypeDependencies(classState.currentClassDec, newTypeDec, newPackageSymbol, typeDecUses,
-                PackageManager.PACKAGE_MANAGER.get().currentPackage);
+                PackageManager.PACKAGE_MANAGER.get().getCurrentPackage());
     }
 
     public static void addToTypeDependencies(NodeWrapper currentClass, NodeWrapper newTypeDec,
@@ -954,19 +962,22 @@ public class ASTTypesVisitor
         }
 
         methodNode.setProperty(IS_USER_CODE, isUserCode);
+        setCallableMethodSymbolProps(methodSymbol, methodTree.getModifiers().getFlags(), methodNode, callableKey);
         boolean alreadyHasType = false;
-        if (DefinitionCache.CALLABLE_DEC_CACHE.get().containsKey(callableKey)) {
-            ast.deleteAccessibleMethod(methodSymbol);
-            ast.removeMethodNodeSymbol(DefinitionCache.CALLABLE_DEC_CACHE.get().get(callableKey));
-            DefinitionCache.CALLABLE_DEC_CACHE.get().putDefinition(callableKey, methodNode);
-            alreadyHasType = methodNode.hasRelationship(TypeRelations.ITS_TYPE_IS, Direction.OUTGOING);
-            if (!methodNode.hasRelationship(rel, Direction.INCOMING))
+        synchronized (DefinitionCache.declarationLock()) {
+            if (DefinitionCache.CALLABLE_DEC_CACHE.get().containsKey(callableKey)) {
+                ast.deleteAccessibleMethod(methodSymbol);
+                ast.removeMethodNodeSymbol(DefinitionCache.CALLABLE_DEC_CACHE.get().get(callableKey));
+                DefinitionCache.CALLABLE_DEC_CACHE.get().putDefinition(callableKey, methodNode);
+                alreadyHasType = methodNode.hasRelationship(TypeRelations.ITS_TYPE_IS, Direction.OUTGOING);
+                if (!methodNode.hasRelationship(rel, Direction.INCOMING))
+                    GraphUtils.connectWithParent(methodNode, t, rel);
+            } else {
+                DefinitionCache.CALLABLE_DEC_CACHE.get().putDefinition(callableKey, methodNode);
                 GraphUtils.connectWithParent(methodNode, t, rel);
-        } else {
-            DefinitionCache.CALLABLE_DEC_CACHE.get().putDefinition(callableKey, methodNode);
-            GraphUtils.connectWithParent(methodNode, t, rel);
-        }
+            }
 
+        }
         declaredCallablePropsAndAnnotations(methodSymbol, methodTree.getModifiers(), methodNode, callableKey);
 
         boolean prevIsInAccesibleCtxt = isInAccessibleContext;
@@ -1538,20 +1549,24 @@ public class ASTTypesVisitor
 
     private static NodeWrapper getNonDeclaredCallable(MethodSymbol symbol, NodeWrapper typeDec,
                                                       ASTAuxiliarStorage ast, boolean needType) {
-        CallableKey callableKey = new CallableKey(symbol);
-        NodeWrapper methodDecNode;
-        if (DefinitionCache.CALLABLE_DEC_CACHE.get().containsKey(callableKey)) {
-            methodDecNode = DefinitionCache.CALLABLE_DEC_CACHE.get().get(callableKey);
-            if(needType && !methodDecNode.hasRelationship(TypeRelations.ITS_TYPE_IS, Direction.OUTGOING))
-                GraphUtils.attachType(methodDecNode, symbol.type, ast);
+        synchronized (DefinitionCache.declarationLock()) {
+            CallableKey callableKey = new CallableKey(symbol);
+            NodeWrapper methodDecNode;
+            if (DefinitionCache.CALLABLE_DEC_CACHE.get().containsKey(callableKey)) {
+                methodDecNode = DefinitionCache.CALLABLE_DEC_CACHE.get().get(callableKey);
+                if(needType && !Boolean.TRUE.equals(methodDecNode.getProperty(IS_USER_CODE))
+                        && !methodDecNode.hasRelationship(TypeRelations.ITS_TYPE_IS, Direction.OUTGOING))
+                    GraphUtils.attachType(methodDecNode, symbol.type, ast);
+                return methodDecNode;
+            }
+            methodDecNode = createAndLinkNonDeclaredCallable(typeDec, symbol, ast, needType);
+            setCallableMethodSymbolProps(symbol, methodDecNode);
+            if (!symbol.isConstructor())
+                ast.addAccessibleMethod(symbol, methodDecNode);
+            DefinitionCache.CALLABLE_DEC_CACHE.get().put(callableKey, methodDecNode);
             return methodDecNode;
+
         }
-        methodDecNode = createAndLinkNonDeclaredCallable(typeDec, symbol, ast, needType);
-        setCallableMethodSymbolProps(symbol, methodDecNode);
-        if (!symbol.isConstructor())
-            ast.addAccessibleMethod(symbol, methodDecNode);
-        DefinitionCache.CALLABLE_DEC_CACHE.get().put(callableKey, methodDecNode);
-        return methodDecNode;
     }
 
     private static NodeWrapper createNonDeclaredCallable(boolean isConstructor) {
@@ -1605,21 +1620,24 @@ public class ASTTypesVisitor
 
     private void declaredRecordComponent(Symbol.RecordComponent componentSymbol, NodeWrapper recordNode,
                                          NodeWrapper fieldNode) {
-        NodeWrapper componentNode =
-                DefinitionCache.COMPONENT_CACHE.get().containsKey(new ComponentKey(componentSymbol)) ?
-                        DefinitionCache.COMPONENT_CACHE.get().get(new ComponentKey(componentSymbol)) :
-                        recordComponent(componentSymbol, recordNode, ast);
-        componentNode.setProperty(IS_USER_CODE, true);
-        componentNode.addLabel(NodeCategory.AST_NODE);
-        componentNode.setProperties(JavacInfo.getPosition(recordNode));
+        synchronized (DefinitionCache.declarationLock()) {
+            NodeWrapper componentNode =
+                    DefinitionCache.COMPONENT_CACHE.get().containsKey(new ComponentKey(componentSymbol)) ?
+                            DefinitionCache.COMPONENT_CACHE.get().get(new ComponentKey(componentSymbol)) :
+                            recordComponent(componentSymbol, recordNode, ast);
+            componentNode.setProperty(IS_USER_CODE, true);
+            componentNode.addLabel(NodeCategory.AST_NODE);
+            componentNode.setProperties(JavacInfo.getPosition(recordNode));
 
-        //        PartialWithEnd componentTypeRel = new PartialWithEnd<>(componentNode, ASTRelationTypes
-        //        .COMPONENT_TYPE);
-        //        componentSymbol.declarationFor().getType().accept(this, Pair.createPair(componentTypeRel));
-        //        componentTypeRel.getEndNode().setProperties(JavacInfo.getPosition(recordNode));
-        DefinitionCache.COMPONENT_CACHE.get().updateToDefinition(new ComponentKey(componentSymbol), componentNode);
+            //        PartialWithEnd componentTypeRel = new PartialWithEnd<>(componentNode, ASTRelationTypes
+            //        .COMPONENT_TYPE);
+            //        componentSymbol.declarationFor().getType().accept(this, Pair.createPair(componentTypeRel));
+            //        componentTypeRel.getEndNode().setProperties(JavacInfo.getPosition(recordNode));
+            DefinitionCache.COMPONENT_CACHE.get().updateToDefinition(new ComponentKey(componentSymbol), componentNode);
 
-        componentNode.createRelationshipTo(fieldNode, ASTRelationTypes.COMPONENT_FIELD);
+            componentNode.createRelationshipTo(fieldNode, ASTRelationTypes.COMPONENT_FIELD);
+
+        }
     }
 
     private static void callsFromVarDecToConstructor(NodeWrapper attr, NodeWrapper constructor) {
@@ -1725,19 +1743,22 @@ public class ASTTypesVisitor
     }
 
     private NodeWrapper createDynamicallyGenConstructor(Symbol newClassConstructor) {
-        CallableKey callableKey = new CallableKey("<init>", newClassConstructor.owner);
-        if (DefinitionCache.CALLABLE_DEC_CACHE.get().containsKey(callableKey))
-            return DefinitionCache.CALLABLE_DEC_CACHE.get().get(callableKey);
-        NodeWrapper generatedClassNode =
-                TypeVisitor.generatedClassType(callableKey.getOwnerKey(), (ClassSymbol) newClassConstructor.owner, ast);
+        synchronized (DefinitionCache.declarationLock()) {
+            CallableKey callableKey = new CallableKey("<init>", newClassConstructor.owner);
+            if (DefinitionCache.CALLABLE_DEC_CACHE.get().containsKey(callableKey))
+                return DefinitionCache.CALLABLE_DEC_CACHE.get().get(callableKey);
+            NodeWrapper generatedClassNode =
+                    TypeVisitor.generatedClassType(callableKey.getOwnerKey(), (ClassSymbol) newClassConstructor.owner, ast);
 
-        if (!typeDecUses.contains(generatedClassNode)) {
-            classState.currentClassDec.createRelationshipTo(generatedClassNode, CDGRelationTypes.USES_TYPE_DEC);
-            typeDecUses.add(generatedClassNode);
+            if (!typeDecUses.contains(generatedClassNode)) {
+                classState.currentClassDec.createRelationshipTo(generatedClassNode, CDGRelationTypes.USES_TYPE_DEC);
+                typeDecUses.add(generatedClassNode);
+            }
+            NodeWrapper constructorDef = createAndLinkNonDeclaredCallable(generatedClassNode, true);
+            setCallableJustSymbolProps(newClassConstructor, constructorDef, callableKey);
+            return constructorDef;
+
         }
-        NodeWrapper constructorDef = createAndLinkNonDeclaredCallable(generatedClassNode, true);
-        setCallableJustSymbolProps(newClassConstructor, constructorDef, callableKey);
-        return constructorDef;
     }
 
     private void scanListWithPropertyIndex(List<? extends Tree> childList, NodeWrapper parentNode,

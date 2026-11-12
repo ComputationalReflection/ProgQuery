@@ -9,6 +9,9 @@ abstract class AbstractNeo4jLazyServerDriverElement implements Propertiable {
 
 	Map<String, Object> properties = new HashMap<String, Object>();
 
+    protected AbstractNeo4jLazyServerDriverElement canonicalElement() { return this; }
+    protected GraphAccess propertyAccess() { return null; }
+
 	public AbstractNeo4jLazyServerDriverElement(Object... props) {
 		if (props == null || props.length % 2 != 0)
 			throw new IllegalArgumentException("Properties must be supplied as name-value pairs.");
@@ -17,20 +20,35 @@ abstract class AbstractNeo4jLazyServerDriverElement implements Propertiable {
 	}
 
 	public void setProp(String name, Object value) {
-		properties.put(name, value);
+        GraphAccess access = propertyAccess();
+        if (access != null) access.topology.readLock().lock();
+        try {
+            var element = canonicalElement();
+            synchronized (element) { element.properties.put(name, value); }
+        } finally { if (access != null) access.topology.readLock().unlock(); }
 	}
 
 	public boolean hasProperty(String name) {
-		return properties.get(name) != null;
+        return getProperty(name) != null;
 	}
 
 	public Object getProperty(String name) {
 
-		return properties.get(name);
+        GraphAccess access = propertyAccess();
+        if (access != null) access.topology.readLock().lock();
+        try {
+            var element = canonicalElement();
+            synchronized (element) { return element.properties.get(name); }
+        } finally { if (access != null) access.topology.readLock().unlock(); }
 	}
 
 	public Set<Entry<String, Object>> getAllProperties() {
-		return properties.entrySet();
+        GraphAccess access = propertyAccess();
+        if (access != null) access.topology.readLock().lock();
+        try {
+            var element = canonicalElement();
+            synchronized (element) { return new HashMap<>(element.properties).entrySet(); }
+        } finally { if (access != null) access.topology.readLock().unlock(); }
 	}
 
 }

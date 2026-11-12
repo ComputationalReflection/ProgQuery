@@ -74,6 +74,6 @@ public class Neo4jDriverQueriedNode extends Neo4jLazyNode implements NodeWrapper
 
     @Override
     public String toString() {
-        return "Neo4jDriverQueriedNode [ID:%d]. Other elements/properties no retrieved.".formatted(id);
+        return "Neo4jDriverQueriedNode [ID:%d]. Other elements/properties no retrieved.".formatted(getId());
     }
 }

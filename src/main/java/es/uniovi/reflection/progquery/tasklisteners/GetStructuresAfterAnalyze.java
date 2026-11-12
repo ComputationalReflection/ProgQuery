@@ -140,7 +140,7 @@ public class GetStructuresAfterAnalyze implements TaskListener {
         scan((ClassTree) typeDeclaration, true, cu);
     }
     private NodeWrapper addPackageInfo(Symbol.PackageSymbol currentPackage, NodeWrapper compilationUnitNode) {
-        PackageManager.PACKAGE_MANAGER.get().currentPackage = currentPackage;
+        PackageManager.PACKAGE_MANAGER.get().setCurrentPackage(currentPackage);
         NodeWrapper packageNode = PackageManager.PACKAGE_MANAGER.get().putDeclaredPackage(currentPackage);
         packageNode.createRelationshipTo(compilationUnitNode, PGRelationTypes.PACKAGE_INCLUDES_CU);
         return packageNode;

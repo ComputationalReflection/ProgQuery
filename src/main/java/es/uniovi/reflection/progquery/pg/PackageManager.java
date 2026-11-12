@@ -21,7 +21,10 @@ import static es.uniovi.reflection.progquery.database.nodes.NodeProperties.NAME_
 public class PackageManager {
     public static ThreadLocal<PackageManager> PACKAGE_MANAGER = new ThreadLocal<>();
     public final ProgramManager programManager;
-    public Symbol.PackageSymbol currentPackage;
+    private final ThreadLocal<Symbol.PackageSymbol> currentPackage = new ThreadLocal<>();
+    public Symbol.PackageSymbol getCurrentPackage() { return currentPackage.get(); }
+    public void setCurrentPackage(Symbol.PackageSymbol value) { currentPackage.set(value); }
+    public void releaseTaskState() { currentPackage.remove(); }
     private final DefinitionCache<PackageKeyI> packageCache;
     private final Set<Pair<PackageKeyI, PackageKeyI>> dependenciesSet;
     private final ModuleManager moduleManager;
@@ -34,33 +37,39 @@ public class PackageManager {
     }
 
     public NodeWrapper putDeclaredPackage(Symbol.PackageSymbol packageSymbol) {
-        PackageKey packageKey = new PackageKey(packageSymbol);
-        if (packageCache.containsDef(packageKey))
-            return getPackageNode(packageKey);
-        else {
-            NodeWrapper packageNode = getPackageNode(packageKey);
-            if (packageNode != null) {
-                packageNode.setProperty(IS_USER_CODE, true);
-                programManager.getCurrentProgram().createRelationshipTo(packageNode, PGRelationTypes.PROGRAM_DECLARES_PACKAGE);
-                packageCache.updateToDefinition(packageKey, packageNode);
-            } else
-                packageNode = createPackage(packageSymbol, packageKey, true);
-            return packageNode;
+        synchronized (DefinitionCache.declarationLock()) {
+            PackageKey packageKey = new PackageKey(packageSymbol);
+            if (packageCache.containsDef(packageKey))
+                return getPackageNode(packageKey);
+            else {
+                NodeWrapper packageNode = getPackageNode(packageKey);
+                if (packageNode != null) {
+                    packageNode.setProperty(IS_USER_CODE, true);
+                    programManager.getCurrentProgram().createRelationshipTo(packageNode, PGRelationTypes.PROGRAM_DECLARES_PACKAGE);
+                    packageCache.updateToDefinition(packageKey, packageNode);
+                } else
+                    packageNode = createPackage(packageSymbol, packageKey, true);
+                return packageNode;
+            }
+
         }
     }
     public void handleNewDependency(Symbol.PackageSymbol dependent, Symbol.PackageSymbol dependency) {
-        if (!dependent.equals(dependency)) {
-            PackageKeyI dependentKey = PackageKey.newPackageKey(dependent), dependencyKey = PackageKey.newPackageKey(dependency);
-            if(!hasDependency(dependentKey, dependencyKey)) {
-                addDependency(dependentKey, dependencyKey);
-                NodeWrapper dependentNode = getPackageNode(dependentKey), dependencyNode = getPackageNode(dependencyKey);
-                if (dependentNode == null)
-                    createPackage(dependent, dependentKey, false);
+        synchronized (DefinitionCache.declarationLock()) {
+            if (!dependent.equals(dependency)) {
+                PackageKeyI dependentKey = PackageKey.newPackageKey(dependent), dependencyKey = PackageKey.newPackageKey(dependency);
+                if(!hasDependency(dependentKey, dependencyKey)) {
+                    addDependency(dependentKey, dependencyKey);
+                    NodeWrapper dependentNode = getPackageNode(dependentKey), dependencyNode = getPackageNode(dependencyKey);
+                    if (dependentNode == null)
+                        createPackage(dependent, dependentKey, false);
 
-                if (dependencyNode == null)
-                    createPackage(dependency, dependencyKey, false);
-                dependenciesSet.add(Pair.create(dependentKey, dependencyKey));
+                    if (dependencyNode == null)
+                        createPackage(dependency, dependencyKey, false);
+                    dependenciesSet.add(Pair.create(dependentKey, dependencyKey));
+                }
             }
+
         }
     }
 
@@ -77,16 +86,22 @@ public class PackageManager {
     }
 
     public NodeWrapper createUserModule(Symbol.ModuleSymbol modle) {
-        return moduleManager.createUserModule(modle);
+        synchronized (DefinitionCache.declarationLock()) {
+            return moduleManager.createUserModule(modle);
+
+        }
     }
 
     NodeWrapper getOrCreateExternalPackage(Symbol.PackageSymbol packageSymbol) {
-        PackageKey packageKey = new PackageKey(packageSymbol);
-        if (packageCache.containsKey(packageKey))
-            return packageCache.get(packageKey);
+        synchronized (DefinitionCache.declarationLock()) {
+            PackageKey packageKey = new PackageKey(packageSymbol);
+            if (packageCache.containsKey(packageKey))
+                return packageCache.get(packageKey);
 
-      return createPackage(packageSymbol, packageKey, false);
+          return createPackage(packageSymbol, packageKey, false);
 
+
+        }
     }
 
     private void addDependency(PackageKeyI dependent, PackageKeyI dependency) {

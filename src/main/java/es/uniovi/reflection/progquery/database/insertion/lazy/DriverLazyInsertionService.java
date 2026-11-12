@@ -213,6 +213,7 @@ public class DriverLazyInsertionService {
     }
 
     private static void logPendingElements(InfoToInsert info) {
+        info.prepareInsertion();
         ProgQuery.LOGGER.info("Preparing insertion of " + info.nodeSet.size() + " nodes and " +
                 info.relSet.size() + " relationships.");
     }

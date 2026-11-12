@@ -37,6 +37,7 @@ import java.util.stream.StreamSupport;
 public class CompilationScheduler {
     private static final boolean MERGING_ALLOWED = true;
     private PDGProcessing pdgUtils;
+    private final ThreadLocal<PDGProcessing> taskPdg = new ThreadLocal<>();
     private ASTAuxiliarStorage ast;
     private final ConcurrentLinkedQueue<StandardJavaFileManager> fileManagers = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<Path> temporaryOutputs = new ConcurrentLinkedQueue<>();
@@ -84,6 +85,7 @@ public class CompilationScheduler {
     }
 
     CompilationResult newCompilationTask(String javac_options, ParallelCompilation parallel, int taskIndex) {
+        if (parallel != null) taskPdg.set(pdgUtils.fork());
         CompilationResult result = new CompilationResult(javac_options);
         try {
             ProgQuery.LOGGER.info(String.format("New Compilation Task: %s", javac_options));
@@ -184,6 +186,9 @@ public class CompilationScheduler {
             return result;
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to prepare compilation", e);
+        } finally {
+            taskPdg.remove();
+            ast.releaseTaskState();
         }
     }
 
@@ -226,7 +231,8 @@ public class CompilationScheduler {
     }
 
     public PDGProcessing getPdgUtils() {
-        return pdgUtils;
+        PDGProcessing local = taskPdg.get();
+        return local == null ? pdgUtils : local;
     }
 
     public ASTAuxiliarStorage getAst() {

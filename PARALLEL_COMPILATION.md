@@ -62,3 +62,67 @@ The first three rows are medians of three runs per mode with a 10 GiB client hea
 James is one run per mode with a 48 GiB heap. Counters matched in both modes.
 RapidOcr timings overlap, so its small gain should not be generalized. Eight
 workers is the default, not a claim that it is optimal for every workload.
+
+## Aspectos técnicos
+
+Los cambios permiten solapar las compilaciones de los módulos conservando el
+orden de las modificaciones del grafo. La construcción compartida del AST/CFG/PDG
+mantiene un único escritor; no se han introducido bloqueos independientes por nodo
+o por caché.
+
+- **Configuración y entrada (`ProgQueryParameters`, Core y API).** Se añadió
+  `max_concurrent_compilations`, con alias `mcc`, valor predeterminado 8 y validación
+  de entero positivo. Los nuevos constructores de `ProgQueryClient` y `ProgQuery`
+  propagan el límite por instancia; los anteriores conservan su firma y delegan
+  con el valor predeterminado. El modo local utiliza un trabajador.
+
+- **Coordinación (`ProgQuery` y `ParallelCompilation`).** El bucle secuencial se
+  sustituye, cuando corresponde, por un pool fijo limitado al número de tareas.
+  Cada compilación devuelve un `Future`; los resultados se recogen en el orden
+  original de módulos. Los análisis globales y la escritura en Neo4j comienzan
+  después de terminar todos los trabajadores. Con un trabajador se mantiene el
+  camino secuencial.
+
+- **Estado privado y compartido.** `CompilationScheduler` crea por tarea su
+  compilador, contexto de javac, file manager, diagnósticos y `JavacInfo`.
+  `ParallelCompilation` enlaza en los `ThreadLocal` de cada trabajador las mismas
+  cachés de declaraciones, `PackageManager`, `InfoToInsert` y `DatabaseFacade`
+  del coordinador. El AST y `PDGProcessing` siguen perteneciendo al scheduler
+  compartido. Al terminar se eliminan los enlaces del trabajador y se recupera
+  en el coordinador el último `JavacInfo` disponible.
+
+- **Acceso al grafo (`GetStructuresAfterAnalyze`).** Las visitas de los eventos
+  `ANALYZE` correspondientes a los fuentes solicitados pasan por `visitGraph`.
+  `graphOwner` identifica el módulo con turno; el array `completed` permite
+  avanzar sobre tareas terminadas, incluidas las vacías. `synchronized`, `wait`
+  y `notifyAll` protegen la espera y el relevo, pero el visitante se ejecuta fuera
+  del monitor. El módulo conserva el turno entre visitas y lo cede al completar
+  sus fuentes, permitiendo que su generación de bytecode se solape con el siguiente.
+
+- **Salidas y recursos (`CompilationScheduler`).** Las tareas paralelas escriben
+  sus clases en un directorio temporal propio mediante `-d`. Se copian los recursos
+  existentes de `CLASS_OUTPUT` que necesitan algunos procesadores de anotaciones,
+  conservando las clases de Maven usadas como dependencias. Los file managers y
+  directorios temporales se registran en `ConcurrentLinkedQueue`; su cierre y
+  limpieza se realizan cuando ya no quedan trabajadores activos.
+
+- **Fallos y liberación.** El primer error se conserva y despierta a los
+  trabajadores que esperan turno. El executor se interrumpe y se espera su
+  terminación antes de liberar el estado compartido. En `ProgQuery`, un `finally`
+  garantiza el reinicio de las cachés aunque falle el cierre de recursos.
+  Las regresiones cubren orden de visitas y resultados, exclusión de escritores,
+  tareas vacías, cesión temprana del turno, fallos y configuración del paralelismo.
+
+## Experimento posterior: visitantes concurrentes (12-11-2026)
+
+La sección anterior documenta el cambio aceptado previamente. El refactor
+experimental posterior separa el estado privado de las tareas y protege las
+operaciones compartidas por caché, elemento y extremos de relación. Las visitas
+concurrentes quedan desactivadas por defecto: las pruebas de canal, Gephi y James
+no conservan los mismos grafos. `-mcc=8` mantiene el comportamiento ordenado;
+la propiedad JVM `-Dprogquery.concurrentVisitors=true` permite reproducir el
+prototipo experimental.
+
+El [informe del experimento](CONCURRENT_VISITORS.md) detalla los cambios de código,
+los bloqueos, los tiempos y las diferencias de nodos y relaciones. Sus porcentajes
+observados no deben interpretarse como mejoras aceptadas cuando cambia el grafo.

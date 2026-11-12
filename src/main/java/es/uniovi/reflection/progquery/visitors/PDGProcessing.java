@@ -54,6 +54,13 @@ public class PDGProcessing {
         this.ast = ast;
     }
 
+    public PDGProcessing fork() {
+        PDGProcessing task = new PDGProcessing(ast);
+        task.attrCache = attrCache;
+        task.thisCache = thisCache;
+        return task;
+    }
+
     public DefinitionCache<LocalScopeVarKey> getLocalVarDefCache() {
         return localVarDefCache;
     }
@@ -126,7 +133,8 @@ public class PDGProcessing {
         //            toDo.remove(varKey);
         //        }
         //        definitionTable.put(varKey, n);
-        definitionCache.putDefinition(varKey, n);
+        if (definitionCache == localVarDefCache) definitionCache.putDefinition(varKey, n);
+        else synchronized (DefinitionCache.declarationLock()) { definitionCache.putDefinition(varKey, n); }
     }
 
     public <TKEY> NodeWrapper getNode(TKEY varKey, DefinitionCache<TKEY> definitionCache) {
@@ -247,18 +255,24 @@ public class PDGProcessing {
                          boolean isIdent, MethodState methodState, NodeWrapper decNode, boolean isThis,
                          boolean isInstance, boolean isAttr) {
         List<Consumer<NodeWrapper>> list = null;
-        if (decNode == null)
-            if (isThis)
-                thisCache.put(new ThisKey(s.owner), decNode = getOrCreateThisNode(currentClassDec).getEndNode());
-            else {
-                FieldKey fieldKey = new FieldKey(s);
-                //                list = toDo.get(fieldKey);
-                //                if (list == null) {
-                //                    list = new ArrayList<>();
-                //                    toDo.put(fieldKey, list);
-                //                }
-                attrCache.put(fieldKey, decNode = createNonDeclaredField(fieldKey));
+        if (decNode == null) {
+            synchronized (DefinitionCache.declarationLock()) {
+                if (isThis) {
+                  ThisKey key = new ThisKey(s.owner);
+                  decNode = thisCache.get(key);
+                  if (decNode == null) thisCache.put(key, decNode = getOrCreateThisNode(currentClassDec).getEndNode());
+                } else {
+                  FieldKey fieldKey = new FieldKey(s);
+                  //                list = toDo.get(fieldKey);
+                  //                if (list == null) {
+                  //                    list = new ArrayList<>();
+                  //                    toDo.put(fieldKey, list);
+                  //                }
+                  decNode = attrCache.get(fieldKey);
+                  if (decNode == null) attrCache.put(fieldKey, decNode = createNonDeclaredField(fieldKey));
+                }
             }
+        }
         //        boolean isAttr = decNode == null || decNode.hasLabel(NodeTypes.ATTR_DEC);
         boolean isStatic = s.isStatic();
         if (ASTVisitorParam == null)
@@ -405,13 +419,16 @@ public class PDGProcessing {
     }
 
     private static RelationshipWrapper getOrCreateThisNode(NodeWrapper classDecNode) {
-        RelationshipWrapper r = getThisRel(classDecNode);
-        if (r != null)
-            return r;
-        return classDecNode.createRelationshipTo(
-                DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.THIS_REFERENCE),
-                PDGRelationTypes.HAS_THIS_REFERENCE);
+        synchronized (DefinitionCache.declarationLock()) {
+            RelationshipWrapper r = getThisRel(classDecNode);
+            if (r != null)
+                return r;
+            return classDecNode.createRelationshipTo(
+                    DatabaseFacade.CURRENT_DB_FACADE.get().createNodeWithoutExplicitTree(NodeTypes.THIS_REFERENCE),
+                    PDGRelationTypes.HAS_THIS_REFERENCE);
 
+
+        }
     }
 
     private NodeWrapper createNotDeclaredFieldOrEnum(VarSymbol s, ASTAuxiliarStorage ast, NodeTypes nodeType,

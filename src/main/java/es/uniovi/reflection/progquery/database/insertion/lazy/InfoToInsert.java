@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import es.uniovi.reflection.progquery.node_wrappers.GraphAccess;
 
 import es.uniovi.reflection.progquery.utils.dataTransferClasses.Pair;
 import org.neo4j.graphdb.Label;
@@ -17,33 +20,59 @@ import es.uniovi.reflection.progquery.node_wrappers.RelationshipWrapper;
 public class InfoToInsert {
 	final List<NodeWrapper> nodeSet = new ArrayList<>();
 	final List<RelationshipWrapper> relSet = new ArrayList<>();
+
+    public final GraphAccess graphAccess = new GraphAccess();
+    public final Object declarationLock = new Object();
+    private static final class Buffer {
+        final List<NodeWrapper> nodes = new ArrayList<>();
+        final List<RelationshipWrapper> relationships = new ArrayList<>();
+    }
+    private final ConcurrentSkipListMap<Integer,Buffer> buffers = new ConcurrentSkipListMap<>();
+    private final ThreadLocal<Buffer> currentBuffer = ThreadLocal.withInitial(() -> buffers.computeIfAbsent(-1, ignored -> new Buffer()));
+    private final Set<NodeWrapper> deletedNodes = ConcurrentHashMap.newKeySet();
+    private final Set<RelationshipWrapper> deletedRelationships = ConcurrentHashMap.newKeySet();
+    public void enterTask(int index) { currentBuffer.set(buffers.computeIfAbsent(index, ignored -> new Buffer())); }
+    public void leaveTask() { currentBuffer.remove(); }
+    public void beginFinalization() { enterTask(Integer.MAX_VALUE); }
+    /** Called only after all graph writers have joined. */
+    public synchronized void prepareInsertion() {
+        nodeSet.clear(); relSet.clear();
+        buffers.values().forEach(buffer -> {
+            for (var node : buffer.nodes) if (!deletedNodes.contains(node)) nodeSet.add(node);
+            for (var rel : buffer.relationships) if (!deletedRelationships.contains(rel)) relSet.add(rel);
+        });
+    }
 	public List<NodeWrapper> getNodeSet() {
+		prepareInsertion();
 		return Collections.unmodifiableList(nodeSet);
 	}
 	public List<RelationshipWrapper> getRelSet() {
+		prepareInsertion();
 		return Collections.unmodifiableList(relSet);
 	}
 	public static ThreadLocal<InfoToInsert> INFO_TO_INSERT  = new ThreadLocal<>();
 	public void addNewNode(Neo4jLazyNode newNode) {
-		nodeSet.add(newNode);
+		currentBuffer.get().nodes.add(newNode);
 	}
 	public void deleteNode(Neo4jLazyNode node) {
-		nodeSet.remove(node);
+		deletedNodes.add(node);
 	}
 	public void addNewRel(Neo4jLazyRelationship newRel) {
-		relSet.add(newRel);
+		currentBuffer.get().relationships.add(newRel);
 	}
 	public void deleteRel(Neo4jLazyRelationship rel) {
-		relSet.remove(rel);
+		deletedRelationships.add(rel);
 	}
 
 	public List<Pair<String, Object[]>> getNodeQueriesInfo() {
+		prepareInsertion();
 		final List<Pair<String, Object[]>> nodeQueries = new ArrayList<>();
 		for (NodeWrapper n : nodeSet)
 			nodeQueries.add(createParameterizedQueryFor(n));
 		return nodeQueries;
 	}
 	public List<Pair<String, Object[]>> getRelQueriesInfo() {
+		prepareInsertion();
 		final List<Pair<String, Object[]>> relQueries = new ArrayList<>();
 		for (RelationshipWrapper r : relSet)
 			relQueries.add(createParameterizedQueryFor(r));

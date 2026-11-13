@@ -6,6 +6,7 @@ import es.uniovi.reflection.progquery.ast.ASTAuxiliarStorage;
 import es.uniovi.reflection.progquery.database.DatabaseFacade;
 import es.uniovi.reflection.progquery.database.EmbeddedInsertion;
 import es.uniovi.reflection.progquery.database.Neo4jDriverLazyInsertion;
+import es.uniovi.reflection.progquery.database.insertion.lazy.InfoToInsert;
 import es.uniovi.reflection.progquery.database.manager.NEO4JManager;
 import es.uniovi.reflection.progquery.node_wrappers.NodeWrapper;
 import es.uniovi.reflection.progquery.pg.PackageManager;

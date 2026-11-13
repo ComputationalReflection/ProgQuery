@@ -174,3 +174,29 @@ Son picos aproximados de working set del proceso Java cliente, muestreados cada 
 Build Maven y regresiones locales superados. La comprobación de las clases congeladas confirma que el coordinador, los visitantes y las claves son idénticos entre variantes. Las clases de referencia principales coinciden también con las archivadas esta mañana. Solo cambian cinco archivos de producción: `DefinitionCache`, `Neo4jLazyNode`, `Neo4jLazyRelationship`, `InfoToInsert` y `DriverLazyInsertionService`. Se añade la regresión de almacenamiento y esta documentación.
 
 No se han incorporado las visitas concurrentes ni el resto del prototipo. No se ha realizado ningún commit. Los datos sin resumir, las clases congeladas y los scripts de reproducción están en `../report/storage-optimizations-20261112/`, excluido de Git.
+
+## Prueba adicional de rendimiento: modeldb
+
+Realizada el 12 de noviembre de 2026, con una ejecución completa por versión. Esta prueba mide exclusivamente rendimiento: no se auditan nodos, relaciones ni equivalencia del grafo.
+
+| Versión | Commit | Análisis e inserción | Duración |
+| --- | --- | ---: | --- |
+| Actual, almacenamiento lazy optimizado y representaciones de claves corregidas | `34b89b2` | 191802 ms | 3 min 11,802 s |
+| Referencia sin optimización del almacenamiento lazy | `9cf2211` | 1244837 ms | 20 min 44,837 s |
+| `feature/parallel_visitors`, visitors concurrentes activados | `528374b` | 177927 ms | 2 min 57,927 s |
+
+La versión actual reduce el tiempo un **84,59 %** respecto a `9cf2211` (**6,49 veces** más rápida). La rama de visitors paralelos tarda **13,875 s menos** que la actual, una reducción adicional del **7,23 %**. Este último dato no valida la corrección de esa rama descartada.
+
+Se utilizó `D:\sources\modeldb`, usuario/programa `oscar/modeldb`, servidor remoto habitual, JDK 22, heap máximo de 48 GiB, límite de 8 compiladores y 8 transacciones de escritura concurrentes. Maven produjo cuatro tareas: se ejecutaron con hasta cuatro compiladores. Los lotes conservan 80000 operaciones. Las variantes históricas se compilaron en copias aisladas y se usó el mismo core y las mismas dependencias.
+
+Maven `clean compile` se ejecutó una vez como preparación. Las tres variantes reprodujeron la misma lista ordenada de opciones javac, con salidas temporales de anotaciones independientes. La métrica de la tabla es `Total Elapsed Time (millis)` de `Insertion Summary`; incluye análisis, construcción e inserción remota, y excluye Maven, arranque y borrado previo. Se eliminó únicamente el grafo `oscar/modeldb` antes de cada ejecución.
+
+| Ejecución válida | Inicio del proceso (hora local) | Fin del proceso | Tiempo completo, incluida limpieza |
+| --- | --- | --- | ---: |
+| Actual | 21:42:15 | 21:45:33 | 197645 ms |
+| Referencia | 22:52:14 | 23:13:04 | 1249875 ms |
+| Visitors paralelos | 23:13:04 | 23:18:47 | 342456 ms |
+
+El primer intento de la referencia quedó interrumpido sin resumen final; se archivó aparte y no se contabiliza. Las tres ejecuciones válidas finalizaron con `Success=true` y código de salida 0. No se reiniciaron las cachés del servidor remoto. Al ser una muestra por versión, estos resultados describen estas ejecuciones y no una variabilidad estadística.
+
+Los logs, JSON, clases congeladas, revisiones y metodología están en `../report/modeldb-performance-20261112/`. La copia de trabajo de producción se mantuvo en su commit actual, sin cambiar de rama ni modificar código.

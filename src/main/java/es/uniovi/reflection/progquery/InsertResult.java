@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 public class InsertResult {
     private List<CompilationResult> compilationResults;
     private long elapsedTime;
+    private long totalNumberOfNodes;
+    private long totalNumberOfRelationships;
 
     public InsertResult() {
         this.compilationResults = new ArrayList<>();
@@ -47,10 +49,32 @@ public class InsertResult {
     public void setElapsedTime(long elapsedTime) { this.elapsedTime = elapsedTime;}
     public long getElapsedTime() { return elapsedTime; }
 
+    public void setTotalNumberOfNodes(long totalNumberOfNodes) { this.totalNumberOfNodes = totalNumberOfNodes; }
+    public long getTotalNumberOfNodes() { return totalNumberOfNodes; }
+
+    public void setTotalNumberOfRelationships(long totalNumberOfRelationships) { this.totalNumberOfRelationships = totalNumberOfRelationships; }
+    public long getTotalNumberOfRelationships() { return totalNumberOfRelationships; }
+
     public String getJavacVersion() {
         return compilationResults.stream()
                 .map(CompilationResult::getJavacVersion)
                 .distinct()
                 .collect(Collectors.joining(","));
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder("Insertion Summary")
+                .append("\n\tSuccess: ").append(isSuccess())
+                .append("\n\tCompilation Tasks: ").append(getCompilationResults().size())
+                .append("\n\tJavac Version: ").append(getJavacVersion())
+                .append("\n\tTotal Number of Files Compiled: ").append(getTotalCompiledFiles())
+                .append("\n\tTotal Number of Diagnostics: ").append(getTotalDiagnostics())
+                .append("\n\tTotal Number of Nodes: ").append(getTotalNumberOfNodes())
+                .append("\n\tTotal Number of Relationships: ").append(getTotalNumberOfRelationships())
+                .append("\n\tHas Warnings: ").append(hasWarnings())
+                .append("\n\tTotal Elapsed Time (millis): ").append(getElapsedTime())
+                .append('\n')
+                .toString();
     }
 }

@@ -108,19 +108,14 @@ public class ProgQuery {
             if (result.isSuccess()) {
                 compilationScheduler.finalizeInsertion();
                 result.setElapsedTime(Duration.between(buildStart, Instant.now()).toMillis());
+                InfoToInsert infoToInsert = InfoToInsert.INFO_TO_INSERT.get();
+                result.setTotalNumberOfNodes(infoToInsert.getNodeSet().size());
+                result.setTotalNumberOfRelationships(infoToInsert.getRelSet().size());
                 if ((result.hasWarnings()))
                     ProgQuery.LOGGER.info("Insertion completed with warnings.");
                 else
                     ProgQuery.LOGGER.info("Insertion completed without errors.");
-                ProgQuery.LOGGER.info("Insertion Summary"
-                        + "\n\tSuccess: " + result.isSuccess()
-                        + "\n\tCompilation Tasks: " + result.getCompilationResults().size()
-                        + "\n\tJavac Version: " + result.getJavacVersion()
-                        + "\n\tTotal Number of Files Compiled: " + result.getTotalCompiledFiles()
-                        + "\n\tTotal Number of Diagnostics: " + result.getTotalDiagnostics()
-                        + "\n\tHas Warnings: " + result.hasWarnings()
-                        + "\n\tTotal Elapsed Time (millis): " + result.getElapsedTime()
-                        + "\n");
+                ProgQuery.LOGGER.info(result.toString());
             } else
                 ProgQuery.LOGGER.info("Insertion aborted, errors found.");
             return result;

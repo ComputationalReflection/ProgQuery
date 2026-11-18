@@ -92,7 +92,8 @@ public class CompilationScheduler {
             options.removeIf(option -> option.startsWith("-Xep")
                     || option.startsWith("-Xplugin:ErrorProne")
                     || option.startsWith("-AGeneratedDocumentationPath=")
-                    || option.startsWith("-ADocumentation."));
+                    || option.startsWith("-ADocumentation.")
+                    || option.startsWith("-Werror"));
 
             String javac_version = getOptionValue(options,"-release");
             if (javac_version.isEmpty())
